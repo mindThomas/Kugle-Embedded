@@ -24,7 +24,7 @@
 #include <stdlib.h>
 
 #define DEBUG(msg)	Debug::Message("DEBUG: ", __func__, msg)
-#define ERROR(msg)	Debug::Message("ERROR: ", __func__, msg)
+#define ERROR(msg)	{Debug::Message("ERROR: ", __func__, msg); Debug::ErrorHandler();}
 
 class Debug
 {
@@ -36,6 +36,7 @@ public:
 	static void Message(const char * functionName, std::string msg);
 	static void Message(const char * msg);
 	static void Message(std::string msg);
+	static void ErrorHandler();
 
 public:
 	Debug();	

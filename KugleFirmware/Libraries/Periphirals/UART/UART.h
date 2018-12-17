@@ -40,9 +40,9 @@ public:
 	UART(port_t port, uint32_t baud); // unbuffered constructor = polling only
 	UART(port_t port, uint32_t baud, uint32_t bufferLength); // ring-buffered constructor
 	~UART();
-	void InitPeriphiral();
-	void DeInitPeriphiral();
-	void ConfigurePeriphiral();
+	void InitPeripheral();
+	void DeInitPeripheral();
+	void ConfigurePeripheral();
 	void RegisterRXcallback(void (*RXcallback)UART_CALLBACK_PARAMS); // each byte callback
 	void RegisterRXcallback(void (*RXcallback)UART_CALLBACK_PARAMS, uint32_t chunkLength); // each byte callback
 	void TransmitBlocking(uint8_t * buffer, uint32_t bufLen);
@@ -64,7 +64,7 @@ private:
 	uint32_t _bufferWriteIdx;
 	uint32_t _bufferReadIdx;
 	uint32_t _callbackChunkLength;
-	TaskHandle_t callbackTaskHandle;
+	TaskHandle_t _callbackTaskHandle;
 
 public:
 	static void UART_Interrupt(port_t port);

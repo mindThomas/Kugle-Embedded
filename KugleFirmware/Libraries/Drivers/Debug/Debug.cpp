@@ -51,14 +51,15 @@ void Debug::Message(const char * functionName, std::string msg)
 
 void Debug::Message(const char * type, const char * functionName, const char * msg)
 {
-	uint32_t i;
-	while (1)
-	{
-		i++;
-	}
+
 }
 
 void Debug::Message(std::string type, const char * functionName, std::string msg)
+{
+
+}
+
+void Debug::ErrorHandler()
 {
 	uint32_t i;
 	while (1)

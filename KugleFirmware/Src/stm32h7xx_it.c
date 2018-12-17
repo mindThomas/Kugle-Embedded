@@ -285,35 +285,6 @@ void EXTI15_10_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles SPI3 global interrupt.
-  */
-void SPI3_IRQHandler(void)
-{
-  /* USER CODE BEGIN SPI3_IRQn 0 */
-
-  /* USER CODE END SPI3_IRQn 0 */
-  HAL_SPI_IRQHandler(&hspi3);
-  /* USER CODE BEGIN SPI3_IRQn 1 */
-
-  /* USER CODE END SPI3_IRQn 1 */
-}
-
-
-/**
-  * @brief This function handles SPI6 global interrupt.
-  */
-void SPI6_IRQHandler(void)
-{
-  /* USER CODE BEGIN SPI6_IRQn 0 */
-
-  /* USER CODE END SPI6_IRQn 0 */
-  HAL_SPI_IRQHandler(&hspi6);
-  /* USER CODE BEGIN SPI6_IRQn 1 */
-
-  /* USER CODE END SPI6_IRQn 1 */
-}
-
-/**
   * @brief This function handles USB On The Go FS global interrupt.
   */
 void OTG_FS_IRQHandler(void)

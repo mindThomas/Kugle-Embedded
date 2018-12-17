@@ -579,6 +579,17 @@ PRIVILEGED_FUNCTION static void prvInitialiseNewTask( 	TaskFunction_t pxTaskCode
  */
 PRIVILEGED_FUNCTION static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB );
 
+/*
+ * freertos_tasks_c_additions_init() should only be called if the user definable
+ * macro FREERTOS_TASKS_C_ADDITIONS_INIT() is defined, as that is the only macro
+ * called by the function.
+ */
+#ifdef FREERTOS_TASKS_C_ADDITIONS_INIT
+
+	static void freertos_tasks_c_additions_init( void ) PRIVILEGED_FUNCTION;
+
+#endif
+
 /*-----------------------------------------------------------*/
 
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
@@ -1827,6 +1838,14 @@ void vTaskStartScheduler( void )
 {
 BaseType_t xReturn;
 
+#if 1 /* only needed for openOCD thread awareness. It needs the symbol uxTopUsedPriority present after linking */
+{
+extern volatile const int uxTopUsedPriority;
+__attribute__((__unused__)) volatile uint8_t dummy_value_for_openocd;
+dummy_value_for_openocd = uxTopUsedPriority;
+}
+#endif
+
 	/* Add the idle task at the lowest priority. */
 	#if( configSUPPORT_STATIC_ALLOCATION == 1 )
 	{
@@ -1880,6 +1899,15 @@ BaseType_t xReturn;
 
 	if( xReturn == pdPASS )
 	{
+		/* freertos_tasks_c_additions_init() should only be called if the user
+		definable macro FREERTOS_TASKS_C_ADDITIONS_INIT() is defined, as that is
+		the only macro called by the function. */
+		#ifdef FREERTOS_TASKS_C_ADDITIONS_INIT
+		{
+			freertos_tasks_c_additions_init();
+		}
+		#endif
+
 		/* Interrupts are turned off here, to ensure a tick does not occur
 		before or during the call to xPortStartScheduler().  The stacks of
 		the created tasks contain a status word with interrupts switched on
@@ -4805,3 +4833,12 @@ const TickType_t xConstTickCount = xTickCount;
 	#include "tasks_test_access_functions.h"
 #endif
 
+#if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 )
+ #include "freertos_tasks_c_additions.h"
+ static void freertos_tasks_c_additions_init( void )
+ {
+ #ifdef FREERTOS_TASKS_C_ADDITIONS_INIT
+ FREERTOS_TASKS_C_ADDITIONS_INIT();
+ #endif
+ }
+#endif
