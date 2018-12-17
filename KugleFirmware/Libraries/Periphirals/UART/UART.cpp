@@ -25,7 +25,7 @@ UART * UART::objUART3 = 0;
 UART * UART::objUART4 = 0;
 UART * UART::objUART7 = 0;
 
-// Necessary to export
+// Necessary to export for compiler to generate code to be called by interrupt vector
 extern "C" __EXPORT void USART3_IRQHandler(void);
 extern "C" __EXPORT void UART4_IRQHandler(void);
 extern "C" __EXPORT void UART7_IRQHandler(void);
@@ -36,8 +36,8 @@ UART::UART(port_t port, uint32_t baud, uint32_t bufferLength) : _port(port), _ba
 		_buffer = (uint8_t *)pvPortMalloc(_bufferLength);
 	else
 		_buffer = 0;
-	InitPeriphiral();
-	ConfigurePeriphiral();
+	InitPeripheral();
+	ConfigurePeripheral();
 }
 
 UART::UART(port_t port, uint32_t baud) : UART(port, baud, 0)
@@ -46,12 +46,12 @@ UART::UART(port_t port, uint32_t baud) : UART(port, baud, 0)
 
 UART::~UART()
 {
-	DeInitPeriphiral();
+	DeInitPeripheral();
 	if (_buffer)
 		vPortFree(_buffer);
 }
 
-void UART::ConfigurePeriphiral()
+void UART::ConfigurePeripheral()
 {
 	switch (_port) {
 		case PORT_UART3:
@@ -94,6 +94,12 @@ void UART::ConfigurePeriphiral()
 	_handle.Init.RXFIFOThreshold = UART_RXFIFO_THRESHOLD_1_8;
 	_handle.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
 
+	if (HAL_UART_Init(&_handle) != HAL_OK)
+	{
+		ERROR("Could not initialize UART port");
+		return;
+	}
+
 	switch (_port) {
 		case PORT_UART3:
 			objUART3 = this;
@@ -110,17 +116,12 @@ void UART::ConfigurePeriphiral()
 
 	// Create binary semaphore for indicating when a single byte has finished transmitting (for flagging to the transmit thread)
 	TransmitByteFinished = xSemaphoreCreateBinary();
-	if (TransmitByteFinished== NULL) {
+	if (TransmitByteFinished == NULL) {
 		ERROR("Could not create UART transmit semaphore");
 		return;
 	}
+	vQueueAddToRegistry(TransmitByteFinished, "UART Finished");
 	xSemaphoreGive( TransmitByteFinished ); // give the semaphore the first time
-
-	if (HAL_UART_Init(&_handle) != HAL_OK)
-	{
-		ERROR("Could not initialize UART port");
-		return;
-	}
 
     /* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
     SET_BIT(_handle.Instance->CR3, USART_CR3_EIE);
@@ -145,7 +146,7 @@ void UART::ConfigurePeriphiral()
     __HAL_UART_CLEAR_OREFLAG(&_handle);
 }
 
-void UART::InitPeriphiral()
+void UART::InitPeripheral()
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -214,7 +215,7 @@ void UART::InitPeriphiral()
 	}
 }
 
-void UART::DeInitPeriphiral()
+void UART::DeInitPeripheral()
 {
   if(_port == PORT_UART3)
   {
@@ -268,13 +269,13 @@ void UART::RegisterRXcallback(void (*RXcallback)UART_CALLBACK_PARAMS)
 
 	switch (_port) {
 		case PORT_UART3:
-			xTaskCreate(this->CallbackThread, (char *)"UART3 callback", 128, (void*) this, 3, &callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART3 callback", 128, (void*) this, 3, &_callbackTaskHandle);
 			break;
 		case PORT_UART4:
-			xTaskCreate(this->CallbackThread, (char *)"UART4 callback", 128, (void*) this, 3, &callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART4 callback", 128, (void*) this, 3, &_callbackTaskHandle);
 			break;
 		case PORT_UART7:
-			xTaskCreate(this->CallbackThread, (char *)"UART7 callback", 128, (void*) this, 3, &callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART7 callback", 128, (void*) this, 3, &_callbackTaskHandle);
 			break;
 		default:
 			break;
@@ -288,13 +289,13 @@ void UART::RegisterRXcallback(void (*RXcallback)UART_CALLBACK_PARAMS, uint32_t c
 
 	switch (_port) {
 		case PORT_UART3:
-			xTaskCreate(this->CallbackThread, (char *)"UART3 callback", 128, (void*) this, 3, &callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART3 callback", 128, (void*) this, 3, &_callbackTaskHandle);
 			break;
 		case PORT_UART4:
-			xTaskCreate(this->CallbackThread, (char *)"UART4 callback", 128, (void*) this, 3, &callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART4 callback", 128, (void*) this, 3, &_callbackTaskHandle);
 			break;
 		case PORT_UART7:
-			xTaskCreate(this->CallbackThread, (char *)"UART7 callback", 128, (void*) this, 3, &callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART7 callback", 128, (void*) this, 3, &_callbackTaskHandle);
 			break;
 		default:
 			break;
@@ -358,7 +359,7 @@ void UART::CallbackThread(void * pvParameters)
 	UART * uart = (UART *)pvParameters;
 
 	while (1) {
-		vTaskSuspend(NULL);
+		vTaskSuspend(NULL); // suspend current thread - this could also be replaced by semaphore-based waiting (flagging)
 
 		if (uart->_RXcallback) {
 			if (uart->_callbackChunkLength == 1) {
@@ -391,7 +392,7 @@ void UART::UART_IncomingDataInterrupt(UART * uart)
 
 	uart->BufferPush(uart->rxByte); // push into local buffer
 	if (uart->_RXcallback)
-		xTaskResumeFromISR(uart->callbackTaskHandle);
+		xTaskResumeFromISR(uart->_callbackTaskHandle);
 }
 
 void USART3_IRQHandler(void)

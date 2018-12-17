@@ -107,15 +107,20 @@
 #define configTICK_RATE_HZ                       ((TickType_t)1000)
 #define configMAX_PRIORITIES                     ( 20 )
 #define configMINIMAL_STACK_SIZE                 ((uint16_t)256)
-#define configTOTAL_HEAP_SIZE                    ((size_t)262144)
+#define configTOTAL_HEAP_SIZE                    ((size_t)262144)//((size_t)65535)//
 #define configMAX_TASK_NAME_LEN                  ( 16 )
 #define configGENERATE_RUN_TIME_STATS            1
 #define configUSE_TRACE_FACILITY                 1
 #define configUSE_STATS_FORMATTING_FUNCTIONS     1
 #define configUSE_16_BIT_TICKS                   0
 #define configUSE_MUTEXES                        1
-#define configQUEUE_REGISTRY_SIZE                8
+#define configQUEUE_REGISTRY_SIZE                20
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  1
+
+#define configRECORD_STACK_HIGH_ADDRESS           1  /* 1: record stack high address for the debugger, 0: do not record stack high address */
+#define configTASK_RETURN_ADDRESS 0
+#define configUSE_HEAP_SCHEME                     4 /* either 1 (only alloc), 2 (alloc/free), 3 (malloc), 4 (coalesc blocks), 5 (multiple blocks) */
+#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H		1
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES                    0
