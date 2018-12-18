@@ -31,7 +31,7 @@ class SMBus
 
 public:
 	typedef enum port_t {
-		PORT_UNDEFINED = -1,
+		PORT_UNDEFINED = 0,
 		PORT_I2C2,
 		PORT_I2C4
 	} port_t;

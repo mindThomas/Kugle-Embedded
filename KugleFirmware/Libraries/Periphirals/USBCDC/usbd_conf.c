@@ -66,11 +66,7 @@
 
 /* USER CODE END PV */
 
-                PCD_HandleTypeDef hpcd_USB_OTG_FS;
-void Error_Handler(void);
-
 /* External functions --------------------------------------------------------*/
-void SystemClock_Config(void);
 
 /* USER CODE BEGIN 0 */
 
@@ -84,7 +80,7 @@ void SystemClock_Config(void);
 /* Private functions ---------------------------------------------------------*/
 
 /* USER CODE BEGIN 1 */
-
+static PCD_HandleTypeDef * hpcd_USB_OTG_FS;
 /* USER CODE END 1 */
 
 /*******************************************************************************
@@ -122,7 +118,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* pcdHandle)
     __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
 
     /* Peripheral interrupt init */
-    HAL_NVIC_SetPriority(OTG_FS_IRQn, 5, 0);
+    HAL_NVIC_SetPriority(OTG_FS_IRQn, 4, 0);
     HAL_NVIC_EnableIRQ(OTG_FS_IRQn);
   /* USER CODE BEGIN USB_OTG_FS_MspInit 1 */
 
@@ -308,6 +304,11 @@ void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
                        LL Driver Interface (USB Device Library --> PCD)
 *******************************************************************************/
 
+void USBD_LL_SetPCD(PCD_HandleTypeDef * pcd)
+{
+	hpcd_USB_OTG_FS = pcd;
+}
+
 /**
   * @brief  Initializes the low level portion of the device driver.
   * @param  pdev: Device handle
@@ -318,29 +319,29 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   /* Init USB Ip. */
   if (pdev->id == DEVICE_FS) {
   /* Link the driver to the stack. */
-  hpcd_USB_OTG_FS.pData = pdev;
-  pdev->pData = &hpcd_USB_OTG_FS;
+  hpcd_USB_OTG_FS->pData = pdev;
+  pdev->pData = hpcd_USB_OTG_FS;
   
-  hpcd_USB_OTG_FS.Instance = USB_OTG_FS;
-  hpcd_USB_OTG_FS.Init.dev_endpoints = 9;
-  hpcd_USB_OTG_FS.Init.speed = PCD_SPEED_FULL;
-  hpcd_USB_OTG_FS.Init.dma_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.ep0_mps = DEP0CTL_MPS_64;
-  hpcd_USB_OTG_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
-  hpcd_USB_OTG_FS.Init.Sof_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.low_power_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.lpm_enable = DISABLE;
-  hpcd_USB_OTG_FS.Init.battery_charging_enable = ENABLE;
-  hpcd_USB_OTG_FS.Init.vbus_sensing_enable = ENABLE;
-  hpcd_USB_OTG_FS.Init.use_dedicated_ep1 = DISABLE;
-  if (HAL_PCD_Init(&hpcd_USB_OTG_FS) != HAL_OK)
+  hpcd_USB_OTG_FS->Instance = USB_OTG_FS;
+  hpcd_USB_OTG_FS->Init.dev_endpoints = 9;
+  hpcd_USB_OTG_FS->Init.speed = PCD_SPEED_FULL;
+  hpcd_USB_OTG_FS->Init.dma_enable = DISABLE;
+  hpcd_USB_OTG_FS->Init.ep0_mps = DEP0CTL_MPS_64;
+  hpcd_USB_OTG_FS->Init.phy_itface = PCD_PHY_EMBEDDED;
+  hpcd_USB_OTG_FS->Init.Sof_enable = DISABLE;
+  hpcd_USB_OTG_FS->Init.low_power_enable = DISABLE;
+  hpcd_USB_OTG_FS->Init.lpm_enable = DISABLE;
+  hpcd_USB_OTG_FS->Init.battery_charging_enable = ENABLE;
+  hpcd_USB_OTG_FS->Init.vbus_sensing_enable = ENABLE;
+  hpcd_USB_OTG_FS->Init.use_dedicated_ep1 = DISABLE;
+  if (HAL_PCD_Init(hpcd_USB_OTG_FS) != HAL_OK)
   {
     Error_Handler( );
   }
 
-  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_FS, 0x80);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 0, 0x40);
-  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 1, 0x80);
+  HAL_PCDEx_SetRxFiFo(hpcd_USB_OTG_FS, 0x80);
+  HAL_PCDEx_SetTxFiFo(hpcd_USB_OTG_FS, 0, 0x40);
+  HAL_PCDEx_SetTxFiFo(hpcd_USB_OTG_FS, 1, 0x80);
   }
   return USBD_OK;
 }

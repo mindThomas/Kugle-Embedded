@@ -20,14 +20,40 @@
 #ifndef PERIPHIRALS_USBCDC_H
 #define PERIPHIRALS_USBCDC_H
 
+#include "stm32h7xx_hal.h"
+#include "cmsis_os.h" // for USB processing task
+
+#include "usbd_conf.h"
+#include "usbd_core.h"
+#include "usbd_desc.h"
+#include "usbd_cdc.h"
+#include "usbd_cdc_if.h"
+
+#define USBCDC_PROCESSING_THREAD_STACK_SIZE		128
+#define USBCDC_RX_PACKAGE_QUEUE_LENGTH	10
+
 class USBCDC
 {
 
 public:
-	USBCDC();	
+	USBCDC(UBaseType_t processingTaskPriority);
 	~USBCDC();
 
 private:
+	TaskHandle_t _processingTaskHandle;
+
+public:
+	SemaphoreHandle_t TXfinishedSemaphore;
+	QueueHandle_t RXqueue;
+
+public:
+	static void ProcessingThread(void * pvParameters);
+	static void SysInit();
+
+public:
+	static USBCDC * usbHandle;
+	static USBD_HandleTypeDef hUsbDeviceFS;
+	static PCD_HandleTypeDef hpcd_USB_OTG_FS;
 	
 };
 	

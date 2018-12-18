@@ -31,7 +31,7 @@ class UART
 
 public:
 	typedef enum port_t {
-		PORT_UNDEFINED = -1,
+		PORT_UNDEFINED = 0,
 		PORT_UART3,
 		PORT_UART4,
 		PORT_UART7

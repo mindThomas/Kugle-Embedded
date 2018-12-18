@@ -24,13 +24,14 @@
 #include "cmsis_os.h" // for semaphore support
 
 #define TIMER_DEFAULT_MAXVALUE	0xFFFF
+#define TIMER_INTERRUPT_PRIORITY		5
 
 class Timer
 {
 
 public:
 	typedef enum timer_t {
-		TIMER_UNDEFINED = -1,
+		TIMER_UNDEFINED = 0,
 		TIMER6,
 		TIMER7,
 		TIMER12,

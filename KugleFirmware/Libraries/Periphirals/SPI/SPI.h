@@ -31,7 +31,7 @@ class SPI
 
 public:
 	typedef enum port_t {
-		PORT_UNDEFINED = -1,
+		PORT_UNDEFINED = 0,
 		PORT_SPI3,
 		PORT_SPI5,
 		PORT_SPI6

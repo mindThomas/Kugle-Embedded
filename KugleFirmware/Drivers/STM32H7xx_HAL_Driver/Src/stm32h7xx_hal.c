@@ -287,6 +287,7 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   * @{
   */
 
+#if 0
 /**
   * @brief This function is called to increment  a global variable "uwTick"
   *        used as application time base.
@@ -311,6 +312,7 @@ __weak uint32_t HAL_GetTick(void)
 {
   return uwTick;
 }
+#endif
 
 /**
   * @brief This function returns a tick priority.

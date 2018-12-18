@@ -96,7 +96,7 @@ __weak void configureTimerForRunTimeStats(void)
 
 unsigned long getRunTimeCounterValue(void)
 {
-	return HAL_GetTick();
+	return HAL_GetHighResTick();
 }
 /* USER CODE END 1 */
 
