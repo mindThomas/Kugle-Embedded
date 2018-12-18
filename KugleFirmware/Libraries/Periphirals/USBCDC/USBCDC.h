@@ -30,7 +30,8 @@
 #include "usbd_cdc_if.h"
 
 #define USBCDC_PROCESSING_THREAD_STACK_SIZE		128
-#define USBCDC_RX_PACKAGE_QUEUE_LENGTH	10
+#define USBCDC_TX_QUEUE_LENGTH	10
+#define USBCDC_RX_QUEUE_LENGTH	10
 
 class USBCDC
 {
@@ -38,12 +39,20 @@ class USBCDC
 public:
 	USBCDC(UBaseType_t processingTaskPriority);
 	~USBCDC();
+	bool GetPackage(USB_CDC_Package_t * packageBuffer);
+	void Write(uint8_t byte);
+	void Write(uint8_t * buffer, uint32_t length);
+	uint8_t Read();
+	bool Available();
 
 private:
 	TaskHandle_t _processingTaskHandle;
+	USB_CDC_Package_t tmpPackageForRead;
+	uint8_t readIndex;
 
 public:
 	SemaphoreHandle_t TXfinishedSemaphore;
+	QueueHandle_t TXqueue;
 	QueueHandle_t RXqueue;
 
 public:

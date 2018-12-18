@@ -38,9 +38,15 @@ void MainTask(void const * argument)
 
 	TestBench_Init();
 
+	uint8_t byte;
+
 	/* Infinite loop */
 	for(;;)
 	{
-		osDelay(1000);
+		if (usb->Available()) {
+			byte = usb->Read();
+			usb->Write(byte);
+		}
+		osDelay(1);
 	}
 }

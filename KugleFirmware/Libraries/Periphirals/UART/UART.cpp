@@ -354,6 +354,25 @@ void UART::TransmitBlockingHard(uint8_t * buffer, uint32_t bufLen)
 	} while (--bufLen > 0);
 }
 
+void UART::Write(uint8_t byte)
+{
+	// OBS! This should be replaced with a non-blocking call by making a TX queue and a processing thread in the UART object
+	TransmitBlocking(&byte, 1);
+}
+
+uint8_t UART::Read()
+{
+	if (!_bufferLength) return 0; // error, buffer not enabled
+	if (BufferContentSize() == 0) return 0; // error, buffer is empty
+	return BufferPop();
+}
+
+bool UART::Available()
+{
+	if (!_bufferLength) return false; // error, buffer not enabled
+	return (_bufferWriteIdx != _bufferReadIdx);
+}
+
 void UART::CallbackThread(void * pvParameters)
 {
 	UART * uart = (UART *)pvParameters;

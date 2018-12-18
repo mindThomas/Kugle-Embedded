@@ -53,6 +53,11 @@ public:
 	uint8_t BufferPop();
 	uint32_t BufferContentSize();
 	uint8_t * BufferPopN(uint32_t numberOfBytesToPush);
+	void Write(uint8_t byte);
+	uint8_t Read();
+	bool Available();
+
+public:
 	SemaphoreHandle_t TransmitByteFinished;
 
 private:
