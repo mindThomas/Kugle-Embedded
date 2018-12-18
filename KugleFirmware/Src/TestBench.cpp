@@ -31,6 +31,7 @@
 #include "Encoder.h"
 #include "Timer.h"
 #include "IO.h"
+#include "QuadratureKnob.h"
 
 
 void TestBench(void const * argument);
@@ -43,6 +44,7 @@ Encoder * encoder;
 Timer * timer;
 Timer * timer2;
 IO * pin;
+QuadratureKnob * knob;
 
 void TestBench_Init()
 {
@@ -72,6 +74,7 @@ void TestBench(void const * argument)
 	timer = new Timer(Timer::TIMER6, 10000);
 	timer2 = new Timer(Timer::TIMER7, 10000);
 	pin = new IO(GPIOA, GPIO_PIN_4, true);
+	//knob = new QuadratureKnob(GPIOA, GPIO_PIN_0, GPIOA, GPIO_PIN_1);
 
 	pwm->Set(5000);
 

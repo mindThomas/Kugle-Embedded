@@ -91,6 +91,32 @@ IO::~IO()
 {
 	if (!_GPIO) return;
 	HAL_GPIO_DeInit(_GPIO, _pin);
+
+	// Calculate pin index by extracting bit index from GPIO_PIN
+	uint16_t pinIndex;
+	uint16_t tmp = _pin;
+	for (pinIndex = -1; tmp != 0; pinIndex++)
+		tmp = tmp >> 1;
+
+	if (interruptObjects[pinIndex]) { // interrupt was configured - so disable it
+		interruptObjects[pinIndex] = 0;
+
+		// Enable interrupt
+		if (_pin == GPIO_PIN_0)
+			HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+		else if (_pin == GPIO_PIN_1)
+			HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+		else if (_pin == GPIO_PIN_2)
+			HAL_NVIC_DisableIRQ(EXTI2_IRQn);
+		else if (_pin == GPIO_PIN_3)
+			HAL_NVIC_DisableIRQ(EXTI3_IRQn);
+		else if (_pin == GPIO_PIN_4)
+			HAL_NVIC_DisableIRQ(EXTI4_IRQn);
+		else if (_pin >= GPIO_PIN_5 && _pin <= GPIO_PIN_9)
+			HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+		else if (_pin >= GPIO_PIN_10 && _pin <= GPIO_PIN_15)
+			HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+	}
 }
 
 void IO::RegisterInterrupt(interrupt_trigger_t trigger, SemaphoreHandle_t semaphore)
