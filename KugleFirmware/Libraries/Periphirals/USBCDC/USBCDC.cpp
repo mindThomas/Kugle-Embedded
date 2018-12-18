@@ -43,7 +43,14 @@ USBCDC::USBCDC(UBaseType_t processingTaskPriority) : _processingTaskHandle(0), T
 		return;
 	}
 
-	RXqueue = xQueueCreate( USBCDC_RX_PACKAGE_QUEUE_LENGTH, sizeof(USB_CDC_Package_t) );
+	tmpPackageForRead.length = 0;
+	readIndex = 0;
+
+	TXqueue = xQueueCreate( USBCDC_TX_QUEUE_LENGTH, sizeof(USB_CDC_Package_t) );
+	vQueueAddToRegistry(TXqueue, "USB TX");
+	CDC_RegisterReceiveQueue(TXqueue);
+
+	RXqueue = xQueueCreate( USBCDC_RX_QUEUE_LENGTH, sizeof(USB_CDC_Package_t) );
 	vQueueAddToRegistry(RXqueue, "USB RX");
 	CDC_RegisterReceiveQueue(RXqueue);
 
@@ -69,10 +76,76 @@ USBCDC::~USBCDC()
 	
 }
 
+bool USBCDC::GetPackage(USB_CDC_Package_t * packageBuffer)
+{
+	if (!packageBuffer) return false;
+
+	if ( xQueueReceive( RXqueue, packageBuffer, ( TickType_t ) 0 ) == pdPASS )
+		return true;
+	else
+		return false;
+}
+
+void USBCDC::Write(uint8_t byte)
+{
+	USB_CDC_Package_t package;
+	package.data[0] = byte;
+	package.length = 1;
+	xQueueSend(TXqueue, (void *)&package, (TickType_t) 1);
+}
+
+void USBCDC::Write(uint8_t * buffer, uint32_t length)
+{
+	USB_CDC_Package_t package;
+
+	uint32_t txLength = length;
+	uint8_t packageLength;
+
+	// Split buffer data into packages
+	while (txLength > 0) {
+		if (txLength > USB_PACKAGE_MAX_SIZE)
+			packageLength = USB_PACKAGE_MAX_SIZE;
+		else
+			packageLength = txLength;
+
+		memcpy(package.data, buffer, packageLength);
+		package.length = packageLength;
+
+		xQueueSend(TXqueue, (void *)&package, (TickType_t) 1);
+
+		buffer += packageLength;
+		txLength -= packageLength;
+	}
+}
+
+uint8_t USBCDC::Read()
+{
+	uint8_t returnValue;
+
+	if (readIndex == tmpPackageForRead.length) { // load in new package for reading (if possible)
+		if ( xQueueReceive( RXqueue, &tmpPackageForRead, ( TickType_t ) 1 ) != pdPASS ) {
+			return 0; // no new package
+		}
+		readIndex = 0;
+	}
+
+	returnValue = tmpPackageForRead.data[readIndex];
+	readIndex++;
+
+	return returnValue;
+}
+
+bool USBCDC::Available()
+{
+	if (readIndex != tmpPackageForRead.length || uxQueueMessagesWaiting(RXqueue) > 0)
+		return true;
+	else
+		return false;
+}
+
 void USBCDC::ProcessingThread(void * pvParameters)
 {
 	USB_CDC_Package_t package;
-	USB_CDC_Package_t packageRX;
 	USBCDC * usb = (USBCDC *)pvParameters;
 
 	// Send initial zero package - wait for communication channel to be opened
@@ -81,22 +154,10 @@ void USBCDC::ProcessingThread(void * pvParameters)
 		osDelay(1);
 	}
 
-
-	package.data[0] = 'T';
-	package.data[1] = 'h';
-	package.data[2] = 'o';
-	package.data[3] = 'm';
-	package.data[4] = 'a';
-	package.data[5] = 's';
-	package.data[6] = 0x0D;
-	package.data[7] = 0x0A;
-
-	// Demonstration loop
+	// Transmit processing loop
 	while (1) {
-		CDC_Transmit_FS_ThreadBlocking(package.data, 8); // send out predefined message every second
-
-		while( xQueueReceive( usb->RXqueue, &packageRX, ( TickType_t ) 1000 ) == pdPASS ) { // wait for 1 second for a message
-			CDC_Transmit_FS_ThreadBlocking(packageRX.data, packageRX.length); // transmit the same message back
+		if ( xQueueReceive( usb->TXqueue, &package, ( TickType_t ) portMAX_DELAY ) == pdPASS ) {
+			CDC_Transmit_FS_ThreadBlocking(package.data, package.length);
 		}
 	}
 }
