@@ -69,6 +69,7 @@ void TestBench(void const * argument)
 	uart = new UART(UART::PORT_UART3, 115200, 100);
 	spi = new SPI(SPI::PORT_SPI6, 500000);
 	i2c = new I2C(I2C::PORT_I2C1, 0x68);
+
 	pwm = new PWM(PWM::TIMER1, PWM::CH1, 1, 50000);
 	encoder = new Encoder(Encoder::TIMER2);
 	timer = new Timer(Timer::TIMER6, 10000);
@@ -86,8 +87,9 @@ void TestBench(void const * argument)
 	SemaphoreHandle_t semaphore;
 	//semaphore = xSemaphoreCreateCounting(100, 0);
 	semaphore = xSemaphoreCreateBinary();
+	vQueueAddToRegistry(semaphore, "Test semaphore");
 	//timer->RegisterInterrupt(10, semaphore);
-	pin->RegisterInterrupt(IO::TRIGGER_BOTH, semaphore);
+	//pin->RegisterInterrupt(IO::TRIGGER_BOTH, semaphore);
 
 	while (1) {
 		/*uart->TransmitBlocking(reinterpret_cast<uint8_t *>(const_cast<char *>(testString.c_str())), testString.length());
@@ -106,7 +108,7 @@ void TestBench(void const * argument)
 		encoderValue = encoder->Get();
 
 
-		timer->Reset();
+		/*timer->Reset();
 		timerValue1 = timer2->Get();
 		level1 = pin->Read();
 		xSemaphoreTake( semaphore, ( TickType_t ) portMAX_DELAY );
@@ -119,7 +121,7 @@ void TestBench(void const * argument)
 		timerValue3 = timer2->Get();
 		level3 = pin->Read();
 		//timerValue2 = xTaskGetTickCount();
-		//timerValue2 = timer2->Get();
+		//timerValue2 = timer2->Get();*/
 
 		//osDelay(100);
 
@@ -131,5 +133,7 @@ void TestBench(void const * argument)
 
 			osDelay(1);
 		}*/
+
+		osDelay(100);
 	}
 }

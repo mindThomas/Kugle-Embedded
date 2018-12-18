@@ -118,22 +118,22 @@ void Timer::ConfigureTimerPeripheral()
 
 	if (_hRes->timer == TIMER6) {
 		__HAL_RCC_TIM6_CLK_ENABLE();
-	    HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 1, 0);
+	    HAL_NVIC_SetPriority(TIM6_DAC_IRQn, TIMER_INTERRUPT_PRIORITY, 0);
 	    HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
 		_hRes->handle.Instance = TIM6;
 	} else if (_hRes->timer == TIMER7) {
 		__HAL_RCC_TIM7_CLK_ENABLE();
-	    HAL_NVIC_SetPriority(TIM7_IRQn, 1, 0);
+	    HAL_NVIC_SetPriority(TIM7_IRQn, TIMER_INTERRUPT_PRIORITY, 0);
 	    HAL_NVIC_EnableIRQ(TIM7_IRQn);
 		_hRes->handle.Instance = TIM7;
 	} else if (_hRes->timer == TIMER12) {
 		__HAL_RCC_TIM12_CLK_ENABLE();
-	    HAL_NVIC_SetPriority(TIM8_BRK_TIM12_IRQn, 1, 0);
+	    HAL_NVIC_SetPriority(TIM8_BRK_TIM12_IRQn, TIMER_INTERRUPT_PRIORITY, 0);
 	    HAL_NVIC_EnableIRQ(TIM8_BRK_TIM12_IRQn);
 		_hRes->handle.Instance = TIM12;
 	} else if (_hRes->timer == TIMER13) {
 		__HAL_RCC_TIM13_CLK_ENABLE();
-	    HAL_NVIC_SetPriority(TIM8_UP_TIM13_IRQn, 1, 0);
+	    HAL_NVIC_SetPriority(TIM8_UP_TIM13_IRQn, TIMER_INTERRUPT_PRIORITY, 0);
 	    HAL_NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
 		_hRes->handle.Instance = TIM13;
 	}

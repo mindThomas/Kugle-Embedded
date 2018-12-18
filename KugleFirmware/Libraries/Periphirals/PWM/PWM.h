@@ -27,7 +27,7 @@ class PWM
 
 public:
 	typedef enum timer_t {
-		TIMER_UNDEFINED = -1,
+		TIMER_UNDEFINED = 0,
 		TIMER1,
 		TIMER8,
 		TIMER15,

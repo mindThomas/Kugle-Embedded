@@ -20,7 +20,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "usb_device.h"
 
 /* Private includes ----------------------------------------------------------*/
 #include "ProcessorInit.h"
@@ -43,7 +42,6 @@ osThreadId mainTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void MainTask(void const * argument);
 
 /**
   * @brief  The application entry point.
@@ -64,8 +62,6 @@ int main(void)
   osThreadDef(mainTask, MainTask, osPriorityNormal, 0, 128);
   mainTaskHandle = osThreadCreate(osThread(mainTask), NULL);
 
-  TestBench_Init();
-
   /* Start scheduler */
   osKernelStart();
   
@@ -73,37 +69,6 @@ int main(void)
 
   /* Infinite loop */
   while (1);
-}
-
-/**
-  * @brief  Function implementing the defaultTask thread.
-  * @param  argument: Not used 
-  * @retval None
-  */
-void MainTask(void const * argument)
-{
-  /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
-
-  /* USER CODE BEGIN 5 */
-  HAL_PWREx_EnableUSBVoltageDetector();
-
-  /* Use this task to:
-   * - Create objects for each module
-   *     (OBS! It is very important that objects created with "new"
-   *      only happens within a thread due to the usage of the FreeRTOS managed heap)
-   * - Link any modules together if necessary
-   * - Create message exchange queues and/or semaphore
-   * - (Create) and start threads related to modules
-   *
-   * Basically anything related to starting the system should happen in this thread and NOT in the main() function !!!
-   */
-
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1000);
-  }
 }
 
 /**

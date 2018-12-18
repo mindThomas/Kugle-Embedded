@@ -11,7 +11,7 @@ extern int _sfreertos_heap; // get address to global symbol defined in linker fi
 extern uint8_t freeRTOSMemoryScheme;
 extern "C" __EXPORT void ZeroInitFreeRTOSheap(void);
 
-#if 1
+#if 0
 /* Defining malloc/free should overwrite the
 standard versions provided by the compiler. */
 void * malloc (size_t size)
@@ -33,7 +33,7 @@ void ZeroInitFreeRTOSheap(void)
 	memset(heapPtr, 0, configTOTAL_HEAP_SIZE);
 }
 
-#if 0
+#if 1
 // Define the 'new' operator for C++ to use the freeRTOS memory management
 // functions. THIS IS NOT OPTIONAL!
 //

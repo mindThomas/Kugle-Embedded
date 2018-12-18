@@ -23,20 +23,20 @@
 #include "stm32h7xx_hal.h"
 #include "cmsis_os.h" // for semaphore support
 
-#define IO_INTERRUPT_PRIORITY	4
+#define IO_INTERRUPT_PRIORITY	5
 
 class IO
 {
 
 public:
 	typedef enum interrupt_trigger_t {
-		TRIGGER_RISING,
+		TRIGGER_RISING = 0,
 		TRIGGER_FALLING,
 		TRIGGER_BOTH
 	} interrupt_trigger_t;
 
 	typedef enum pull_t {
-		PULL_NONE,
+		PULL_NONE = 0,
 		PULL_UP,
 		PULL_DOWN,
 	} pull_t;

@@ -27,7 +27,7 @@ class InputCapture
 
 public:
 	typedef enum timer_t {
-		TIMER_UNDEFINED = -1,
+		TIMER_UNDEFINED = 0,
 		TIMER5,
 		TIMER14
 	} timer_t;

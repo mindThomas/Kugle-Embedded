@@ -150,6 +150,8 @@ __ALIGN_BEGIN static uint8_t USBD_CDC_DeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
   * @}
   */ 
 
+SemaphoreHandle_t USB_TX_FinishedSemaphore = NULL;
+
 /** @defgroup USBD_CDC_Private_Variables
   * @{
   */ 
@@ -465,6 +467,14 @@ __ALIGN_BEGIN uint8_t USBD_CDC_OtherSpeedCfgDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIG
   * @{
   */ 
 
+static USBD_CDC_HandleTypeDef USBD_CDC_Handle;
+static _Bool HandleUsed = 0;
+
+void USBD_CDC_SetTXfinishedSemaphore(SemaphoreHandle_t semaphore)
+{
+	USB_TX_FinishedSemaphore = semaphore;
+}
+
 /**
   * @brief  USBD_CDC_Init
   *         Initialize the CDC interface
@@ -513,8 +523,20 @@ static uint8_t  USBD_CDC_Init (USBD_HandleTypeDef *pdev,
                  USBD_EP_TYPE_INTR,
                  CDC_CMD_PACKET_SIZE);
   
-    
-  pdev->pClassData = USBD_malloc(sizeof (USBD_CDC_HandleTypeDef));
+
+  // OBS. This function seem to be called from inside an interrupt
+  // But it has not been possible to move this malloc operation outside this function
+  // Furthermore this can not be changed to FreeRTOS malloc since that can not be used within an interrupt!
+  //pdev->pClassData = USBD_malloc(sizeof (USBD_CDC_HandleTypeDef));
+
+  // Instead we have now hardcoded it, since we will only be creating one USB instance
+  if (!HandleUsed) {
+	  pdev->pClassData = &USBD_CDC_Handle;
+	  HandleUsed = 1;
+  }
+  else {
+	  pdev->pClassData = 0;
+  }
   
   if(pdev->pClassData == NULL)
   {
@@ -664,11 +686,16 @@ static uint8_t  USBD_CDC_Setup (USBD_HandleTypeDef *pdev,
 static uint8_t  USBD_CDC_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
 {
   USBD_CDC_HandleTypeDef   *hcdc = (USBD_CDC_HandleTypeDef*) pdev->pClassData;
+  portBASE_TYPE xHigherPriorityTaskWoken;
   
   if(pdev->pClassData != NULL)
   {
     
-    hcdc->TxState = 0;
+	xSemaphoreGiveFromISR( USB_TX_FinishedSemaphore, &xHigherPriorityTaskWoken );
+
+	hcdc->TxState = 0;
+
+	portEND_SWITCHING_ISR( xHigherPriorityTaskWoken );
 
     return USBD_OK;
   }

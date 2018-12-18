@@ -64,7 +64,7 @@
 #include "stm32h7xx_hal.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "cmsis_os.h" // for malloc etc.
 /* USER CODE END INCLUDE */
 
 /** @addtogroup USBD_OTG_DRIVER
@@ -122,10 +122,11 @@
 /* Memory management macros */
 
 /** Alias for memory allocation. */
-#define USBD_malloc         malloc
+#define USBD_malloc         malloc//pvPortMalloc
+// OBS. This can not be changed to FreeRTOS malloc since the memory allocation happens from within an interrupt routine (don't ask me why?!), since the FreeRTOS malloc can not be used within an interrupt!
 
 /** Alias for memory release. */
-#define USBD_free           free
+#define USBD_free           free//vPortFree
 
 /** Alias for memory set. */
 #define USBD_memset         memset
@@ -151,7 +152,7 @@
                             printf(__VA_ARGS__);\
                             printf("\n");
 #else
-#define USBD_ErrLog(...)
+#define USBD_ErrLog(...)	while (1);
 #endif
 
 #if (USBD_DEBUG_LEVEL > 2)
@@ -181,6 +182,7 @@
   */
 
 /* Exported functions -------------------------------------------------------*/
+void USBD_LL_SetPCD(PCD_HandleTypeDef * pcd);
 
 /**
   * @}

@@ -49,6 +49,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
+#include "cmsis_os.h"
 
 /* USER CODE BEGIN INCLUDE */
 
@@ -139,7 +140,8 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
   * @{
   */
 
-extern USBD_HandleTypeDef hUsbDeviceFS;
+static USBD_HandleTypeDef * hUsbDeviceFS;
+static QueueHandle_t ReceiveQueue;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 
@@ -184,8 +186,8 @@ static int8_t CDC_Init_FS(void)
 {
   /* USER CODE BEGIN 3 */
   /* Set Application Buffers */
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
+  USBD_CDC_SetTxBuffer(hUsbDeviceFS, UserTxBufferFS, 0);
+  USBD_CDC_SetRxBuffer(hUsbDeviceFS, UserRxBufferFS);
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -291,39 +293,84 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+  USB_CDC_Package_t package;
+  uint32_t receivedLength = *Len;
+  uint16_t copyLength;
+
+  while (receivedLength > 0) {
+	  copyLength = receivedLength;
+	  if (copyLength > USB_PACKAGE_MAX_SIZE) copyLength = USB_PACKAGE_MAX_SIZE;
+	  memcpy(package.data, Buf, copyLength);
+	  package.length = copyLength;
+	  if (ReceiveQueue)
+		  xQueueSendFromISR(ReceiveQueue, (void *)&package, (TickType_t) 0);
+
+	  Buf += copyLength;
+	  receivedLength -= copyLength;
+  }
+
+  USBD_CDC_SetRxBuffer(hUsbDeviceFS, &Buf[0]);
+  USBD_CDC_ReceivePacket(hUsbDeviceFS);
   return (USBD_OK);
   /* USER CODE END 6 */
 }
 
 /**
   * @brief  CDC_Transmit_FS
-  *         Data to send over USB IN endpoint are sent over CDC interface
+  *         Data send over USB IN endpoint are sent over CDC interface
   *         through this function.
   *         @note
   *
   *
-  * @param  Buf: Buffer of data to be sent
-  * @param  Len: Number of data to be sent (in bytes)
-  * @retval USBD_OK if all operations are OK else USBD_FAIL or USBD_BUSY
+  * @param  Buf: Buffer of data to be send
+  * @param  Len: Number of data to be send (in bytes)
+  * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL or USBD_BUSY
   */
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 {
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
-  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
+  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS->pClassData;
   if (hcdc->TxState != 0){
     return USBD_BUSY;
   }
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
-  result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+  USBD_CDC_SetTxBuffer(hUsbDeviceFS, Buf, Len);
+  result = USBD_CDC_TransmitPacket(hUsbDeviceFS);
   /* USER CODE END 7 */
   return result;
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+uint8_t CDC_Transmit_FS_ThreadBlocking(uint8_t* Buf, uint16_t Len)
+{
+  uint8_t result = USBD_OK;
+  /* USER CODE BEGIN 7 */
+  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS->pClassData;
+  if (USB_TX_FinishedSemaphore) {
+	  if( xSemaphoreTake( USB_TX_FinishedSemaphore, portMAX_DELAY ) != pdTRUE )
+		  return USBD_BUSY;
+  }
+  USBD_CDC_SetTxBuffer(hUsbDeviceFS, Buf, Len);
+  result = USBD_CDC_TransmitPacket(hUsbDeviceFS);
+  /* USER CODE END 7 */
+  return result;
+}
 
+void CDC_EmptyReceiveBuffer(void)
+{
+	memset(UserRxBufferFS, 0, APP_RX_DATA_SIZE);
+}
+
+/* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+void CDC_RegisterUsbDeviceObject(USBD_HandleTypeDef * usbDevice)
+{
+	hUsbDeviceFS = usbDevice;
+}
+
+void CDC_RegisterReceiveQueue(QueueHandle_t queue)
+{
+	ReceiveQueue = queue;
+}
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**

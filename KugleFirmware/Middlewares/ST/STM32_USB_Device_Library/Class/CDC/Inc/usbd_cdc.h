@@ -35,6 +35,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include  "usbd_ioreq.h"
+#include "cmsis_os.h" // for TX finished semaphore
 
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
@@ -82,6 +83,7 @@
   * @}
   */ 
 
+extern SemaphoreHandle_t USB_TX_FinishedSemaphore;
 
 /** @defgroup USBD_CORE_Exported_TypesDefinitions
   * @{
@@ -142,6 +144,9 @@ extern USBD_ClassTypeDef  USBD_CDC;
 /**
   * @}
   */ 
+
+void USBD_CDC_AllocateMemory(USBD_HandleTypeDef *pdev);
+void USBD_CDC_SetTXfinishedSemaphore(SemaphoreHandle_t semaphore);
 
 /** @defgroup USB_CORE_Exported_Functions
   * @{
