@@ -17,58 +17,60 @@
  * ------------------------------------------
  */
  
-#ifndef PERIPHIRALS_PWM_H
-#define PERIPHIRALS_PWM_H
+#ifndef PERIPHIRALS_TIMER_H
+#define PERIPHIRALS_TIMER_H
 
 #include "stm32h7xx_hal.h"
+#include "cmsis_os.h" // for semaphore support
 
-class PWM
+#define TIMER_DEFAULT_MAXVALUE	0xFFFF
+
+class Timer
 {
 
 public:
 	typedef enum timer_t {
 		TIMER_UNDEFINED = -1,
-		TIMER1,
-		TIMER8,
-		TIMER15,
-		TIMER17
+		TIMER6,
+		TIMER7,
+		TIMER12,
+		TIMER13
 	} timer_t;
 
-	typedef enum pwm_channel_t {
-		CH1 = 1,
-		CH2 = 2,
-		CH3 = 4,
-		CH4 = 8
-	} pwm_channel_t;
-
 public:
-	PWM(timer_t timer, pwm_channel_t channel, uint32_t frequency, uint16_t maxValue);
-	PWM(timer_t timer, pwm_channel_t channel);
-	~PWM();
-	void InitPeripheral(timer_t timer, pwm_channel_t channel, uint32_t frequency, uint16_t maxValue);
+	Timer(timer_t timer, uint32_t frequency); // frequency defines the timer count frequency
+	~Timer();
 	void ConfigureTimerPeripheral();
-	void ConfigureTimerGPIO();
-	void ConfigureTimerChannel();
-	void Set(uint16_t value);
+	void RegisterInterruptSoft(uint32_t frequency, void (*TimerCallbackSoft)());
+	void RegisterInterrupt(uint32_t frequency, void (*TimerCallback)());
+	void RegisterInterrupt(uint32_t frequency, SemaphoreHandle_t semaphore);
+	void SetMaxValue(uint16_t maxValue);
+	uint32_t Get();
+	void Reset();
+	void (*_TimerCallbackSoft)();
 
 public:
 	typedef struct hardware_resource_t {
 		timer_t timer;
 		uint32_t frequency;
 		uint16_t maxValue;
-		uint8_t configuredChannels; // each bit indicate whether the corresponding channel is configured and in use by another object
 		TIM_HandleTypeDef handle;
+		TaskHandle_t callbackTaskHandle;
+		void (*TimerCallback)();
+		SemaphoreHandle_t callbackSemaphore;
 	} hardware_resource_t;
 
-	static hardware_resource_t * resTIMER1;
-	static hardware_resource_t * resTIMER8;
-	static hardware_resource_t * resTIMER15;
-	static hardware_resource_t * resTIMER17;
+	static hardware_resource_t * resTIMER6;
+	static hardware_resource_t * resTIMER7;
+	static hardware_resource_t * resTIMER12;
+	static hardware_resource_t * resTIMER13;
 
 private:
 	hardware_resource_t * _hRes;
-	pwm_channel_t _channel;
-	uint32_t _channelHAL;
+
+public:
+	static void InterruptHandler(Timer::hardware_resource_t * timer);
+	static void CallbackThread(void * pvParameters);
 
 };
 	

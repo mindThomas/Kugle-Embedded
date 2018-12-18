@@ -24,6 +24,7 @@
 #include "cmsis_os.h" // for memory allocation (for the buffer) and callback
 
 #define UART_CALLBACK_PARAMS (uint8_t * buffer, uint32_t bufLen)
+#define UART_INTERRUPT_PRIORITY		5
 
 class UART
 {

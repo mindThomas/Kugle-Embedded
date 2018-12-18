@@ -60,6 +60,8 @@ TIM_HandleTypeDef        htim16;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
+static __IO uint32_t uwTickHighRes;
+
 /**
   * @brief  This function configures the TIM16 as a time base source. 
   *         The time source is configured  to have 1ms time base with a dedicated 
@@ -91,8 +93,8 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   /* Compute TIM16 clock */
   uwTimclock = 2*HAL_RCC_GetPCLK2Freq();
    
-  /* Compute the prescaler value to have TIM16 counter clock equal to 1MHz */
-  uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000) - 1);
+  /* Compute the prescaler value to have TIM16 counter clock equal to 10 kHz */
+  uwPrescalerValue = (uint32_t) ((uwTimclock / 10000) - 1);
   
   /* Initialize TIM16 */
   htim16.Instance = TIM16;
@@ -103,7 +105,7 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   + ClockDivision = 0
   + Counter direction = Up
   */
-  htim16.Init.Period = (1000000 / 1000) - 1;
+  htim16.Init.Period = (10000 / 1000) - 1;
   htim16.Init.Prescaler = uwPrescalerValue;
   htim16.Init.ClockDivision = 0;
   htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -115,6 +117,11 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   
   /* Return function status */
   return HAL_ERROR;
+}
+
+uint32_t HAL_GetTickTimerValue(void)
+{
+	return (uint32_t)__HAL_TIM_GET_COUNTER(&htim16);
 }
 
 /**
@@ -139,6 +146,36 @@ void HAL_ResumeTick(void)
 {
   /* Enable TIM16 Update interrupt */
   __HAL_TIM_ENABLE_IT(&htim16, TIM_IT_UPDATE);
+}
+
+/**
+  * @brief This function is called to increment  a global variable "uwTick"
+  *        used as application time base.
+  * @note In the default implementation, this variable is incremented each 1ms
+  *       in Systick ISR.
+ * @note This function is declared as __weak to be overwritten in case of other
+  *      implementations in user file.
+  * @retval None
+  */
+void HAL_IncTick(void)
+{
+	uwTickHighRes += 10; // timer update rate configured 1 kHz but with timer count frequency running at 10 kHz
+}
+
+uint32_t HAL_GetHighResTick(void)
+{
+	return (uwTickHighRes + HAL_GetTickTimerValue());
+}
+
+/**
+  * @brief Provides a tick value in millisecond.
+  * @note This function is declared as __weak to be overwritten in case of other
+  *       implementations in user file.
+  * @retval tick value
+  */
+uint32_t HAL_GetTick(void)
+{
+  return (uwTickHighRes / 10); // divide by 10 since we have configured HAL timer to run at 10 kHz in stm32h7xx_hal_timebase_tim.c
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

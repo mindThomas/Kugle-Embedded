@@ -17,29 +17,29 @@
  * ------------------------------------------
  */
  
-#ifndef PERIPHIRALS_I2C_H
-#define PERIPHIRALS_I2C_H
+#ifndef PERIPHIRALS_SMBUS_H
+#define PERIPHIRALS_SMBUS_H
 
 #include "stm32h7xx_hal.h"
 #include "cmsis_os.h" // for memory allocation (for the buffer) and callback
 
-#define I2C_DEFAULT_FREQUENCY	400000		// 400 kHz
-#define I2C_INTERRUPT_PRIORITY	5
+#define SMBUS_DEFAULT_FREQUENCY	100000		// 100 kHz
+#define SMBUS_MASTER_ADDRESS	38
 
-class I2C
+class SMBus
 {
 
 public:
 	typedef enum port_t {
 		PORT_UNDEFINED = -1,
-		PORT_I2C1,
-		PORT_I2C3
+		PORT_I2C2,
+		PORT_I2C4
 	} port_t;
 
 public:
-	I2C(port_t port, uint8_t devAddr); // use default frequency (or current configured frequency)
-	I2C(port_t port, uint8_t devAddr, uint32_t frequency); // configure with frequency if possible
-	~I2C();
+	SMBus(port_t port, uint8_t devAddr); // use default frequency (or current configured frequency)
+	SMBus(port_t port, uint8_t devAddr, uint32_t frequency); // configure with frequency if possible
+	~SMBus();
 	void InitPeripheral(port_t port, uint32_t frequency);
 	void DeInitPeripheral();
 	void ConfigurePeripheral();
@@ -56,18 +56,18 @@ public:
 		SemaphoreHandle_t transmissionFinished;
 		bool configured;
 		uint8_t instances; // how many objects are using this hardware resource
-		I2C_HandleTypeDef handle;
+		SMBUS_HandleTypeDef handle;
 	} hardware_resource_t;
 
-	static hardware_resource_t * resI2C1;
-	static hardware_resource_t * resI2C3;
+	static hardware_resource_t * resI2C2;
+	static hardware_resource_t * resI2C4;
 
 private:
 	hardware_resource_t * _hRes;
 	uint8_t _devAddr;
 
 public:
-	static void TransmissionCompleteCallback(I2C_HandleTypeDef *I2cHandle);
+	static void TransmissionCompleteCallback(SMBUS_HandleTypeDef *hsmbus);
 	
 };
 	

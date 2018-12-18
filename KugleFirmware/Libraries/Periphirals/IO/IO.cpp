@@ -18,16 +18,308 @@
  */
  
 #include "IO.h"
- 
-IO::IO()
+#include "stm32h7xx_hal.h"
+#include "Debug.h"
+
+IO * IO::interruptObjects[16] = {0};
+
+// Necessary to export for compiler to generate code to be called by interrupt vector
+extern "C" __EXPORT void EXTI0_IRQHandler(void);
+extern "C" __EXPORT void EXTI1_IRQHandler(void);
+extern "C" __EXPORT void EXTI2_IRQHandler(void);
+extern "C" __EXPORT void EXTI3_IRQHandler(void);
+extern "C" __EXPORT void EXTI4_IRQHandler(void);
+extern "C" __EXPORT void EXTI9_5_IRQHandler(void);
+extern "C" __EXPORT void EXTI15_10_IRQHandler(void);
+
+IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pull_t pull) : _InterruptCallback(0), _InterruptCallbackParams(0), _InterruptSemaphore(0), _GPIO(GPIOx), _pin(GPIO_Pin), _isInput(isInput), _pull(pull)
 {
-	
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+	// GPIO Ports Clock Enable
+	if (GPIOx == GPIOA)
+		__HAL_RCC_GPIOA_CLK_ENABLE();
+	else if (GPIOx == GPIOB)
+		__HAL_RCC_GPIOB_CLK_ENABLE();
+	else if (GPIOx == GPIOC)
+		__HAL_RCC_GPIOC_CLK_ENABLE();
+	else if (GPIOx == GPIOD)
+		__HAL_RCC_GPIOD_CLK_ENABLE();
+	else if (GPIOx == GPIOE)
+		__HAL_RCC_GPIOE_CLK_ENABLE();
+	else if (GPIOx == GPIOF)
+		__HAL_RCC_GPIOF_CLK_ENABLE();
+	else if (GPIOx == GPIOG)
+		__HAL_RCC_GPIOG_CLK_ENABLE();
+	else
+	{
+		_GPIO = 0;
+		return;
+	}
+
+	// Configure GPIO pin Output Level
+	HAL_GPIO_WritePin(GPIOx, GPIO_Pin, GPIO_PIN_RESET);
+
+	// Configure pin as output or input
+	if (isInput)
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	else
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+
+	if (pull == PULL_NONE)
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+	else if (pull == PULL_UP)
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+	else if (pull == PULL_DOWN)
+		GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+
+	// Configure GPIO
+	GPIO_InitStruct.Pin = GPIO_Pin;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
+}
+
+IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput) : IO(GPIOx, GPIO_Pin, isInput, PULL_NONE)
+{
+}
+
+IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin) : IO(GPIOx, GPIO_Pin, false, PULL_NONE)
+{
 }
 
 IO::~IO()
 {
-	
+	if (!_GPIO) return;
+	HAL_GPIO_DeInit(_GPIO, _pin);
 }
 
+void IO::RegisterInterrupt(interrupt_trigger_t trigger, SemaphoreHandle_t semaphore)
+{
+	if (!_GPIO || !_isInput) return;
 
-// Also needs to hold EXTI handlers
+	_InterruptSemaphore = semaphore;
+	ConfigureInterrupt(trigger);
+}
+
+void IO::RegisterInterrupt(interrupt_trigger_t trigger, void (*InterruptCallback)(void * params), void * callbackParams)
+{
+	if (!_GPIO || !_isInput) return;
+
+	_InterruptCallback = InterruptCallback;
+	_InterruptCallbackParams = callbackParams;
+	ConfigureInterrupt(trigger);
+}
+
+void IO::ConfigureInterrupt(interrupt_trigger_t trigger)
+{
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+	// Calculate pin index by extracting bit index from GPIO_PIN
+	uint16_t pinIndex;
+	uint16_t tmp = _pin;
+	for (pinIndex = -1; tmp != 0; pinIndex++)
+		tmp = tmp >> 1;
+
+	if (interruptObjects[pinIndex] != 0) {
+		ERROR("Interrupt vector already used for this pin");
+		return;
+	}
+
+	interruptObjects[pinIndex] = this;
+
+	// Reconfigure pin to enable interrupt triggering
+	GPIO_InitStruct.Pin = _pin;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+
+	if (trigger == TRIGGER_RISING)
+		GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+	else if (trigger == TRIGGER_FALLING)
+		GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	else if (trigger == TRIGGER_BOTH)
+		GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+
+	if (_pull == PULL_NONE)
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+	else if (_pull == PULL_UP)
+		GPIO_InitStruct.Pull = GPIO_PULLUP;
+	else if (_pull == PULL_DOWN)
+		GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+
+	HAL_GPIO_Init(_GPIO, &GPIO_InitStruct);
+
+	// Enable interrupt
+	if (_pin == GPIO_PIN_0) {
+		HAL_NVIC_SetPriority(EXTI0_IRQn, IO_INTERRUPT_PRIORITY, 0);
+		HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+	}
+	else if (_pin == GPIO_PIN_1) {
+		HAL_NVIC_SetPriority(EXTI1_IRQn, IO_INTERRUPT_PRIORITY, 0);
+		HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+	}
+	else if (_pin == GPIO_PIN_2) {
+		HAL_NVIC_SetPriority(EXTI2_IRQn, IO_INTERRUPT_PRIORITY, 0);
+		HAL_NVIC_EnableIRQ(EXTI2_IRQn);
+	}
+	else if (_pin == GPIO_PIN_3) {
+		HAL_NVIC_SetPriority(EXTI3_IRQn, IO_INTERRUPT_PRIORITY, 0);
+		HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+	}
+	else if (_pin == GPIO_PIN_4) {
+		HAL_NVIC_SetPriority(EXTI4_IRQn, IO_INTERRUPT_PRIORITY, 0);
+		HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+	}
+	else if (_pin >= GPIO_PIN_5 && _pin <= GPIO_PIN_9) {
+		HAL_NVIC_SetPriority(EXTI9_5_IRQn, IO_INTERRUPT_PRIORITY, 0);
+		HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+	}
+	else if (_pin >= GPIO_PIN_10 && _pin <= GPIO_PIN_15) {
+		HAL_NVIC_SetPriority(EXTI9_5_IRQn, IO_INTERRUPT_PRIORITY, 0);
+		HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+	}
+}
+
+void IO::Set(bool state)
+{
+	if (!_GPIO || _isInput) return;
+	if (state)
+		_GPIO->BSRRL = _pin;
+	else
+		_GPIO->BSRRH = _pin;
+}
+
+void IO::High()
+{
+	if (!_GPIO || _isInput) return;
+	_GPIO->BSRRL = _pin;
+}
+
+void IO::Low()
+{
+	if (!_GPIO || _isInput) return;
+	_GPIO->BSRRH = _pin;
+}
+
+void IO::Toggle()
+{
+	if (!_GPIO || _isInput) return;
+	_GPIO->ODR ^= _pin;
+}
+
+bool IO::Read()
+{
+	if (!_GPIO || !_isInput) return false;
+	if((_GPIO->IDR & _pin) != (uint32_t)GPIO_PIN_RESET)
+		return true;
+	else
+		return false;
+}
+
+void IO::InterruptHandler(IO * io)
+{
+	if (!io) return;
+
+	if (io->_InterruptSemaphore) {
+		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+		//xSemaphoreGiveFromISR( timer->callbackSemaphore, &xHigherPriorityTaskWoken );
+		xQueueSendFromISR(io->_InterruptSemaphore, NULL, &xHigherPriorityTaskWoken);
+		portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+	}
+
+	if (io->_InterruptCallback)
+		io->_InterruptCallback(io->_InterruptCallbackParams);
+
+	/*if (timer->callbackTaskHandle)
+		xTaskResumeFromISR(timer->callbackTaskHandle);*/
+}
+
+void EXTI0_IRQHandler(void)
+{
+	if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_0) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_0);
+		IO::InterruptHandler(IO::interruptObjects[0]);
+	}
+}
+
+void EXTI1_IRQHandler(void)
+{
+	if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_1) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_1);
+		IO::InterruptHandler(IO::interruptObjects[1]);
+	}
+}
+
+void EXTI2_IRQHandler(void)
+{
+	if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_2) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_2);
+		IO::InterruptHandler(IO::interruptObjects[2]);
+	}
+}
+
+void EXTI3_IRQHandler(void)
+{
+	if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_3) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_3);
+		IO::InterruptHandler(IO::interruptObjects[3]);
+	}
+}
+
+void EXTI4_IRQHandler(void)
+{
+	if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_4) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_4);
+		IO::InterruptHandler(IO::interruptObjects[4]);
+	}
+}
+
+void EXTI9_5_IRQHandler(void)
+{
+	if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_5) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_5);
+		IO::InterruptHandler(IO::interruptObjects[5]);
+	}
+	else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_6) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_6);
+		IO::InterruptHandler(IO::interruptObjects[6]);
+	}
+	else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_7) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_7);
+		IO::InterruptHandler(IO::interruptObjects[7]);
+	}
+	else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_8) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_8);
+		IO::InterruptHandler(IO::interruptObjects[8]);
+	}
+	else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_9) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_9);
+		IO::InterruptHandler(IO::interruptObjects[9]);
+	}
+}
+
+void EXTI15_10_IRQHandler(void)
+{
+	if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_10) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_10);
+		IO::InterruptHandler(IO::interruptObjects[10]);
+	}
+	else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_11) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_11);
+		IO::InterruptHandler(IO::interruptObjects[11]);
+	}
+	else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_12) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_12);
+		IO::InterruptHandler(IO::interruptObjects[12]);
+	}
+	else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_13) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_13);
+		IO::InterruptHandler(IO::interruptObjects[13]);
+	}
+	else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_14) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_14);
+		IO::InterruptHandler(IO::interruptObjects[14]);
+	}
+	else if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_15) != RESET) {
+		__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_15);
+		IO::InterruptHandler(IO::interruptObjects[15]);
+	}
+}

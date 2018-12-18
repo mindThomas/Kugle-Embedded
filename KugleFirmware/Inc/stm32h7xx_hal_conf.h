@@ -404,6 +404,8 @@
  #include "stm32h7xx_hal_hcd.h"
 #endif /* HAL_HCD_MODULE_ENABLED */
    
+#include "stm32h7xx_hal_timebase_tim.h"
+
 /* Exported macro ------------------------------------------------------------*/
 #ifdef  USE_FULL_ASSERT
 /**
