@@ -68,6 +68,7 @@
 								<option id="gnu.cpp.compiler.option.debugging.level.165604567" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1025994982" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Libraries/Devices/Battery"/>
+									<listOptionValue builtIn="false" value="../Libraries/Devices/QuadratureKnob"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/ESCON"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/IMU"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/LCD"/>
