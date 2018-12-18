@@ -24,6 +24,7 @@
 #include "cmsis_os.h" // for memory allocation (for the buffer) and callback
 
 #define SPI_DEFAULT_FREQUENCY	1000000		// 1 MHz
+#define SPI_INTERRUPT_PRIORITY	5
 
 class SPI
 {
@@ -46,10 +47,10 @@ public:
 	void DeInitPeripheral();
 	void DeInitChipSelect();
 	void ConfigurePeripheral();
-	void write(uint8_t reg, uint8_t * buffer, uint8_t writeLength);
-	void write(uint8_t reg, uint8_t value);
-	void read(uint8_t reg, uint8_t * buffer, uint8_t readLength);
-	uint8_t read(uint8_t reg);
+	void Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength);
+	void Write(uint8_t reg, uint8_t value);
+	void Read(uint8_t reg, uint8_t * buffer, uint8_t readLength);
+	uint8_t Read(uint8_t reg);
 
 public:
 	typedef struct hardware_resource_t {

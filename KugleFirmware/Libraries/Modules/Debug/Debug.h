@@ -17,8 +17,8 @@
  * ------------------------------------------
  */
  
-#ifndef DRIVERS_DEBUG_H
-#define DRIVERS_DEBUG_H
+#ifndef MODULES_DEBUG_H
+#define MODULES_DEBUG_H
 
 #include <string>
 #include <stdlib.h>

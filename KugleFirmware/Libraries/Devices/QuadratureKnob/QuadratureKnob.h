@@ -17,46 +17,18 @@
  * ------------------------------------------
  */
  
-#ifndef PERIPHIRALS_ENCODER_H
-#define PERIPHIRALS_ENCODER_H
+#ifndef DEVICES_QUADRATURE_KNOB_H
+#define DEVICES_QUADRATURE_KNOB_H
 
-#include "stm32h7xx_hal.h"
-
-class Encoder
+class QuadratureKnob
 {
 
 public:
-	typedef enum timer_t {
-		TIMER_UNDEFINED = -1,
-		TIMER2,
-		TIMER3,
-		TIMER4
-	} timer_t;
-
-public:
-	Encoder(timer_t timer);
-	~Encoder();
-	void ConfigureEncoderGPIO();
-	void ConfigureEncoderPeripheral();
-	int32_t Get();
-
-public:
-	typedef struct hardware_resource_t {
-		timer_t timer;
-		TIM_HandleTypeDef handle;
-		int32_t offsetValue;
-	} hardware_resource_t;
-
-	static hardware_resource_t * resTIMER2;
-	static hardware_resource_t * resTIMER3;
-	static hardware_resource_t * resTIMER4;
+	QuadratureKnob();	
+	~QuadratureKnob();
 
 private:
-	hardware_resource_t * _hRes;
 	
-public:
-	static void InterruptHandler(Encoder::hardware_resource_t * encoder);
-
 };
 	
 	

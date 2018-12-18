@@ -144,6 +144,7 @@ void I2C::InitPeripheral(port_t port, uint32_t frequency)
 		_hRes->instances = 0;
 		_hRes->resourceSemaphore = xSemaphoreCreateBinary();
 		if (_hRes->resourceSemaphore == NULL) {
+			_hRes = 0;
 			ERROR("Could not create I2C resource semaphore");
 			return;
 		}
@@ -152,6 +153,7 @@ void I2C::InitPeripheral(port_t port, uint32_t frequency)
 
 		_hRes->transmissionFinished = xSemaphoreCreateBinary();
 		if (_hRes->transmissionFinished == NULL) {
+			_hRes = 0;
 			ERROR("Could not create I2C transmission semaphore");
 			return;
 		}
@@ -177,9 +179,9 @@ void I2C::InitPeripheral(port_t port, uint32_t frequency)
 		    __HAL_RCC_I2C1_CLK_ENABLE();
 
 		    /* NVIC for I2C1 */
-		    HAL_NVIC_SetPriority(I2C1_ER_IRQn, 5, 0);
+		    HAL_NVIC_SetPriority(I2C1_ER_IRQn, I2C_INTERRUPT_PRIORITY, 0);
 		    HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
-		    HAL_NVIC_SetPriority(I2C1_EV_IRQn, 5, 0);
+		    HAL_NVIC_SetPriority(I2C1_EV_IRQn, I2C_INTERRUPT_PRIORITY, 0);
 		    HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
 		}
 		else if (port == PORT_I2C3)
@@ -208,9 +210,9 @@ void I2C::InitPeripheral(port_t port, uint32_t frequency)
 		    __HAL_RCC_I2C3_CLK_ENABLE();
 
 		    /* NVIC for I2C3 */
-		    HAL_NVIC_SetPriority(I2C3_ER_IRQn, 5, 0);
+		    HAL_NVIC_SetPriority(I2C3_ER_IRQn, I2C_INTERRUPT_PRIORITY, 0);
 		    HAL_NVIC_EnableIRQ(I2C3_ER_IRQn);
-		    HAL_NVIC_SetPriority(I2C3_EV_IRQn, 5, 0);
+		    HAL_NVIC_SetPriority(I2C3_EV_IRQn, I2C_INTERRUPT_PRIORITY, 0);
 		    HAL_NVIC_EnableIRQ(I2C3_EV_IRQn);
 		}
 	}
@@ -230,7 +232,8 @@ void I2C::ConfigurePeripheral()
 				_hRes->handle.Instance = I2C3;
 				break;
 			default:
-				ERROR("Undefined SPI port");
+				_hRes = 0;
+				ERROR("Undefined I2C port");
 				return;
 		}
 
@@ -277,34 +280,39 @@ void I2C::ConfigurePeripheral()
 
 		if (HAL_I2C_Init(&_hRes->handle) != HAL_OK)
 		{
+			_hRes = 0;
 			ERROR("Could not initialize I2C port");
 			return;
 		}
 
 		if (HAL_I2CEx_ConfigAnalogFilter(&_hRes->handle, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
 		{
+			_hRes = 0;
 			ERROR("Could not initialize analog filter for I2C port");
 			return;
 		}
 
 		if (HAL_I2CEx_ConfigAnalogFilter(&_hRes->handle, 0) != HAL_OK)
 		{
+			_hRes = 0;
 			ERROR("Could not initialize digital filters for I2C port");
 			return;
 		}
 	}
 }
 
-void I2C::write(uint8_t reg, uint8_t value)
+void I2C::Write(uint8_t reg, uint8_t value)
 {
-	write(reg, &value, 1);
+	Write(reg, &value, 1);
 }
 
-void I2C::write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
+void I2C::Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
 {
 	if (!_hRes) return;
 	xSemaphoreTake( _hRes->resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
 
+	// Consider to use task notifications instead: https://www.freertos.org/RTOS-task-notifications.html
+	// However using notifications can possibly lead to other problems if multiple objects are going to notify the same task simultaneously
 	if (uxSemaphoreGetCount(_hRes->transmissionFinished)) // semaphore is available to be taken - which it should not be at this state before starting the transmission, since we use the semaphore for flagging the finish transmission event
 		xSemaphoreTake( _hRes->transmissionFinished, ( TickType_t ) portMAX_DELAY ); // something incorrect happened, as the transmissionFinished semaphore should always be taken before a transmission starts
 
@@ -330,14 +338,14 @@ void I2C::write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
 	xSemaphoreGive( _hRes->resourceSemaphore ); // give hardware resource back
 }
 
-uint8_t I2C::read(uint8_t reg)
+uint8_t I2C::Read(uint8_t reg)
 {
 	uint8_t rx;
-	read(reg, &rx, 1);
+	Read(reg, &rx, 1);
 	return rx;
 }
 
-void I2C::read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
+void I2C::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
 {
 	if (!_hRes) return;
 	xSemaphoreTake( _hRes->resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource

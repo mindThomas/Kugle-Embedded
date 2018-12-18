@@ -44,6 +44,7 @@ SPI::SPI(port_t port, uint32_t frequency, GPIO_TypeDef * GPIOx, uint32_t GPIO_Pi
 SPI::SPI(port_t port, uint32_t frequency)
 {
 	InitPeripheral(port, frequency);
+	if (!_hRes) return;
 
 	// Set default chip selects
 	switch (_hRes->port)
@@ -61,6 +62,7 @@ SPI::SPI(port_t port, uint32_t frequency)
 			_csPin = GPIO_PIN_8;
 			break;
 		default:
+			_hRes = 0;
 			ERROR("Undefined SPI port");
 			return;
 	}
@@ -254,7 +256,7 @@ void SPI::InitPeripheral(port_t port, uint32_t frequency)
 			HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
 			/* SPI3 interrupt Init */
-			HAL_NVIC_SetPriority(SPI3_IRQn, 5, 0);
+			HAL_NVIC_SetPriority(SPI3_IRQn, SPI_INTERRUPT_PRIORITY, 0);
 			HAL_NVIC_EnableIRQ(SPI3_IRQn);
 		}
 		else if (port == PORT_SPI5)
@@ -274,7 +276,7 @@ void SPI::InitPeripheral(port_t port, uint32_t frequency)
 			HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
 			/* SPI3 interrupt Init */
-			HAL_NVIC_SetPriority(SPI5_IRQn, 5, 0);
+			HAL_NVIC_SetPriority(SPI5_IRQn, SPI_INTERRUPT_PRIORITY, 0);
 			HAL_NVIC_EnableIRQ(SPI5_IRQn);
 		}
 		else if (port == PORT_SPI6)
@@ -295,7 +297,7 @@ void SPI::InitPeripheral(port_t port, uint32_t frequency)
 		    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
 		    /* SPI6 interrupt Init */
-		    HAL_NVIC_SetPriority(SPI6_IRQn, 5, 0);
+		    HAL_NVIC_SetPriority(SPI6_IRQn, SPI_INTERRUPT_PRIORITY, 0);
 		    HAL_NVIC_EnableIRQ(SPI6_IRQn);
 		}
 	}
@@ -433,12 +435,12 @@ void SPI::ConfigurePeripheral()
 	}
 }
 
-void SPI::write(uint8_t reg, uint8_t value)
+void SPI::Write(uint8_t reg, uint8_t value)
 {
-	write(reg, &value, 1);
+	Write(reg, &value, 1);
 }
 
-void SPI::write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
+void SPI::Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
 {
 	if (!_hRes) return;
 	xSemaphoreTake( _hRes->resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
@@ -474,14 +476,14 @@ void SPI::write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
 	xSemaphoreGive( _hRes->resourceSemaphore ); // give hardware resource back
 }
 
-uint8_t SPI::read(uint8_t reg)
+uint8_t SPI::Read(uint8_t reg)
 {
 	uint8_t rx;
-	read(reg, &rx, 1);
+	Read(reg, &rx, 1);
 	return rx;
 }
 
-void SPI::read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
+void SPI::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
 {
 	if (!_hRes) return;
 	xSemaphoreTake( _hRes->resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource

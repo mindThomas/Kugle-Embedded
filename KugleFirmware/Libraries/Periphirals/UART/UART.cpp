@@ -30,7 +30,7 @@ extern "C" __EXPORT void USART3_IRQHandler(void);
 extern "C" __EXPORT void UART4_IRQHandler(void);
 extern "C" __EXPORT void UART7_IRQHandler(void);
 
-UART::UART(port_t port, uint32_t baud, uint32_t bufferLength) : _port(port), _baud(baud), _bufferLength(bufferLength), _bufferWriteIdx(0), _bufferReadIdx(0)
+UART::UART(port_t port, uint32_t baud, uint32_t bufferLength) : _port(port), _baud(baud), _bufferLength(bufferLength), _bufferWriteIdx(0), _bufferReadIdx(0), _RXcallback(0)
 {
 	if (_bufferLength > 0)
 		_buffer = (uint8_t *)pvPortMalloc(_bufferLength);
@@ -168,7 +168,7 @@ void UART::InitPeripheral()
 		HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 		/* UART4 interrupt Init */
-		HAL_NVIC_SetPriority(UART4_IRQn, 5, 0);
+		HAL_NVIC_SetPriority(UART4_IRQn, UART_INTERRUPT_PRIORITY, 0);
 		HAL_NVIC_EnableIRQ(UART4_IRQn);
 	}
 	else if(_port == PORT_UART7)
@@ -189,7 +189,7 @@ void UART::InitPeripheral()
 		HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
 		/* UART7 interrupt Init */
-		HAL_NVIC_SetPriority(UART7_IRQn, 5, 0);
+		HAL_NVIC_SetPriority(UART7_IRQn, UART_INTERRUPT_PRIORITY, 0);
 		HAL_NVIC_EnableIRQ(UART7_IRQn);
 	}
 	else if(_port == PORT_UART3)
@@ -210,7 +210,7 @@ void UART::InitPeripheral()
 		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 		/* USART3 interrupt Init */
-		HAL_NVIC_SetPriority(USART3_IRQn, 5, 0);
+		HAL_NVIC_SetPriority(USART3_IRQn, UART_INTERRUPT_PRIORITY, 0);
 		HAL_NVIC_EnableIRQ(USART3_IRQn);
 	}
 }

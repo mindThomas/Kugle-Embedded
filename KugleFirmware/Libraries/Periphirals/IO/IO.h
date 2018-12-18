@@ -20,15 +20,59 @@
 #ifndef PERIPHIRALS_IO_H
 #define PERIPHIRALS_IO_H
 
+#include "stm32h7xx_hal.h"
+#include "cmsis_os.h" // for semaphore support
+
+#define IO_INTERRUPT_PRIORITY	4
+
 class IO
 {
 
 public:
-	IO();	
+	typedef enum interrupt_trigger_t {
+		TRIGGER_RISING,
+		TRIGGER_FALLING,
+		TRIGGER_BOTH
+	} interrupt_trigger_t;
+
+	typedef enum pull_t {
+		PULL_NONE,
+		PULL_UP,
+		PULL_DOWN,
+	} pull_t;
+
+public:
+	IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pull_t pull);
+	IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput);
+	IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin); // default configure as output
+	void RegisterInterrupt(interrupt_trigger_t trigger, SemaphoreHandle_t semaphore);
+	void RegisterInterrupt(interrupt_trigger_t trigger, void (*InterruptCallback)(void * params), void * callbackParams);
+	void Set(bool state);
+	bool Read();
+	void High();
+	void Low();
+	void Toggle();
 	~IO();
 
+public:
+	void (*_InterruptCallback)(void * params);
+	void * _InterruptCallbackParams;
+	SemaphoreHandle_t _InterruptSemaphore;
+
+	static IO * interruptObjects[16]; // we only have 16 interrupt lines
+
 private:
-	
+	GPIO_TypeDef * _GPIO;
+	uint32_t _pin;
+	bool _isInput;
+	pull_t _pull;
+
+private:
+	void ConfigureInterrupt(interrupt_trigger_t level);
+
+public:
+	static void InterruptHandler(IO * io);
+
 };
 	
 	

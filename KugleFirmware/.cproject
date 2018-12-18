@@ -67,6 +67,13 @@
 								<option defaultValue="gnu.cpp.optimization.level.none" id="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level.1284902352" name="Optimization Level" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="fr.ac6.managedbuild.gnu.cpp.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.debugging.level.165604567" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1025994982" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
+									<listOptionValue builtIn="false" value="../Libraries/Devices/Battery"/>
+									<listOptionValue builtIn="false" value="../Libraries/Devices/ESCON"/>
+									<listOptionValue builtIn="false" value="../Libraries/Devices/IMU"/>
+									<listOptionValue builtIn="false" value="../Libraries/Devices/LCD"/>
+									<listOptionValue builtIn="false" value="../Libraries/Devices/MPU9250"/>
+									<listOptionValue builtIn="false" value="../Libraries/Devices/MTI200"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Debug"/>
 									<listOptionValue builtIn="false" value="../Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/DSP/Include"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
@@ -85,14 +92,9 @@
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/PWM"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SPI"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/UART"/>
+									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Timer"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/USBCDC"/>
-									<listOptionValue builtIn="false" value="../Libraries/Drivers/Battery"/>
-									<listOptionValue builtIn="false" value="../Libraries/Drivers/ESCON"/>
-									<listOptionValue builtIn="false" value="../Libraries/Drivers/IMU"/>
-									<listOptionValue builtIn="false" value="../Libraries/Drivers/LCD"/>
-									<listOptionValue builtIn="false" value="../Libraries/Drivers/MPU9250"/>
-									<listOptionValue builtIn="false" value="../Libraries/Drivers/MTI200"/>
-									<listOptionValue builtIn="false" value="../Libraries/Drivers/Debug"/>
+									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SMBus"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.2021347189" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__weak=__attribute__((weak))"/>

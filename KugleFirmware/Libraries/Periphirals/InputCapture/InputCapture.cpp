@@ -17,19 +17,16 @@
  * ------------------------------------------
  */
  
-#ifndef DRIVERS_BATTERY_H
-#define DRIVERS_BATTERY_H
-
-class Battery
+/* Use input capture to measure time between rising and/or falling edges of an input */
+ 
+#include "InputCapture.h"
+ 
+InputCapture::InputCapture()
 {
+	
+}
 
-public:
-	Battery();	
-	~Battery();
-
-private:
+InputCapture::~InputCapture()
+{
 	
-};
-	
-	
-#endif
+}
