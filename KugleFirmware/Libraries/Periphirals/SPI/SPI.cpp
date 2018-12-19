@@ -251,7 +251,7 @@ void SPI::InitPeripheral(port_t port, uint32_t frequency)
 			GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12;
 			GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 			GPIO_InitStruct.Pull = GPIO_NOPULL;
-			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 			GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
 			HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
@@ -271,7 +271,7 @@ void SPI::InitPeripheral(port_t port, uint32_t frequency)
 			GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
 			GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 			GPIO_InitStruct.Pull = GPIO_NOPULL;
-			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 			GPIO_InitStruct.Alternate = GPIO_AF5_SPI5;
 			HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
@@ -292,7 +292,7 @@ void SPI::InitPeripheral(port_t port, uint32_t frequency)
 		    GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14;
 		    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
 		    GPIO_InitStruct.Pull = GPIO_NOPULL;
-		    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 		    GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
 		    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
@@ -399,7 +399,7 @@ void SPI::ConfigurePeripheral()
 		_hRes->handle.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
 		_hRes->handle.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
 		_hRes->handle.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
-		_hRes->handle.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
+		_hRes->handle.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_ENABLE;
 		_hRes->handle.Init.IOSwap = SPI_IO_SWAP_DISABLE;
 
 		uint32_t SPI_Clock = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_SPI123); // assuming all SPI periphirals to be configured with the same clock frequency!!!
@@ -432,7 +432,20 @@ void SPI::ConfigurePeripheral()
 			ERROR("Could not initialize SPI port");
 			return;
 		}
+
+		osDelay(10); // wait 10 ms for clock to stabilize
 	}
+}
+
+void SPI::ReconfigureFrequency(uint32_t frequency)
+{
+	xSemaphoreTake( _hRes->resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
+
+	_hRes->frequency = frequency;
+	_hRes->configured = false;
+	ConfigurePeripheral();
+
+	xSemaphoreGive( _hRes->resourceSemaphore ); // give hardware resource back
 }
 
 void SPI::Write(uint8_t reg, uint8_t value)

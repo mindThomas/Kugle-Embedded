@@ -167,6 +167,42 @@ uint32_t HAL_GetHighResTick(void)
 	return (uwTickHighRes + HAL_GetTickTimerValue());
 }
 
+void HAL_Delay(uint32_t Delay)
+{
+  uint32_t tickstart = HAL_GetTick();
+  uint32_t wait = Delay;
+
+  /*
+  // Add a freq to guarantee minimum wait
+  if (wait < HAL_MAX_DELAY)
+  {
+    wait += (uint32_t)(uwTickFreq);
+  }
+  */
+
+  while ((HAL_GetTick() - tickstart) < wait)
+  {
+  }
+}
+
+void HAL_DelayHighRes(uint32_t Delay)
+{
+  uint32_t tickstart = HAL_GetHighResTick();
+  uint32_t wait = Delay;
+
+  /*
+  // Add a freq to guarantee minimum wait
+  if (wait < HAL_MAX_DELAY)
+  {
+    wait += (uint32_t)(uwTickFreq);
+  }
+  */
+
+  while ((HAL_GetHighResTick() - tickstart) < wait)
+  {
+  }
+}
+
 /**
   * @brief Provides a tick value in millisecond.
   * @note This function is declared as __weak to be overwritten in case of other

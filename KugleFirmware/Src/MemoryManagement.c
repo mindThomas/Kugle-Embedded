@@ -6,6 +6,12 @@
 #include "string.h" // for memset
 #include <malloc.h>
 
+/* Adjustments of the Dynamic Memory scheme
+ * See: https://mcuoneclipse.com/2017/07/02/using-freertos-with-newlib-and-newlib-nano/
+ * And: http://www.nadler.com/embedded/newlibAndFreeRTOS.html
+ * And another possible way: https://github.com/ErichStyger/McuOnEclipse_PEx/blob/master/Drivers/freeRTOS/Source/portable/MemMang/heap_useNewlib.c
+ */
+
 #define USE_FREERTOS
 
 extern int _sfreertos_heap; // get address to global symbol defined in linker file
