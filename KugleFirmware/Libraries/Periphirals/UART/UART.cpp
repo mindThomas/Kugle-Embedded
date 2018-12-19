@@ -30,7 +30,7 @@ extern "C" __EXPORT void USART3_IRQHandler(void);
 extern "C" __EXPORT void UART4_IRQHandler(void);
 extern "C" __EXPORT void UART7_IRQHandler(void);
 
-UART::UART(port_t port, uint32_t baud, uint32_t bufferLength) : _port(port), _baud(baud), _bufferLength(bufferLength), _bufferWriteIdx(0), _bufferReadIdx(0), _RXcallback(0)
+UART::UART(port_t port, uint32_t baud, uint32_t bufferLength) : _port(port), _baud(baud), _bufferLength(bufferLength), _bufferWriteIdx(0), _bufferReadIdx(0), RXcallback(0)
 {
 	if (_bufferLength > 0)
 		_buffer = (uint8_t *)pvPortMalloc(_bufferLength);
@@ -114,14 +114,28 @@ void UART::ConfigurePeripheral()
 			break;
 	}
 
+	_resourceSemaphore = xSemaphoreCreateBinary();
+	if (_resourceSemaphore == NULL) {
+		ERROR("Could not create UART resource semaphore");
+		return;
+	}
+	vQueueAddToRegistry(_resourceSemaphore, "UART Resource");
+
 	// Create binary semaphore for indicating when a single byte has finished transmitting (for flagging to the transmit thread)
 	TransmitByteFinished = xSemaphoreCreateBinary();
 	if (TransmitByteFinished == NULL) {
-		ERROR("Could not create UART transmit semaphore");
+		ERROR("Could not create UART transmit finished semaphore");
 		return;
 	}
 	vQueueAddToRegistry(TransmitByteFinished, "UART Finished");
 	xSemaphoreGive( TransmitByteFinished ); // give the semaphore the first time
+
+	RXdataAvailable = xSemaphoreCreateBinary();
+	if (RXdataAvailable == NULL) {
+		ERROR("Could not create UART RX available semaphore");
+		return;
+	}
+	vQueueAddToRegistry(RXdataAvailable, "UART RX Available");
 
     /* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
     SET_BIT(_handle.Instance->CR3, USART_CR3_EIE);
@@ -262,9 +276,9 @@ void UART::DeInitPeripheral()
 
 }
 
-void UART::RegisterRXcallback(void (*RXcallback)UART_CALLBACK_PARAMS)
+void UART::RegisterRXcallback(void (*callback)UART_CALLBACK_PARAMS)
 {
-	_RXcallback = RXcallback;
+	RXcallback = callback;
 	_callbackChunkLength = 1;
 
 	switch (_port) {
@@ -282,9 +296,9 @@ void UART::RegisterRXcallback(void (*RXcallback)UART_CALLBACK_PARAMS)
 	}
 }
 
-void UART::RegisterRXcallback(void (*RXcallback)UART_CALLBACK_PARAMS, uint32_t chunkLength)
+void UART::RegisterRXcallback(void (*callback)UART_CALLBACK_PARAMS, uint32_t chunkLength)
 {
-	_RXcallback = RXcallback;
+	RXcallback = callback;
 	_callbackChunkLength = chunkLength;
 
 	switch (_port) {
@@ -356,13 +370,21 @@ void UART::TransmitBlockingHard(uint8_t * buffer, uint32_t bufLen)
 
 void UART::Write(uint8_t byte)
 {
+	xSemaphoreTake( _resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
+
 	// OBS! This should be replaced with a non-blocking call by making a TX queue and a processing thread in the UART object
 	TransmitBlocking(&byte, 1);
+
+	xSemaphoreGive( _resourceSemaphore ); // give hardware resource back
 }
 
 uint32_t UART::Write(uint8_t * buffer, uint32_t length)
 {
+	xSemaphoreTake( _resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
+
 	TransmitBlocking(buffer, length);
+
+	xSemaphoreGive( _resourceSemaphore ); // give hardware resource back
 	return length;
 }
 
@@ -386,15 +408,15 @@ void UART::CallbackThread(void * pvParameters)
 	while (1) {
 		vTaskSuspend(NULL); // suspend current thread - this could also be replaced by semaphore-based waiting (flagging)
 
-		if (uart->_RXcallback) {
+		if (uart->RXcallback) {
 			if (uart->_callbackChunkLength == 1) {
-				uart->_RXcallback(&uart->rxByte, 1);
+				uart->RXcallback(&uart->rxByte, 1);
 			}
 			else if (uart->BufferContentSize() >= uart->_callbackChunkLength)
 			{
 				uint8_t * chunkBuffer = uart->BufferPopN(uart->_callbackChunkLength);
 				if (chunkBuffer) {
-					uart->_RXcallback(chunkBuffer, uart->_callbackChunkLength);
+					uart->RXcallback(chunkBuffer, uart->_callbackChunkLength);
 					vPortFree(chunkBuffer);
 				}
 			}
@@ -404,6 +426,8 @@ void UART::CallbackThread(void * pvParameters)
 
 void UART::UART_IncomingDataInterrupt(UART * uart)
 {
+	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+
 	// Only call this function is RXNE interrupt flag is set
 	if (!uart) {
 		ERROR("UART interrupt for unconfigured port");
@@ -416,9 +440,20 @@ void UART::UART_IncomingDataInterrupt(UART * uart)
     //__HAL_UART_SEND_REQ(huart, UART_RXDATA_FLUSH_REQUEST); // should already have been cleared by reading
 
 	uart->BufferPush(uart->rxByte); // push into local buffer
-	if (uart->_RXcallback)
+	if (uart->RXcallback)
 		xTaskResumeFromISR(uart->_callbackTaskHandle);
+
+  if (uart->RXdataAvailable)
+	  xSemaphoreGiveFromISR( uart->RXdataAvailable, &xHigherPriorityTaskWoken );
+
+	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 }
+
+uint32_t UART::WaitForNewData(uint32_t xTicksToWait) // blocking call
+{
+	return xSemaphoreTake( RXdataAvailable, ( TickType_t ) xTicksToWait );
+}
+
 
 void USART3_IRQHandler(void)
 {

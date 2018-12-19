@@ -32,6 +32,7 @@
 #include "Timer.h"
 #include "IO.h"
 #include "QuadratureKnob.h"
+#include "ADC.h"
 
 
 void TestBench(void const * argument);
@@ -45,6 +46,7 @@ Timer * timer;
 Timer * timer2;
 IO * pin;
 QuadratureKnob * knob;
+ADC * adc;
 
 void TestBench_Init()
 {
@@ -76,6 +78,7 @@ void TestBench(void const * argument)
 	timer2 = new Timer(Timer::TIMER7, 10000);
 	pin = new IO(GPIOA, GPIO_PIN_4, true);
 	//knob = new QuadratureKnob(GPIOA, GPIO_PIN_0, GPIOA, GPIO_PIN_1);
+	adc = new ADC(ADC::ADC_1, ADC_CHANNEL_8);
 
 	pwm->Set(5000);
 
@@ -90,6 +93,8 @@ void TestBench(void const * argument)
 	vQueueAddToRegistry(semaphore, "Test semaphore");
 	//timer->RegisterInterrupt(10, semaphore);
 	//pin->RegisterInterrupt(IO::TRIGGER_BOTH, semaphore);
+
+	uint16_t adcValue;
 
 	while (1) {
 		/*uart->TransmitBlocking(reinterpret_cast<uint8_t *>(const_cast<char *>(testString.c_str())), testString.length());
@@ -106,6 +111,7 @@ void TestBench(void const * argument)
 		pwm->Set(750);
 		osDelay(500);*/
 		encoderValue = encoder->Get();
+		adcValue = adc->Read();
 
 
 		/*timer->Reset();

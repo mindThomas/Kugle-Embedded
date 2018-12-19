@@ -44,11 +44,11 @@ public:
 	void InitPeripheral();
 	void DeInitPeripheral();
 	void ConfigurePeripheral();
-	void RegisterRXcallback(void (*RXcallback)UART_CALLBACK_PARAMS); // each byte callback
-	void RegisterRXcallback(void (*RXcallback)UART_CALLBACK_PARAMS, uint32_t chunkLength); // each byte callback
+	void RegisterRXcallback(void (*callback)UART_CALLBACK_PARAMS); // each byte callback
+	void RegisterRXcallback(void (*callback)UART_CALLBACK_PARAMS, uint32_t chunkLength); // each byte callback
 	void TransmitBlocking(uint8_t * buffer, uint32_t bufLen);
 	void TransmitBlockingHard(uint8_t * buffer, uint32_t bufLen);
-	void (*_RXcallback)UART_CALLBACK_PARAMS;
+	void (*RXcallback)UART_CALLBACK_PARAMS;
 	void BufferPush(uint8_t byte);
 	uint8_t BufferPop();
 	uint32_t BufferContentSize();
@@ -57,9 +57,11 @@ public:
 	uint32_t Write(uint8_t * buffer, uint32_t length);
 	int16_t Read();
 	bool Available();
+	uint32_t WaitForNewData(uint32_t xTicksToWait);
 
 public:
 	SemaphoreHandle_t TransmitByteFinished;
+	SemaphoreHandle_t RXdataAvailable;
 
 private:
 	port_t _port;
@@ -72,6 +74,7 @@ private:
 	uint32_t _bufferReadIdx;
 	uint32_t _callbackChunkLength;
 	TaskHandle_t _callbackTaskHandle;
+	SemaphoreHandle_t _resourceSemaphore;
 
 public:
 	static void UART_Interrupt(port_t port);

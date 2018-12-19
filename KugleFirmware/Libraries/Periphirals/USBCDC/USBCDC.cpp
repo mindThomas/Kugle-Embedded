@@ -46,19 +46,42 @@ USBCDC::USBCDC(uint32_t processingTaskPriority) : _processingTaskHandle(0), _TXf
 	_tmpPackageForRead.length = 0;
 	_readIndex = 0;
 
+	_resourceSemaphore = xSemaphoreCreateBinary();
+	if (_resourceSemaphore == NULL) {
+		ERROR("Could not create USBCDC resource semaphore");
+		return;
+	}
+	vQueueAddToRegistry(_resourceSemaphore, "USBCDC Resource");
+
 	_TXqueue = xQueueCreate( USBCDC_TX_QUEUE_LENGTH, sizeof(USB_CDC_Package_t) );
+	if (_TXqueue == NULL) {
+		ERROR("Could not create USBCDC TX queue");
+		return;
+	}
 	vQueueAddToRegistry(_TXqueue, "USB TX");
 	CDC_RegisterReceiveQueue(_TXqueue);
 
 	_RXqueue = xQueueCreate( USBCDC_RX_QUEUE_LENGTH, sizeof(USB_CDC_Package_t) );
+	if (_RXqueue == NULL) {
+		ERROR("Could not create USBCDC RX queue");
+		return;
+	}
 	vQueueAddToRegistry(_RXqueue, "USB RX");
 	CDC_RegisterReceiveQueue(_RXqueue);
 
 	_RXdataAvailable = xSemaphoreCreateBinary();
+	if (_RXdataAvailable == NULL) {
+		ERROR("Could not create USBCDC RX available semaphore");
+		return;
+	}
 	vQueueAddToRegistry(_RXdataAvailable, "USB RX Available");
 	CDC_RegisterRXsemaphore(_RXdataAvailable);
 
 	_TXfinishedSemaphore = xSemaphoreCreateBinary();
+	if (_TXfinishedSemaphore == NULL) {
+		ERROR("Could not create USBCDC TX semaphore");
+		return;
+	}
 	vQueueAddToRegistry(_TXfinishedSemaphore, "USB TX Finished");
 	USBD_CDC_SetTXfinishedSemaphore(_TXfinishedSemaphore);
 
@@ -92,9 +115,12 @@ bool USBCDC::GetPackage(USB_CDC_Package_t * packageBuffer)
 void USBCDC::Write(uint8_t byte)
 {
 	USB_CDC_Package_t package;
+
+	xSemaphoreTake( _resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
 	package.data[0] = byte;
 	package.length = 1;
 	xQueueSend(_TXqueue, (void *)&package, (TickType_t) 1);
+	xSemaphoreGive( _resourceSemaphore ); // give hardware resource back
 }
 
 uint32_t USBCDC::Write(uint8_t * buffer, uint32_t length)
@@ -103,6 +129,8 @@ uint32_t USBCDC::Write(uint8_t * buffer, uint32_t length)
 
 	uint32_t txLength = length;
 	uint8_t packageLength;
+
+	xSemaphoreTake( _resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
 
 	// Split buffer data into packages
 	while (txLength > 0) {
@@ -119,6 +147,8 @@ uint32_t USBCDC::Write(uint8_t * buffer, uint32_t length)
 		buffer += packageLength;
 		txLength -= packageLength;
 	}
+
+	xSemaphoreGive( _resourceSemaphore ); // give hardware resource back
 
 	return length;
 }

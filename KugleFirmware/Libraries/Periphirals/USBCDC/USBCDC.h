@@ -54,6 +54,7 @@ private:
 	SemaphoreHandle_t _RXdataAvailable;
 	QueueHandle_t _TXqueue;
 	QueueHandle_t _RXqueue;
+	SemaphoreHandle_t _resourceSemaphore;
 
 public:
 
