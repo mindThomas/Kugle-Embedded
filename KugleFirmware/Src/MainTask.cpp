@@ -1,3 +1,4 @@
+#include <LSPC.hpp>
 #include "main.h"
 #include "USBCDC.h"
 #include "cmsis_os.h"
@@ -10,6 +11,9 @@
 #include "Timer.h"
 #include "IO.h"
 #include "QuadratureKnob.h"
+#include "LSPC.hpp"
+
+void handl(const std::vector<uint8_t>& payload);
 
 void MainTask(void const * argument)
 {
@@ -25,28 +29,20 @@ void MainTask(void const * argument)
 	 */
 
 	USBCDC * usb = new USBCDC(3);
-
-	/*UART * uart = new UART(UART::PORT_UART3, 115200, 100);
-	SPI * spi = new SPI(SPI::PORT_SPI6, 500000);
-	I2C * i2c = new I2C(I2C::PORT_I2C1, 0x68);
-
-	PWM * pwm = new PWM(PWM::TIMER1, PWM::CH1, 1, 50000);
-	Encoder * encoder = new Encoder(Encoder::TIMER2);
-	Timer * timer = new Timer(Timer::TIMER6, 10000);
-	Timer * timer2 = new Timer(Timer::TIMER7, 10000);
-	IO * pin = new IO(GPIOA, GPIO_PIN_4, true);*/
+	lspc::Socket<USBCDC> * mySocket = new lspc::Socket<USBCDC>(usb, 3); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
+	mySocket->registerCallback(1, handl);
 
 	TestBench_Init();
 
-	uint8_t byte;
-
-	/* Infinite loop */
-	for(;;)
+	while (1)
 	{
-		if (usb->Available()) {
-			byte = usb->Read();
-			usb->Write(byte);
-		}
-		osDelay(1);
+		osDelay(100);
 	}
+}
+
+void handl(const std::vector<uint8_t>& payload)
+{
+	uint8_t * buffer = const_cast<uint8_t *>(payload.data());
+	uint32_t length = payload.size();
+	osDelay(1);
 }

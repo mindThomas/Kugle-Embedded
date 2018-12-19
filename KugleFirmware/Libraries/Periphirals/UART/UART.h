@@ -54,7 +54,8 @@ public:
 	uint32_t BufferContentSize();
 	uint8_t * BufferPopN(uint32_t numberOfBytesToPush);
 	void Write(uint8_t byte);
-	uint8_t Read();
+	uint32_t Write(uint8_t * buffer, uint32_t length);
+	int16_t Read();
 	bool Available();
 
 public:

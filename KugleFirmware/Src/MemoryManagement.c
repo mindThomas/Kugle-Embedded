@@ -4,26 +4,65 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "string.h" // for memset
+#include <malloc.h>
 
 #define USE_FREERTOS
 
 extern int _sfreertos_heap; // get address to global symbol defined in linker file
 extern uint8_t freeRTOSMemoryScheme;
-extern "C" __EXPORT void ZeroInitFreeRTOSheap(void);
 
-#if 0
+/*void ZeroInitFreeRTOSheap(void);
+void * __wrap_malloc (size_t size);
+void __wrap_free (void * ptr);*/
+
+/*extern void *__malloc(size_t size);
+extern void *__free(void *ptr);*/
+extern void *__real_malloc(size_t size);
+extern void __real_free(void *ptr);
+extern void *__real__malloc_r(size_t size);
+extern void __real__free_r(void *ptr);
+
+#if 1
+#ifdef USE_FREERTOS
+// Very important to include following linker options:
+// -Xlinker --wrap=malloc
+// -Xlinker --wrap=_malloc_r
+// -Xlinker --wrap=free
+// -Xlinker --wrap=_free_r
+// These will "replace" the calls to malloc with the wrapped functions below, see https://www.cs.cmu.edu/afs/cs/academic/class/15213-s13/www/lectures/12-linking.pdf
+// See also: https://github.com/ErichStyger/McuOnEclipse_PEx/blob/master/Drivers/freeRTOS/Source/portable/MemMang/heap_useNewlib.c
+
 /* Defining malloc/free should overwrite the
 standard versions provided by the compiler. */
-void * malloc (size_t size)
+void * __wrap_malloc (size_t size)
 {
-	/* Call the FreeRTOS version of malloc. */
-	return pvPortMalloc( size );
+	if(uxTaskGetNumberOfTasks())
+		/* Call the FreeRTOS version of malloc. */
+		return pvPortMalloc( size );
+	else
+		// Call the original C version of malloc
+		return __real_malloc( size );
 }
-void free (void * ptr)
+void __wrap_free (void * ptr)
 {
-	/* Call the FreeRTOS version of free. */
-	vPortFree( ptr );
+	if(uxTaskGetNumberOfTasks())
+		/* Call the FreeRTOS version of free. */
+		vPortFree( ptr );
+	else
+		// Call the original C version of free
+		__real_free( ptr );
 }
+
+void * __wrap__malloc_r (size_t size)
+{
+	return __real__malloc_r( size );
+}
+void __wrap__free_r (void * ptr)
+{
+	__real__free_r( ptr );
+}
+
+#endif
 #endif
 
 void ZeroInitFreeRTOSheap(void)
@@ -33,7 +72,7 @@ void ZeroInitFreeRTOSheap(void)
 	memset(heapPtr, 0, configTOTAL_HEAP_SIZE);
 }
 
-#if 1
+#if 0
 // Define the 'new' operator for C++ to use the freeRTOS memory management
 // functions. THIS IS NOT OPTIONAL!
 //

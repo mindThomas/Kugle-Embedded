@@ -141,7 +141,8 @@ uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
   */
 
 static USBD_HandleTypeDef * hUsbDeviceFS;
-static QueueHandle_t ReceiveQueue;
+static QueueHandle_t ReceiveQueue = 0;
+static SemaphoreHandle_t ReceiveSemaphore = 0;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 
@@ -293,6 +294,7 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+  portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
   USB_CDC_Package_t package;
   uint32_t receivedLength = *Len;
   uint16_t copyLength;
@@ -303,14 +305,20 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 	  memcpy(package.data, Buf, copyLength);
 	  package.length = copyLength;
 	  if (ReceiveQueue)
-		  xQueueSendFromISR(ReceiveQueue, (void *)&package, (TickType_t) 0);
+		  xQueueSendFromISR(ReceiveQueue, (void *)&package, &xHigherPriorityTaskWoken);
 
 	  Buf += copyLength;
 	  receivedLength -= copyLength;
   }
 
+  if (ReceiveSemaphore)
+	  xSemaphoreGiveFromISR( ReceiveSemaphore, &xHigherPriorityTaskWoken );
+
   USBD_CDC_SetRxBuffer(hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(hUsbDeviceFS);
+
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+
   return (USBD_OK);
   /* USER CODE END 6 */
 }
@@ -370,6 +378,11 @@ void CDC_RegisterUsbDeviceObject(USBD_HandleTypeDef * usbDevice)
 void CDC_RegisterReceiveQueue(QueueHandle_t queue)
 {
 	ReceiveQueue = queue;
+}
+
+void CDC_RegisterRXsemaphore(SemaphoreHandle_t semaphore)
+{
+	ReceiveSemaphore = semaphore;
 }
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 

@@ -29,7 +29,7 @@
 #include "usbd_cdc.h"
 #include "usbd_cdc_if.h"
 
-#define USBCDC_PROCESSING_THREAD_STACK_SIZE		128
+#define USBCDC_TX_PROCESSING_THREAD_STACK_SIZE		128
 #define USBCDC_TX_QUEUE_LENGTH	10
 #define USBCDC_RX_QUEUE_LENGTH	10
 
@@ -37,23 +37,26 @@ class USBCDC
 {
 
 public:
-	USBCDC(UBaseType_t processingTaskPriority);
+	USBCDC(uint32_t processingTaskPriority);
 	~USBCDC();
 	bool GetPackage(USB_CDC_Package_t * packageBuffer);
 	void Write(uint8_t byte);
-	void Write(uint8_t * buffer, uint32_t length);
-	uint8_t Read();
+	uint32_t Write(uint8_t * buffer, uint32_t length);
+	int16_t Read();
 	bool Available();
+	uint32_t WaitForNewData(uint32_t xTicksToWait);
 
 private:
 	TaskHandle_t _processingTaskHandle;
-	USB_CDC_Package_t tmpPackageForRead;
-	uint8_t readIndex;
+	USB_CDC_Package_t _tmpPackageForRead;
+	uint8_t _readIndex;
+	SemaphoreHandle_t _TXfinishedSemaphore;
+	SemaphoreHandle_t _RXdataAvailable;
+	QueueHandle_t _TXqueue;
+	QueueHandle_t _RXqueue;
 
 public:
-	SemaphoreHandle_t TXfinishedSemaphore;
-	QueueHandle_t TXqueue;
-	QueueHandle_t RXqueue;
+
 
 public:
 	static void ProcessingThread(void * pvParameters);
