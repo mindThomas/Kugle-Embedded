@@ -360,10 +360,16 @@ void UART::Write(uint8_t byte)
 	TransmitBlocking(&byte, 1);
 }
 
-uint8_t UART::Read()
+uint32_t UART::Write(uint8_t * buffer, uint32_t length)
 {
-	if (!_bufferLength) return 0; // error, buffer not enabled
-	if (BufferContentSize() == 0) return 0; // error, buffer is empty
+	TransmitBlocking(buffer, length);
+	return length;
+}
+
+int16_t UART::Read()
+{
+	if (!_bufferLength) return -1; // error, buffer not enabled
+	if (BufferContentSize() == 0) return -1; // error, buffer is empty
 	return BufferPop();
 }
 

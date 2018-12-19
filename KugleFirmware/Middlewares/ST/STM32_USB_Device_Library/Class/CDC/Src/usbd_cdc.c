@@ -604,8 +604,9 @@ static uint8_t  USBD_CDC_DeInit (USBD_HandleTypeDef *pdev,
   if(pdev->pClassData != NULL)
   {
     ((USBD_CDC_ItfTypeDef *)pdev->pUserData)->DeInit();
-    USBD_free(pdev->pClassData);
-    pdev->pClassData = NULL;
+    // freeing disabled since we provide it as static (pre-allocated) memory
+    //USBD_free(pdev->pClassData);
+    //pdev->pClassData = NULL;
   }
   
   return ret;
