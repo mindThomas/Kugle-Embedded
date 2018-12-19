@@ -95,6 +95,7 @@
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/I2C"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/IO"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/PWM"/>
+									<listOptionValue builtIn="false" value="../Libraries/Periphirals/ADC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SPI"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/UART"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Timer"/>

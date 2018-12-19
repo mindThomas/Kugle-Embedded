@@ -49,6 +49,8 @@ PWM::~PWM()
 		return;
 	}
 
+	// Missing deinit of GPIO, eg. HAL_GPIO_DeInit(GPIOF, GPIO_PIN_3)
+
 	if (_hRes->configuredChannels == 0) { // no more channels in use in resource, so delete the resource
 		// Delete hardware resource
 		timer_t tmpTimer = _hRes->timer;
