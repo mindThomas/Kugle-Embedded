@@ -47,6 +47,7 @@ public:
 	void DeInitPeripheral();
 	void DeInitChipSelect();
 	void ConfigurePeripheral();
+	void ReconfigureFrequency(uint32_t frequency);
 	void Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength);
 	void Write(uint8_t reg, uint8_t value);
 	void Read(uint8_t reg, uint8_t * buffer, uint8_t readLength);

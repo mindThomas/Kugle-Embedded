@@ -57,7 +57,7 @@ public:
 	uint32_t Write(uint8_t * buffer, uint32_t length);
 	int16_t Read();
 	bool Available();
-	uint32_t WaitForNewData(uint32_t xTicksToWait);
+	uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY);
 
 public:
 	SemaphoreHandle_t TransmitByteFinished;

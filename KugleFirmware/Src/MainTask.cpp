@@ -28,9 +28,9 @@ void MainTask(void const * argument)
 	 * Basically anything related to starting the system should happen in this thread and NOT in the main() function !!!
 	 */
 
-	USBCDC * usb = new USBCDC(3);
-	lspc::Socket<USBCDC> * mySocket = new lspc::Socket<USBCDC>(usb, 3); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
-	mySocket->registerCallback(1, handl);
+	/*USBCDC * usb = new USBCDC(3);
+	lspc::Socket<USBCDC> * mySocket = new lspc::Socket<USBCDC>(usb, osPriorityNormal); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
+	mySocket->registerCallback(1, handl);*/
 
 	TestBench_Init();
 
@@ -44,5 +44,4 @@ void handl(const std::vector<uint8_t>& payload)
 {
 	uint8_t * buffer = const_cast<uint8_t *>(payload.data());
 	uint32_t length = payload.size();
-	osDelay(1);
 }

@@ -33,7 +33,7 @@
 #include "IO.h"
 #include "QuadratureKnob.h"
 #include "ADC.h"
-
+#include "MPU9250.h"
 
 void TestBench(void const * argument);
 osThreadId testBenchTaskHandle;
@@ -47,11 +47,12 @@ Timer * timer2;
 IO * pin;
 QuadratureKnob * knob;
 ADC * adc;
+MPU9250<SPI,MPU9250_SPI> * imu;
 
 void TestBench_Init()
 {
 	/* Create Test bench thread */
-	osThreadDef(testBenchTask, TestBench, osPriorityNormal, 0, 128);
+	osThreadDef(testBenchTask, TestBench, osPriorityRealtime, 0, 128);
 	testBenchTaskHandle = osThreadCreate(osThread(testBenchTask), NULL);
 }
 
@@ -63,14 +64,36 @@ void UART_Callback(uint8_t * buffer, uint32_t bufLen)
 int32_t encoderValue;
 uint32_t timerValue1, timerValue2, timerValue3;
 bool oldState = false;
+uint8_t value;
 
 bool level1, level2, level3;
 
+float ax, ay, az, gx, gy, gz, mx, my, mz;
+
+void TestBench(void const * argument)
+{
+	spi = new SPI(SPI::PORT_SPI3, MPU9250_SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
+	imu = new MPU9250<SPI,MPU9250_SPI>(spi);
+	imu->Configure(ACCEL_RANGE_2G, GYRO_RANGE_250DPS);
+	imu->setFilt(DLPF_BANDWIDTH_250HZ, DLPF_BANDWIDTH_184HZ, 8);
+	imu->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
+
+	while (1) {
+		imu->WaitForNewData();
+		imu->WaitForNewData();
+		imu->WaitForNewData();
+		imu->WaitForNewData();
+	    imu->getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+	}
+}
+
+#if 0
 void TestBench(void const * argument)
 {
 	uart = new UART(UART::PORT_UART3, 115200, 100);
 	spi = new SPI(SPI::PORT_SPI6, 500000);
 	i2c = new I2C(I2C::PORT_I2C1, 0x68);
+	imu = new MPU9250<I2C,I2C::port_t>(i2c);
 
 	pwm = new PWM(PWM::TIMER1, PWM::CH1, 1, 50000);
 	encoder = new Encoder(Encoder::TIMER2);
@@ -143,3 +166,4 @@ void TestBench(void const * argument)
 		osDelay(100);
 	}
 }
+#endif

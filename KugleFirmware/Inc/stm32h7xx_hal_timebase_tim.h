@@ -10,6 +10,7 @@ extern "C" {
 
 uint32_t HAL_GetTickTimerValue(void);
 uint32_t HAL_GetHighResTick(void);
+void HAL_DelayHighRes(uint32_t Delay);
 
 
 #ifdef __cplusplus

@@ -52,7 +52,7 @@ int main(void)
   ZeroInitFreeRTOSheap();
 
   /* Create the main thread which creates objects and spawns the rest of the threads */
-  osThreadDef(mainTask, MainTask, osPriorityNormal, 0, 128);
+  osThreadDef(mainTask, MainTask, osPriorityIdle, 0, 128);
   mainTaskHandle = osThreadCreate(osThread(mainTask), NULL);
 
   /* Start scheduler */
