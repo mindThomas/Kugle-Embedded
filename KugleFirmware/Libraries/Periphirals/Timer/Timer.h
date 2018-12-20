@@ -23,55 +23,59 @@
 #include "stm32h7xx_hal.h"
 #include "cmsis_os.h" // for semaphore support
 
-#define TIMER_DEFAULT_MAXVALUE	0xFFFF
 #define TIMER_INTERRUPT_PRIORITY		5
 
 class Timer
 {
+	private:
+		const uint16_t TIMER_DEFAULT_MAXVALUE = 0xFFFF;
 
-public:
-	typedef enum timer_t {
-		TIMER_UNDEFINED = 0,
-		TIMER6,
-		TIMER7,
-		TIMER12,
-		TIMER13
-	} timer_t;
+	public:
+		typedef enum timer_t {
+			TIMER_UNDEFINED = 0,
+			TIMER6,
+			TIMER7,
+			TIMER12,
+			TIMER13
+		} timer_t;
 
-public:
-	Timer(timer_t timer, uint32_t frequency); // frequency defines the timer count frequency
-	~Timer();
-	void ConfigureTimerPeripheral();
-	void RegisterInterruptSoft(uint32_t frequency, void (*TimerCallbackSoft)());
-	void RegisterInterrupt(uint32_t frequency, void (*TimerCallback)());
-	void RegisterInterrupt(uint32_t frequency, SemaphoreHandle_t semaphore);
-	void SetMaxValue(uint16_t maxValue);
-	uint32_t Get();
-	void Reset();
-	void (*_TimerCallbackSoft)();
+	public:
+		Timer(timer_t timer, uint32_t frequency); // frequency defines the timer count frequency
+		~Timer();
 
-public:
-	typedef struct hardware_resource_t {
-		timer_t timer;
-		uint32_t frequency;
-		uint16_t maxValue;
-		TIM_HandleTypeDef handle;
-		TaskHandle_t callbackTaskHandle;
-		void (*TimerCallback)();
-		SemaphoreHandle_t callbackSemaphore;
-	} hardware_resource_t;
+		void ConfigureTimerPeripheral();
+		void RegisterInterruptSoft(uint32_t frequency, void (*TimerCallbackSoft)());
+		void RegisterInterrupt(uint32_t frequency, void (*TimerCallback)());
+		void RegisterInterrupt(uint32_t frequency, SemaphoreHandle_t semaphore);
+		void SetMaxValue(uint16_t maxValue);
 
-	static hardware_resource_t * resTIMER6;
-	static hardware_resource_t * resTIMER7;
-	static hardware_resource_t * resTIMER12;
-	static hardware_resource_t * resTIMER13;
+		uint32_t Get();
+		void Reset();
 
-private:
-	hardware_resource_t * _hRes;
+	public:
+		typedef struct hardware_resource_t {
+			timer_t timer;
+			uint32_t frequency;
+			uint16_t maxValue;
+			TIM_HandleTypeDef handle;
+			TaskHandle_t callbackTaskHandle;
+			void (*TimerCallback)();
+			SemaphoreHandle_t callbackSemaphore;
+		} hardware_resource_t;
 
-public:
-	static void InterruptHandler(Timer::hardware_resource_t * timer);
-	static void CallbackThread(void * pvParameters);
+		static hardware_resource_t * resTIMER6;
+		static hardware_resource_t * resTIMER7;
+		static hardware_resource_t * resTIMER12;
+		static hardware_resource_t * resTIMER13;
+
+		void (*_TimerCallbackSoft)();
+
+	private:
+		hardware_resource_t * _hRes;
+
+	public:
+		static void InterruptHandler(Timer::hardware_resource_t * timer);
+		static void CallbackThread(void * pvParameters);
 
 };
 	

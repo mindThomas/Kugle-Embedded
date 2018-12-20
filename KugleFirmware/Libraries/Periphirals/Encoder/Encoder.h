@@ -24,39 +24,39 @@
 
 class Encoder
 {
+	public:
+		typedef enum timer_t {
+			TIMER_UNDEFINED = 0,
+			TIMER2,
+			TIMER3,
+			TIMER4
+		} timer_t;
 
-public:
-	typedef enum timer_t {
-		TIMER_UNDEFINED = 0,
-		TIMER2,
-		TIMER3,
-		TIMER4
-	} timer_t;
+	public:
+		Encoder(timer_t timer);
+		~Encoder();
 
-public:
-	Encoder(timer_t timer);
-	~Encoder();
-	void ConfigureEncoderGPIO();
-	void ConfigureEncoderPeripheral();
-	int32_t Get();
+		void ConfigureEncoderGPIO();
+		void ConfigureEncoderPeripheral();
 
-public:
-	typedef struct hardware_resource_t {
-		timer_t timer;
-		TIM_HandleTypeDef handle;
-		int32_t offsetValue;
-	} hardware_resource_t;
+		int32_t Get();
 
-	static hardware_resource_t * resTIMER2;
-	static hardware_resource_t * resTIMER3;
-	static hardware_resource_t * resTIMER4;
+	public:
+		typedef struct hardware_resource_t {
+			timer_t timer;
+			TIM_HandleTypeDef handle;
+			int32_t offsetValue;
+		} hardware_resource_t;
 
-private:
-	hardware_resource_t * _hRes;
+		static hardware_resource_t * resTIMER2;
+		static hardware_resource_t * resTIMER3;
+		static hardware_resource_t * resTIMER4;
 	
-public:
-	static void InterruptHandler(Encoder::hardware_resource_t * encoder);
+	private:
+		hardware_resource_t * _hRes;
 
+	public:
+		static void InterruptHandler(Encoder::hardware_resource_t * encoder);
 };
 	
 	

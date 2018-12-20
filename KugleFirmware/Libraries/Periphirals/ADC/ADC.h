@@ -24,39 +24,46 @@
 
 class ADC
 {
+	private:
+		const uint32_t ADC_DEFAULT_RESOLUTION = ADC_RESOLUTION_12B;
 
-public:
-	typedef enum adc_t {
-		ADC_UNDEFINED = 0,
-		ADC_1,
-		ADC_2,
-		ADC_3,
-	} adc_t;
+	public:
+		typedef enum adc_t {
+			ADC_UNDEFINED = 0,
+			ADC_1,
+			ADC_2,
+			ADC_3,
+		} adc_t;
 
-public:
-	ADC(adc_t adc, uint32_t channel);
-	~ADC();
-	void InitPeripheral(adc_t adc, uint32_t channel);
-	void ConfigureADCPeripheral();
-	void ConfigureADCGPIO();
-	void ConfigureADCChannel();
-	int32_t Read();
+	public:
+		ADC(adc_t adc, uint32_t channel);
+		ADC(adc_t adc, uint32_t channel, uint32_t resolution);
+		~ADC();
 
-public:
-	typedef struct hardware_resource_t {
-		adc_t adc;
-		uint16_t configuredChannels; // each bit indicate whether the corresponding channel is configured and in use by another object
-		ADC_HandleTypeDef handle;
-	} hardware_resource_t;
+		void InitPeripheral(adc_t adc, uint32_t channel, uint32_t resolution);
+		void ConfigureADCPeripheral();
+		void ConfigureADCGPIO();
+		void ConfigureADCChannel();
 
-	static hardware_resource_t * resADC1;
-	static hardware_resource_t * resADC2;
-	static hardware_resource_t * resADC3;
+		float Read();
+		int32_t ReadRaw();
 
-private:
-	hardware_resource_t * _hRes;
-	uint32_t _channel;
-	
+	public:
+		typedef struct hardware_resource_t {
+			adc_t adc;
+			uint32_t resolution;
+			uint16_t configuredChannels; // each bit indicate whether the corresponding channel is configured and in use by another object
+			ADC_HandleTypeDef handle;
+		} hardware_resource_t;
+
+		static hardware_resource_t * resADC1;
+		static hardware_resource_t * resADC2;
+		static hardware_resource_t * resADC3;
+
+	private:
+		hardware_resource_t * _hRes;
+		uint32_t _channel;
+		uint16_t _range;
 };
 	
 	

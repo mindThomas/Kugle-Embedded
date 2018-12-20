@@ -152,6 +152,13 @@ void PWM::InitPeripheral(timer_t timer, pwm_channel_t channel, uint32_t frequenc
 		_hRes->maxValue = maxValue;
 		_hRes->configuredChannels = 0;
 
+		if (frequency == 0 || maxValue == 0)
+		{
+			_hRes = 0;
+			ERROR("Invalid timer frequency and/or maxValue");
+			return;
+		}
+
 		ConfigureTimerPeripheral();
 	}
 
@@ -393,7 +400,17 @@ void PWM::ConfigureTimerChannel()
 	_hRes->configuredChannels |= _channel;
 }
 
-void PWM::Set(uint16_t value)
+// Set a duty-cycle value between 0-1, where 0 results in an always LOW signal and 1 results in an always HIGH signal
+void PWM::Set(float value)
+{
+	if (value < 0) return;
+	if (value > 1) return;
+
+	uint16_t rawValue = _hRes->maxValue * value;
+	SetRaw(rawValue);
+}
+
+void PWM::SetRaw(uint16_t value)
 {
 	if (!_hRes) return;
 	if (value > _hRes->maxValue) value =_hRes->maxValue;

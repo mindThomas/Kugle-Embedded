@@ -48,7 +48,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 /* MPU9250 object */
 
 template <class PORT, class BUS>
-MPU9250<PORT, BUS>::MPU9250(PORT * port) : _bus(BUS(port)), _accelScale(0), _gyroScale(0), _magScaleX(0), _magScaleY(0), _magScaleZ(0)
+MPU9250<PORT, BUS>::MPU9250(PORT * port) : _bus(BUS(port)), _interruptPin(0), _accelScale(0), _gyroScale(0), _magScaleX(0), _magScaleY(0), _magScaleZ(0)
 {
 }
 
@@ -76,7 +76,7 @@ void MPU9250<PORT, BUS>::ConfigureInterrupt(IO * interruptPin)
 template <class PORT, class BUS>
 void MPU9250<PORT, BUS>::ConfigureInterrupt(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin)
 {
-	IO * intIO = new IO(GPIOx, GPIO_Pin, true, IO::PULL_NONE);
+	IO * intIO = new IO(GPIOx, GPIO_Pin, IO::PULL_NONE);
 	ConfigureInterrupt(intIO);
 }
 
