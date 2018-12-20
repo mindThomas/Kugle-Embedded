@@ -23,13 +23,13 @@
 #include "I2C.h"  // I2C library
 #include "SPI.h" // SPI Library
 
-#define MPU9250_I2C_FREQUENCY		400000		// 400 kHz
+#define MPU9250_I2C_FREQUENCY 		400000		// 400 kHz
 #define MPU9250_SPI_LOW_FREQUENCY	1000000		// 1 MHz
-#define MPU9250_SPI_HIGH_FREQUENCY	1000000	// 10 MHz
+#define MPU9250_SPI_HIGH_FREQUENCY	1000000		// 10 MHz
 
 class MPU9250_Bus
 {
-    public:
+	public:
 		virtual ~MPU9250_Bus() {};
 		virtual bool writeRegister(uint8_t subAddress, uint8_t data) { return false; };
 		virtual void readRegisters(uint8_t subAddress, uint8_t count, uint8_t* dest) {};
@@ -49,8 +49,8 @@ class MPU9250_I2C : public MPU9250_Bus
 		/* reads registers from MPU9250 given a starting register address, number of bytes, and a pointer to store data */		
 		void readRegisters(uint8_t subAddress, uint8_t count, uint8_t* dest);
 		
-    private:
-        I2C * _bus;    
+	private:
+		I2C * _bus;
 };
 
 class MPU9250_SPI : public MPU9250_Bus

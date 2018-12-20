@@ -29,45 +29,41 @@
 #include "usbd_cdc.h"
 #include "usbd_cdc_if.h"
 
-#define USBCDC_TX_PROCESSING_THREAD_STACK_SIZE		128
-#define USBCDC_TX_QUEUE_LENGTH	10
-#define USBCDC_RX_QUEUE_LENGTH	10
-
 class USBCDC
 {
+	private:
+		const int USBCDC_TX_PROCESSING_THREAD_STACK_SIZE = 128;
+		const int USBCDC_TX_QUEUE_LENGTH = 10;
+		const int USBCDC_RX_QUEUE_LENGTH = 10;
 
-public:
-	USBCDC(uint32_t processingTaskPriority);
-	~USBCDC();
-	bool GetPackage(USB_CDC_Package_t * packageBuffer);
-	void Write(uint8_t byte);
-	uint32_t Write(uint8_t * buffer, uint32_t length);
-	int16_t Read();
-	bool Available();
-	uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY);
+	public:
+		USBCDC(uint32_t processingTaskPriority);
+		~USBCDC();
+		bool GetPackage(USB_CDC_Package_t * packageBuffer);
+		void Write(uint8_t byte);
+		uint32_t Write(uint8_t * buffer, uint32_t length);
+		int16_t Read();
+		bool Available();
+		uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY);
 
-private:
-	TaskHandle_t _processingTaskHandle;
-	USB_CDC_Package_t _tmpPackageForRead;
-	uint8_t _readIndex;
-	SemaphoreHandle_t _TXfinishedSemaphore;
-	SemaphoreHandle_t _RXdataAvailable;
-	QueueHandle_t _TXqueue;
-	QueueHandle_t _RXqueue;
-	SemaphoreHandle_t _resourceSemaphore;
+	private:
+		TaskHandle_t _processingTaskHandle;
+		USB_CDC_Package_t _tmpPackageForRead;
+		uint8_t _readIndex;
+		SemaphoreHandle_t _TXfinishedSemaphore;
+		SemaphoreHandle_t _RXdataAvailable;
+		QueueHandle_t _TXqueue;
+		QueueHandle_t _RXqueue;
+		SemaphoreHandle_t _resourceSemaphore;
 
-public:
+	public:
+		static void ProcessingThread(void * pvParameters);
+		static void SysInit();
 
-
-public:
-	static void ProcessingThread(void * pvParameters);
-	static void SysInit();
-
-public:
-	static USBCDC * usbHandle;
-	static USBD_HandleTypeDef hUsbDeviceFS;
-	static PCD_HandleTypeDef hpcd_USB_OTG_FS;
-	
+	public:
+		static USBCDC * usbHandle;
+		static USBD_HandleTypeDef hUsbDeviceFS;
+		static PCD_HandleTypeDef hpcd_USB_OTG_FS;
 };
 	
 	

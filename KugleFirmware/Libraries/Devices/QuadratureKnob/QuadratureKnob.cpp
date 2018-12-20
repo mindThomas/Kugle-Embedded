@@ -23,8 +23,8 @@
  
 QuadratureKnob::QuadratureKnob(GPIO_TypeDef * GPIOx_A, uint32_t GPIO_Pin_A, GPIO_TypeDef * GPIOx_B, uint32_t GPIO_Pin_B) : value(0), oldAB(0)
 {
-	sigA = new IO(GPIOx_A, GPIO_Pin_A, true);
-	sigB = new IO(GPIOx_B, GPIO_Pin_B, true);
+	sigA = new IO(GPIOx_A, GPIO_Pin_A, IO::PULL_NONE);
+	sigB = new IO(GPIOx_B, GPIO_Pin_B, IO::PULL_NONE);
 
 	if (!sigA || !sigB) {
 		if (sigA)

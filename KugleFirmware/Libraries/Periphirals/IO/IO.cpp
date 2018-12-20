@@ -32,7 +32,51 @@ extern "C" __EXPORT void EXTI4_IRQHandler(void);
 extern "C" __EXPORT void EXTI9_5_IRQHandler(void);
 extern "C" __EXPORT void EXTI15_10_IRQHandler(void);
 
-IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pull_t pull) : _InterruptCallback(0), _InterruptCallbackParams(0), _InterruptSemaphore(0), _GPIO(GPIOx), _pin(GPIO_Pin), _isInput(isInput), _pull(pull)
+// Configure as output
+IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin) : _InterruptCallback(0), _InterruptCallbackParams(0), _InterruptSemaphore(0), _GPIO(GPIOx), _pin(GPIO_Pin), _isInput(false), _pull()
+{
+	ConfigurePin(GPIOx, GPIO_Pin, false, PULL_NONE);
+}
+
+// Configure as input
+IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, pull_t pull) : _InterruptCallback(0), _InterruptCallbackParams(0), _InterruptSemaphore(0), _GPIO(GPIOx), _pin(GPIO_Pin), _isInput(false), _pull()
+{
+	ConfigurePin(GPIOx, GPIO_Pin, true, pull);
+}
+
+IO::~IO()
+{
+	if (!_GPIO) return;
+	HAL_GPIO_DeInit(_GPIO, _pin);
+
+	// Calculate pin index by extracting bit index from GPIO_PIN
+	uint16_t pinIndex;
+	uint16_t tmp = _pin;
+	for (pinIndex = -1; tmp != 0; pinIndex++)
+		tmp = tmp >> 1;
+
+	if (interruptObjects[pinIndex]) { // interrupt was configured - so disable it
+		interruptObjects[pinIndex] = 0;
+
+		// Enable interrupt
+		if (_pin == GPIO_PIN_0)
+			HAL_NVIC_DisableIRQ(EXTI0_IRQn);
+		else if (_pin == GPIO_PIN_1)
+			HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+		else if (_pin == GPIO_PIN_2)
+			HAL_NVIC_DisableIRQ(EXTI2_IRQn);
+		else if (_pin == GPIO_PIN_3)
+			HAL_NVIC_DisableIRQ(EXTI3_IRQn);
+		else if (_pin == GPIO_PIN_4)
+			HAL_NVIC_DisableIRQ(EXTI4_IRQn);
+		else if (_pin >= GPIO_PIN_5 && _pin <= GPIO_PIN_9)
+			HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+		else if (_pin >= GPIO_PIN_10 && _pin <= GPIO_PIN_15)
+			HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+	}
+}
+
+void IO::ConfigurePin(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pull_t pull)
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -79,46 +123,6 @@ IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pull_t pull) : _In
 	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
 }
 
-IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput) : IO(GPIOx, GPIO_Pin, isInput, PULL_NONE)
-{
-}
-
-IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin) : IO(GPIOx, GPIO_Pin, false, PULL_NONE)
-{
-}
-
-IO::~IO()
-{
-	if (!_GPIO) return;
-	HAL_GPIO_DeInit(_GPIO, _pin);
-
-	// Calculate pin index by extracting bit index from GPIO_PIN
-	uint16_t pinIndex;
-	uint16_t tmp = _pin;
-	for (pinIndex = -1; tmp != 0; pinIndex++)
-		tmp = tmp >> 1;
-
-	if (interruptObjects[pinIndex]) { // interrupt was configured - so disable it
-		interruptObjects[pinIndex] = 0;
-
-		// Enable interrupt
-		if (_pin == GPIO_PIN_0)
-			HAL_NVIC_DisableIRQ(EXTI0_IRQn);
-		else if (_pin == GPIO_PIN_1)
-			HAL_NVIC_DisableIRQ(EXTI1_IRQn);
-		else if (_pin == GPIO_PIN_2)
-			HAL_NVIC_DisableIRQ(EXTI2_IRQn);
-		else if (_pin == GPIO_PIN_3)
-			HAL_NVIC_DisableIRQ(EXTI3_IRQn);
-		else if (_pin == GPIO_PIN_4)
-			HAL_NVIC_DisableIRQ(EXTI4_IRQn);
-		else if (_pin >= GPIO_PIN_5 && _pin <= GPIO_PIN_9)
-			HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
-		else if (_pin >= GPIO_PIN_10 && _pin <= GPIO_PIN_15)
-			HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
-	}
-}
-
 void IO::RegisterInterrupt(interrupt_trigger_t trigger, SemaphoreHandle_t semaphore)
 {
 	if (!_GPIO || !_isInput) return;
@@ -139,6 +143,8 @@ void IO::RegisterInterrupt(interrupt_trigger_t trigger, void (*InterruptCallback
 void IO::ConfigureInterrupt(interrupt_trigger_t trigger)
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+	if (!_GPIO || _isInput) return;
 
 	// Calculate pin index by extracting bit index from GPIO_PIN
 	uint16_t pinIndex;

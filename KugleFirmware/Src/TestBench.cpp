@@ -38,7 +38,6 @@
 void TestBench(void const * argument);
 osThreadId testBenchTaskHandle;
 UART * uart;
-SPI * spi;
 I2C * i2c;
 PWM * pwm;
 Encoder * encoder;
@@ -47,7 +46,6 @@ Timer * timer2;
 IO * pin;
 QuadratureKnob * knob;
 ADC * adc;
-MPU9250<SPI,MPU9250_SPI> * imu;
 
 void TestBench_Init()
 {
@@ -58,7 +56,7 @@ void TestBench_Init()
 
 void UART_Callback(uint8_t * buffer, uint32_t bufLen)
 {
-	uart->TransmitBlocking(buffer, bufLen);
+	uart->Write(buffer, bufLen);
 }
 
 int32_t encoderValue;
@@ -72,8 +70,9 @@ float ax, ay, az, gx, gy, gz, mx, my, mz;
 
 void TestBench(void const * argument)
 {
-	spi = new SPI(SPI::PORT_SPI3, MPU9250_SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
-	imu = new MPU9250<SPI,MPU9250_SPI>(spi);
+	SPI * spi = new SPI(SPI::PORT_SPI3, MPU9250_SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
+	MPU9250<SPI,MPU9250_SPI> * imu = new MPU9250<SPI,MPU9250_SPI>(spi);
+
 	imu->Configure(ACCEL_RANGE_2G, GYRO_RANGE_250DPS);
 	imu->setFilt(DLPF_BANDWIDTH_250HZ, DLPF_BANDWIDTH_184HZ, 8);
 	imu->ConfigureInterrupt(GPIOE, GPIO_PIN_3);

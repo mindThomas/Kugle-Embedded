@@ -27,52 +27,54 @@
 
 class IO
 {
+	public:
+		typedef enum interrupt_trigger_t {
+			TRIGGER_RISING = 0,
+			TRIGGER_FALLING,
+			TRIGGER_BOTH
+		} interrupt_trigger_t;
 
-public:
-	typedef enum interrupt_trigger_t {
-		TRIGGER_RISING = 0,
-		TRIGGER_FALLING,
-		TRIGGER_BOTH
-	} interrupt_trigger_t;
+		typedef enum pull_t {
+			PULL_NONE = 0,
+			PULL_UP,
+			PULL_DOWN,
+		} pull_t;
 
-	typedef enum pull_t {
-		PULL_NONE = 0,
-		PULL_UP,
-		PULL_DOWN,
-	} pull_t;
+	public:
+		IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin); // configure as output
+		IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, pull_t pull); // configure as input
+		~IO();
 
-public:
-	IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pull_t pull);
-	IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput);
-	IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin); // default configure as output
-	void RegisterInterrupt(interrupt_trigger_t trigger, SemaphoreHandle_t semaphore);
-	void RegisterInterrupt(interrupt_trigger_t trigger, void (*InterruptCallback)(void * params), void * callbackParams);
-	void Set(bool state);
-	bool Read();
-	void High();
-	void Low();
-	void Toggle();
-	~IO();
+		void RegisterInterrupt(interrupt_trigger_t trigger, SemaphoreHandle_t semaphore);
+		void RegisterInterrupt(interrupt_trigger_t trigger, void (*InterruptCallback)(void * params), void * callbackParams);
 
-public:
-	void (*_InterruptCallback)(void * params);
-	void * _InterruptCallbackParams;
-	SemaphoreHandle_t _InterruptSemaphore;
+		void Set(bool state);
+		bool Read();
+		void High();
+		void Low();
+		void Toggle();
 
-	static IO * interruptObjects[16]; // we only have 16 interrupt lines
+	private:
+		void ConfigurePin(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pull_t pull);
 
-private:
-	GPIO_TypeDef * _GPIO;
-	uint32_t _pin;
-	bool _isInput;
-	pull_t _pull;
+	public:
+		void (*_InterruptCallback)(void * params);
+		void * _InterruptCallbackParams;
+		SemaphoreHandle_t _InterruptSemaphore;
 
-private:
-	void ConfigureInterrupt(interrupt_trigger_t level);
+		static IO * interruptObjects[16]; // we only have 16 interrupt lines
 
-public:
-	static void InterruptHandler(IO * io);
+	private:
+		GPIO_TypeDef * _GPIO;
+		uint32_t _pin;
+		bool _isInput;
+		pull_t _pull;
 
+	private:
+		void ConfigureInterrupt(interrupt_trigger_t level);
+
+	public:
+		static void InterruptHandler(IO * io);
 };
 	
 	

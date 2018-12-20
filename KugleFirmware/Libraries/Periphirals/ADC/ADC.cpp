@@ -26,9 +26,13 @@ ADC::hardware_resource_t * ADC::resADC1 = 0;
 ADC::hardware_resource_t * ADC::resADC2 = 0;
 ADC::hardware_resource_t * ADC::resADC3 = 0;
 
+ADC::ADC(adc_t adc, uint32_t channel, uint32_t resolution) : _channel(channel)
+{
+	InitPeripheral(adc, channel, resolution);
+}
 ADC::ADC(adc_t adc, uint32_t channel) : _channel(channel)
 {
-	InitPeripheral(adc, channel);
+	InitPeripheral(adc, channel, ADC_DEFAULT_RESOLUTION);
 }
 
 ADC::~ADC()
@@ -37,13 +41,13 @@ ADC::~ADC()
 	uint16_t channelBit = 1 << _channel;
 	_hRes->configuredChannels &= !channelBit;
 
-	// Stop channel
-	/*if (HAL_TIM_PWM_Start(&_hRes->handle, _channelHAL) != HAL_OK)
+	// Stop ADC
+	if (HAL_ADC_Stop(&_hRes->handle) != HAL_OK)
 	{
 		_hRes = 0;
-		ERROR("Could not stop PWM channel");
+		ERROR("Could not stop ADC");
 		return;
-	}*/
+	}
 
 	// Missing deinit of GPIO, eg. HAL_GPIO_DeInit(GPIOF, GPIO_PIN_3)
 
@@ -75,7 +79,7 @@ ADC::~ADC()
 	}
 }
 
-void ADC::InitPeripheral(adc_t adc, uint32_t channel)
+void ADC::InitPeripheral(adc_t adc, uint32_t channel, uint32_t resolution)
 {
 	bool configureResource = false;
 
@@ -124,6 +128,7 @@ void ADC::InitPeripheral(adc_t adc, uint32_t channel)
 	if (configureResource) { // first time configuring peripheral
 		_hRes->adc = adc;
 		_hRes->configuredChannels = 0;
+		_hRes->resolution = resolution;
 
 		ConfigureADCPeripheral();
 	}
@@ -135,9 +140,30 @@ void ADC::InitPeripheral(adc_t adc, uint32_t channel)
 		ERROR("Channel already configured on selected ADC");
 		return;
 	}
+	if (_hRes->resolution != resolution) {
+		_hRes = 0;
+		ERROR("ADC already in used with different resolution");
+		return;
+	}
 
 	ConfigureADCGPIO();
 	ConfigureADCChannel();
+
+	if (resolution == ADC_RESOLUTION_8B)
+		_range = ((uint32_t)1 << 8) - 1;
+	else if (resolution == ADC_RESOLUTION_10B)
+		_range = ((uint32_t)1 << 10) - 1;
+	else if (resolution == ADC_RESOLUTION_12B)
+		_range = ((uint32_t)1 << 12) - 1;
+	else if (resolution == ADC_RESOLUTION_14B)
+		_range = ((uint32_t)1 << 14) - 1;
+	else if (resolution == ADC_RESOLUTION_16B)
+		_range = ((uint32_t)1 << 16) - 1;
+	else {
+		_hRes = 0;
+		ERROR("Incorrect ADC resolution");
+		return;
+	}
 }
 
 void ADC::ConfigureADCPeripheral()
@@ -157,8 +183,23 @@ void ADC::ConfigureADCPeripheral()
 		_hRes->handle.Instance = ADC3;
 	}
 
+	if (_hRes->resolution == ADC_RESOLUTION_8B)
+		_hRes->handle.Init.Resolution = ADC_RESOLUTION_8B; /* 8-bit resolution for converted data */
+	else if (_hRes->resolution == ADC_RESOLUTION_10B)
+		_hRes->handle.Init.Resolution = ADC_RESOLUTION_10B; /* 10-bit resolution for converted data */
+	else if (_hRes->resolution == ADC_RESOLUTION_12B)
+		_hRes->handle.Init.Resolution = ADC_RESOLUTION_12B; /* 12-bit resolution for converted data */
+	else if (_hRes->resolution == ADC_RESOLUTION_14B)
+		_hRes->handle.Init.Resolution = ADC_RESOLUTION_14B; /* 14-bit resolution for converted data */
+	else if (_hRes->resolution == ADC_RESOLUTION_16B)
+		_hRes->handle.Init.Resolution = ADC_RESOLUTION_16B; /* 16-bit resolution for converted data */
+	else {
+		_hRes = 0;
+		ERROR("Incorrect ADC resolution");
+		return;
+	}
+
 	_hRes->handle.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4; // ADC clock input is configured to be 80 MHz, divided by 4 gives an ADC clock of 20 MHz
-	_hRes->handle.Init.Resolution = ADC_RESOLUTION_16B; /* 16-bit resolution for converted data */
 	_hRes->handle.Init.ScanConvMode = ADC_SCAN_DISABLE; /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
 	_hRes->handle.Init.EOCSelection = ADC_EOC_SINGLE_CONV; /* EOC flag picked-up to indicate conversion end */
 	_hRes->handle.Init.LowPowerAutoWait = DISABLE;
@@ -336,7 +377,15 @@ void ADC::ConfigureADCChannel()
 	}
 }
 
-int32_t ADC::Read()
+// Return ADC reading between 0-1, where 1 corresponds to the ADC's Analog reference (Aref)
+float ADC::Read()
+{
+	int32_t reading = ReadRaw();
+	float converted = (float)reading / _range;
+	return converted;
+}
+
+int32_t ADC::ReadRaw()
 {
 	if (HAL_ADC_PollForConversion(&_hRes->handle, HAL_MAX_DELAY) != HAL_OK)
 	{
