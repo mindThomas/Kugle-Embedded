@@ -32,20 +32,24 @@ ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder) :
 	_encoder(encoder),
 	_currentFeedback(0),
 	_velocityFeedback(0),
+	_directionFeedbackPin(0),
 	_deleteObjectsAtDestruction(false)
 {
-
+	SetTorque(0);
+	Disable();
 }
 
-ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, ADC * CurrentFeedback, ADC * VelocityFeedback) :
+ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, ADC * CurrentFeedback, ADC * VelocityFeedback, IO * DirectionFeedbackPin) :
 	_torqueSetpoint(TorqueSetpoint),
 	_enablePin(EnablePin),
 	_encoder(encoder),
 	_currentFeedback(CurrentFeedback),
 	_velocityFeedback(VelocityFeedback),
+	_directionFeedbackPin(DirectionFeedbackPin),
 	_deleteObjectsAtDestruction(false)
 {
-
+	SetTorque(0);
+	Disable();
 }
 
 ESCON::ESCON(uint8_t MotorIndex) :
@@ -54,38 +58,45 @@ ESCON::ESCON(uint8_t MotorIndex) :
 	_encoder(0),
 	_currentFeedback(0),
 	_velocityFeedback(0),
+	_directionFeedbackPin(0),
 	_deleteObjectsAtDestruction(true)
 {
 	// Instantiate periphiral objects according to selected motor index
 	if (MotorIndex == 0)
 	{
 		_torqueSetpoint = new PWM(PWM::TIMER1, PWM::CH1, ESCON_PWM_FREQUENCY, ESCON_PWM_RANGE);
-		_enablePin = new IO(GPIOD, GPIO_PIN_2); // configure as output
+		_enablePin = new IO(GPIOC, GPIO_PIN_6); // configure as output
 		_currentFeedback = new ADC(ADC::ADC_3, ADC_CHANNEL_5, ADC_RESOLUTION_12B);
 		_velocityFeedback = new ADC(ADC::ADC_3, ADC_CHANNEL_9, ADC_RESOLUTION_12B);
 		_encoder = new Encoder(Encoder::TIMER2);
+		_directionFeedbackPin = new IO(GPIOD, GPIO_PIN_2, IO::PULL_UP); // configure as input
 	}
 	else if (MotorIndex == 1)
 	{
 		_torqueSetpoint = new PWM(PWM::TIMER1, PWM::CH2, ESCON_PWM_FREQUENCY, ESCON_PWM_RANGE);
-		_enablePin = new IO(GPIOD, GPIO_PIN_8); // configure as output
+		_enablePin = new IO(GPIOC, GPIO_PIN_7); // configure as output
 		_currentFeedback = new ADC(ADC::ADC_3, ADC_CHANNEL_4, ADC_RESOLUTION_12B);
 		_velocityFeedback = new ADC(ADC::ADC_3, ADC_CHANNEL_6, ADC_RESOLUTION_12B);
 		_encoder = new Encoder(Encoder::TIMER3);
+		_directionFeedbackPin = new IO(GPIOD, GPIO_PIN_8, IO::PULL_UP); // configure as input
 	}
 	else if (MotorIndex == 2)
 	{
 		_torqueSetpoint = new PWM(PWM::TIMER1, PWM::CH3, ESCON_PWM_FREQUENCY, ESCON_PWM_RANGE);
-		_enablePin = new IO(GPIOD, GPIO_PIN_9); // configure as output
+		_enablePin = new IO(GPIOC, GPIO_PIN_8); // configure as output
 		_currentFeedback = new ADC(ADC::ADC_2, ADC_CHANNEL_10, ADC_RESOLUTION_12B);
 		_velocityFeedback = new ADC(ADC::ADC_2, ADC_CHANNEL_11, ADC_RESOLUTION_12B);
 		_encoder = new Encoder(Encoder::TIMER4);
+		_directionFeedbackPin = new IO(GPIOD, GPIO_PIN_9, IO::PULL_UP); // configure as input
 	}
 	else
 	{
 		ERROR("Incorrect motor index");
 		return;
 	}
+
+	SetTorque(0);
+	Disable();
 }
 
 ESCON::~ESCON()
@@ -178,6 +189,12 @@ float ESCON::GetAppliedTorque()
 	return EC60_TORQUE_CONSTANT * Current;
 }
 
+int32_t ESCON::GetEncoderRaw()
+{
+	if (!_encoder) return 0;
+	return _encoder->Get();
+}
+
 // Return motor angle in radians (rad)
 float ESCON::GetAngle()
 {
@@ -185,10 +202,13 @@ float ESCON::GetAngle()
 	int32_t encoderReading = _encoder->Get();
 
 	// The encoder reading is in number of quadrature ticks (counting each edge on the two signal wires, hence 4 ticks pr. repetition)
-	float absoluteRevolutions = (float)encoderReading / ENCODER_TICKS_PR_REV;
+	float absoluteMotorRevolutions = (float)encoderReading / ENCODER_TICKS_PR_REV;
+
+	// Since the motor is geared the absolute output shaft angle is less than the absolute motor shaft angle
+	float absoluteOutputRevolutions = absoluteMotorRevolutions / GEARING_RATIO;
 
 	// Convert to radians
-	return 2 * M_PI * absoluteRevolutions;
+	return 2 * M_PI * absoluteOutputRevolutions;
 }
 
 // Return motor velocity in radians pr. second (rad/s)

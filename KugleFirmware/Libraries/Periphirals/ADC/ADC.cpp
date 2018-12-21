@@ -222,13 +222,13 @@ void ADC::ConfigureADCPeripheral()
 
 	/**Configure the ADC multi-mode
 	*/
-	multimode.Mode = ADC_MODE_INDEPENDENT;
+	/*multimode.Mode = ADC_MODE_INDEPENDENT;
 	if (HAL_ADCEx_MultiModeConfigChannel(&_hRes->handle, &multimode) != HAL_OK)
 	{
 		_hRes = 0;
 		ERROR("Could not configure ADC");
 		return;
-	}
+	}*/
 
 	/* Run the ADC calibration in single-ended mode */
 	if (HAL_ADCEx_Calibration_Start(&_hRes->handle, ADC_CALIB_OFFSET, ADC_SINGLE_ENDED) != HAL_OK)

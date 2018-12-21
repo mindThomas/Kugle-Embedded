@@ -31,18 +31,18 @@ class ESCON
 	private:
 		const double M_PI = 3.14159265358979323846264338327950288;
 
-		const int ESCON_PWM_FREQUENCY	= 4000;		// 4 kHz
-		const int ESCON_PWM_RANGE = 1000;			// 0-1000, corresponding to 0.1% resolution
+		const int ESCON_PWM_FREQUENCY	= 1000;		// 4 kHz
+		const int ESCON_PWM_RANGE = 2000;			// 0-2000, corresponding to 0.1% resolution
 
-		const float ESCON_MAX_RAD_PR_SEC = 31.4159265359;  // rad/s
+		const float ESCON_MAX_RAD_PR_SEC = 6000 * 2 * M_PI / 60;  // rad/s   (6000 rpm)
 		const float ESCON_MAX_AMP_SETPOINT = 15;	 // A
 		const float EC60_TORQUE_CONSTANT = 53.4E-3;  // Nm/A
 		const uint16_t ENCODER_TICKS_PR_REV = 4*4096;	 // ticks/rev
-		const float GEARING_RATIO = 3.5;
+		const float GEARING_RATIO = 4.3;
 
 	public:
 		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder); // minimal operation general constructor
-		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, ADC * CurrentFeedback, ADC * VelocityFeedback); // extended operation general constructor
+		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, ADC * CurrentFeedback, ADC * VelocityFeedback, IO * DirectionFeedbackPin); // extended operation general constructor
 		ESCON(uint8_t MotorIndex); // platform specific constructor
 		~ESCON();
 
@@ -55,12 +55,15 @@ class ESCON
 		float GetAngle();
 		float GetVelocity();
 
+		int32_t GetEncoderRaw();
+
 	private:
 		PWM * _torqueSetpoint; 		// DIG_IN_1 on ESCON
 		IO * _enablePin;			// DIG_IN_4 on ESCON
 		Encoder * _encoder;
 		ADC * _currentFeedback;		// AN_OUT_1 on ESCON
 		ADC * _velocityFeedback;	// AN_OUT_2 on ESCON
+		IO * _directionFeedbackPin;	// DIG_IN_3 on ESCON
 
 		// Future use objects
 		// PWM * _DIG_IN_2;

@@ -47,6 +47,7 @@ UART::UART(port_t port, uint32_t baud) : UART(port, baud, 0)
 UART::~UART()
 {
 	DeInitPeripheral();
+
 	if (_buffer)
 		vPortFree(_buffer);
 }
