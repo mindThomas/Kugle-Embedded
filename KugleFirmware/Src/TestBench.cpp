@@ -38,6 +38,7 @@
 #include "PowerManagement.h"
 #include "Parameters.h"
 #include "HealthMonitor.h"
+#include "VelocityEKF.h"
 
 void TestBench(void const * argument);
 osThreadId testBenchTaskHandle;
@@ -226,6 +227,7 @@ void TestBench(void const * argument)
 {
 	Parameters& params = Parameters::Get();
 	HealthMonitor * hm = new HealthMonitor();
+	VelocityEKF * vEKF = new VelocityEKF(params);
 
 	while (1) {
 		params.test.var2 += 2;

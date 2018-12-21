@@ -22,6 +22,7 @@
 
 #include "stm32h7xx_hal.h"
 #include "ThreadSafeParameter.hpp"
+#include "ESCON.h"
 
 class Parameters
 {
@@ -168,6 +169,9 @@ class Parameters
 			const float Bvk = 0*0.001f;
 			const float Bvm = 0*0.001f;
 			const float Bvb = 0*0.001f;
+
+			const uint16_t EncoderTicksPrRev = 4*4096;	 // ticks/rev
+			const float TicksPrRev = i_gear * EncoderTicksPrRev;
 			/* Model parameters end */	
 		} model;
 		

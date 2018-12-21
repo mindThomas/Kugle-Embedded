@@ -20,15 +20,16 @@
 #ifndef MODULES_ESTIMATORS_QEKF_H
 #define MODULES_ESTIMATORS_QEKF_H
 
+#include "Parameters.h"
+
 class QEKF
 {
-
-public:
-	QEKF();	
-	~QEKF();
-
-private:
+	public:
+		QEKF(Parameters& params);
+		~QEKF();
 	
+	private:
+		Parameters& _params;
 };
 	
 	

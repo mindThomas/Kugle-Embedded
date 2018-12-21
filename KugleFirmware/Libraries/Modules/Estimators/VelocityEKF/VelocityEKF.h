@@ -20,15 +20,22 @@
 #ifndef MODULES_ESTIMATORS_VELOCITYEKF_H
 #define MODULES_ESTIMATORS_VELOCITYEKF_H
 
+#include "Parameters.h"
+
 class VelocityEKF
 {
-
-public:
-	VelocityEKF();	
-	~VelocityEKF();
-
-private:
+	public:
+		VelocityEKF(Parameters& params);
+		~VelocityEKF();
 	
+		void Reset();
+		void Step(const float dt, const float EncoderDiffMeas[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3]);
+
+		float X[2];
+		float P[2*2];
+
+	private:
+		Parameters& _params;
 };
 	
 	

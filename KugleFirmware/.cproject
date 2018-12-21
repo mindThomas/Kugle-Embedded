@@ -70,16 +70,18 @@
 								<option id="gnu.cpp.compiler.option.debugging.level.165604567" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1025994982" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Libraries/Devices/Battery"/>
-									<listOptionValue builtIn="false" value="../Libraries/Application/HealthMonitor"/>
-									<listOptionValue builtIn="false" value="../Libraries/Application/AttitudeController"/>
-									<listOptionValue builtIn="false" value="../Libraries/Application/Communication"/>
-									<listOptionValue builtIn="false" value="../Libraries/Application/PathFollowing"/>
+									<listOptionValue builtIn="false" value="../Libraries/Applications/HealthMonitor"/>
+									<listOptionValue builtIn="false" value="../Libraries/Applications/AttitudeController"/>
+									<listOptionValue builtIn="false" value="../Libraries/Applications/Communication"/>
+									<listOptionValue builtIn="false" value="../Libraries/Applications/PathFollowing"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/MATLABCoderInit"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/FirstOrderLPF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/IIR"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/ModelMatrices"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingModeMATLABCoder"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingModeMATLABCoder/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/QuadratureKnob"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/ESCON"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/IMU"/>
@@ -90,10 +92,13 @@
 									<listOptionValue builtIn="false" value="../Libraries/Devices/LSPC/LSPC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Debug"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/QEKF"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/QEKF/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/PowerManagement"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/MadgwickAHRS"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityEKF"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityEKF/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/LQR"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingMode"/>

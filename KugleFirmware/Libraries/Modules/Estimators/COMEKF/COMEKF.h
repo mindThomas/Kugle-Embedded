@@ -20,15 +20,16 @@
 #ifndef MODULES_ESTIMATORS_COMEKF_H
 #define MODULES_ESTIMATORS_COMEKF_H
 
+#include "Parameters.h"
+
 class COMEKF
 {
-
-public:
-	COMEKF();	
-	~COMEKF();
-
-private:
+	public:
+		COMEKF(Parameters& params);
+		~COMEKF();
 	
+	private:
+		Parameters& _params;
 };
 	
 	

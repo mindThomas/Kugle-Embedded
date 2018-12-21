@@ -18,8 +18,10 @@
  */
  
 #include "QEKF.h"
+#include "QEKF_coder.h"
+#include "Parameters.h"
  
-QEKF::QEKF()
+QEKF::QEKF(Parameters& params) : _params(params)
 {
 	
 }
