@@ -56,9 +56,8 @@ class USBCDC
 		QueueHandle_t _RXqueue;
 		SemaphoreHandle_t _resourceSemaphore;
 
-	public:
+	private:
 		static void ProcessingThread(void * pvParameters);
-		static void SysInit();
 
 	public:
 		static USBCDC * usbHandle;

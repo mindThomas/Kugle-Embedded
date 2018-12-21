@@ -100,6 +100,8 @@ USBCDC::USBCDC(uint32_t processingTaskPriority) : _processingTaskHandle(0), _TXf
 
 USBCDC::~USBCDC()
 {
+	if (_processingTaskHandle)
+		vTaskDelete(_processingTaskHandle); // stop task
 }
 
 bool USBCDC::GetPackage(USB_CDC_Package_t * packageBuffer)

@@ -75,6 +75,8 @@ class UART
 
 	public:
 		static void UART_Interrupt(port_t port);
+
+	private:
 		static void UART_IncomingDataInterrupt(UART * uart);
 		static void CallbackThread(void * pvParameters);
 
