@@ -17,30 +17,26 @@
  * ------------------------------------------
  */
  
-#ifndef MODULES_CONTROLLERS_SLIDINGMODE_H
-#define MODULES_CONTROLLERS_SLIDINGMODE_H
+#ifndef MISC_FIRSTORDERLPF_H
+#define MISC_FIRSTORDERLPF_H
 
-#include <stddef.h>
-#include <stdlib.h>
-
-#include "Parameters.h"
-
-class SlidingMode
+class FirstOrderLPF
 {
 	public:
-		SlidingMode(Parameters& params);
-		~SlidingMode();
-
-			void Step(float X[12], float q_ref[4], float tau[3], float S[3]);
-		void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4]);
-		void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4]);
+		FirstOrderLPF(float Ts, float tau);
+		~FirstOrderLPF();
+		
+		float Filter(float input);
 
 	private:
-		void Saturation(float * in, int size, float epsilon, float * out);
-		void Sign(float * in, int size, float * out);
+		const float _Ts;             // Sampling Time
+		const float _tau;            // Filter time constant
 
-	private:
-		Parameters& _params;
+		const float _coeff_b = 0.0;  // IIR filter coefficient (nominator polynomial)
+		const float _coeff_a = 0.0;  // IIR filter coefficient (denominator polynomial)
+		
+		float _lpfOld = 0.0;   // Holds previous sample output value
+		float _inputOld = 0.0; // Holds previous sample output value
 };
 	
 	

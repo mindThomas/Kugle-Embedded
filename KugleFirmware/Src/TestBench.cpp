@@ -34,6 +34,9 @@
 #include "QuadratureKnob.h"
 #include "ADC.h"
 #include "MPU9250.h"
+#include "ESCON.h"
+#include "PowerManagement.h"
+#include "Parameters.h"
 
 void TestBench(void const * argument);
 osThreadId testBenchTaskHandle;
@@ -68,9 +71,57 @@ bool level1, level2, level3;
 
 float ax, ay, az, gx, gy, gz, mx, my, mz;
 
+float angle = 0;
+
+#if 0
 void TestBench(void const * argument)
 {
-	SPI * spi = new SPI(SPI::PORT_SPI3, MPU9250_SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
+	PowerManagement * pm = new PowerManagement(osPriorityNormal);
+	ESCON * motor1 = new ESCON(0);
+	ESCON * motor2 = new ESCON(1);
+	ESCON * motor3 = new ESCON(2);
+
+	pm->Enable(true, true);
+
+	motor1->Enable();
+	motor2->Enable();
+	motor3->Enable();
+
+	motor1->SetTorque(0.05);
+	motor2->SetTorque(0.05);
+	motor3->SetTorque(0.05);
+
+	osDelay(1000);
+
+	while (1)
+	{
+		/*angle = motor1->GetAngle();
+		encoderValue = motor1->GetEncoderRaw();*/
+
+		motor1->SetTorque(-0.05);
+		motor2->SetTorque(-0.05);
+		motor3->SetTorque(-0.05);
+		osDelay(1000);
+		motor1->SetTorque(0.0);
+		motor2->SetTorque(0.0);
+		motor3->SetTorque(0.0);
+		osDelay(1000);
+		motor1->SetTorque(0.05);
+		motor2->SetTorque(0.05);
+		motor3->SetTorque(0.05);
+		osDelay(1000);
+		motor1->SetTorque(0.0);
+		motor2->SetTorque(0.0);
+		motor3->SetTorque(0.0);
+		osDelay(1000);
+	}
+}
+#endif
+
+#if 0
+void TestBench(void const * argument)
+{
+	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
 	MPU9250<SPI,MPU9250_SPI> * imu = new MPU9250<SPI,MPU9250_SPI>(spi);
 
 	imu->Configure(ACCEL_RANGE_2G, GYRO_RANGE_250DPS);
@@ -83,8 +134,10 @@ void TestBench(void const * argument)
 		imu->WaitForNewData();
 		imu->WaitForNewData();
 	    imu->getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+	    osDelay(100);
 	}
 }
+#endif
 
 #if 0
 void TestBench(void const * argument)
@@ -162,6 +215,18 @@ void TestBench(void const * argument)
 			osDelay(1);
 		}*/
 
+		osDelay(100);
+	}
+}
+#endif
+
+#if 1
+void TestBench(void const * argument)
+{
+	Parameters& params = Parameters::Get();
+
+	while (1) {
+		params.test.var2 += 2;
 		osDelay(100);
 	}
 }

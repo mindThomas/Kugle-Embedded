@@ -17,18 +17,26 @@
  * ------------------------------------------
  */
  
-#ifndef MODULES_HEALTHMONITOR_H
-#define MODULES_HEALTHMONITOR_H
+#ifndef MODULES_ESTIMATORS_KINEMATICS_H
+#define MODULES_ESTIMATORS_KINEMATICS_H
 
-class HealthMonitor
+#include <stddef.h>
+#include <stdlib.h>
+
+#include "Parameters.h"
+
+class Kinematics
 {
-
 	public:
-		HealthMonitor();	
-		~HealthMonitor();
+		Kinematics(Parameters& params);	
+		~Kinematics();
 
+		void ForwardKinematics(const float dpsi[3], const float q[4], const float dq[4], float xy_velocity[2]);
+		void ConvertBallTo2Lvelocity(float vel_ball[2], float q[4], float dq[4], float vel_2L[2]);
+		void Convert2LtoBallVelocity(float vel_2L[2], float q[4], float dq[4], float vel_ball[2]);
+		
 	private:
-	
+		Parameters& _params;
 };
 	
 	

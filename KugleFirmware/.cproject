@@ -70,6 +70,12 @@
 								<option id="gnu.cpp.compiler.option.debugging.level.165604567" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1025994982" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Libraries/Devices/Battery"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics"/>
+									<listOptionValue builtIn="false" value="../Libraries/Misc/MATLABCoderInit"/>
+									<listOptionValue builtIn="false" value="../Libraries/Misc/FirstOrderLPF"/>
+									<listOptionValue builtIn="false" value="../Libraries/Misc/IIR"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/ModelMatrices"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingModeMATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/QuadratureKnob"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/ESCON"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/IMU"/>
@@ -80,6 +86,7 @@
 									<listOptionValue builtIn="false" value="../Libraries/Devices/LSPC/LSPC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Debug"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/QEKF"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/PowerManagement"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/MadgwickAHRS"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityEKF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF"/>
@@ -107,7 +114,9 @@
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/UART"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Timer"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/USBCDC"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SMBus"/>
+									<listOptionValue builtIn="false" value="../Libraries/Misc/Quaternion"/>
+									<listOptionValue builtIn="false" value="../Libraries/Misc/Matrix"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Parameters"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.2021347189" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__weak=__attribute__((weak))"/>

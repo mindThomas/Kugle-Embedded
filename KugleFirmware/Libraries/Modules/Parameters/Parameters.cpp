@@ -17,31 +17,15 @@
  * ------------------------------------------
  */
  
-#ifndef MODULES_CONTROLLERS_SLIDINGMODE_H
-#define MODULES_CONTROLLERS_SLIDINGMODE_H
-
-#include <stddef.h>
-#include <stdlib.h>
-
 #include "Parameters.h"
 
-class SlidingMode
+// Create global parameter variable in project scope
+static Parameters * paramsGlobal = 0;
+
+Parameters& Parameters::Get()
 {
-	public:
-		SlidingMode(Parameters& params);
-		~SlidingMode();
+	if (!paramsGlobal) // first time initializes the global parameters objects
+		paramsGlobal = new Parameters;
 
-			void Step(float X[12], float q_ref[4], float tau[3], float S[3]);
-		void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4]);
-		void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4]);
-
-	private:
-		void Saturation(float * in, int size, float epsilon, float * out);
-		void Sign(float * in, int size, float * out);
-
-	private:
-		Parameters& _params;
-};
-	
-	
-#endif
+	return *paramsGlobal;
+}
