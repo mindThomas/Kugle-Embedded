@@ -18,8 +18,10 @@
  */
  
 #include "COMEKF.h"
+#include "COMEstimator.h"
+#include "Parameters.h"
  
-COMEKF::COMEKF()
+COMEKF::COMEKF(Parameters& params) : _params(params)
 {
 	
 }

@@ -25,7 +25,7 @@
  
 #include "Parameters.h"
 
-#include "ForwardKinematics.h"
+#include "MATLABCoder/ForwardKinematics.h"
 #include "Velocity2L.h"
  
 Kinematics::Kinematics(Parameters& params) : _params(params)
