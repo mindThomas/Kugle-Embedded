@@ -17,14 +17,26 @@
  * ------------------------------------------
  */
  
-#include "HealthMonitor.h"
+#include "FirstOrderLPF.h"
  
-HealthMonitor::HealthMonitor()
+FirstOrderLPF::FirstOrderLPF(float Ts, float tau) : _Ts(Ts), _tau(tau),
+	// Calculate filter coefficients for a  of First order Low-pass filter using the Tustin (Bilinear) transform (however without frequency warping)
+	_coeff_b( 1/(2*tau/Ts + 1) ), // nominator
+	_coeff_a( 1/(2*tau/Ts + 1) - 2/(2 + Ts/tau) ) // denominator
 {
-	
+	_inputOld = 0;
+	_lpfOld = 0;
 }
 
-HealthMonitor::~HealthMonitor()
+FirstOrderLPF::~FirstOrderLPF()
 {
-	
+}
+
+// Filter a given input using the first order LPF
+float FirstOrderLPF::Filter(float input)
+{	
+	float out = _coeff_b * input + _coeff_b * _inputOld - _coeff_a * _lpfOld; // IIR difference equation implementation
+	_lpfOld = out;
+	_inputOld = input;
+	return out;
 }

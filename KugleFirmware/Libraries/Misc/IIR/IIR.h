@@ -17,30 +17,24 @@
  * ------------------------------------------
  */
  
-#ifndef MODULES_CONTROLLERS_SLIDINGMODE_H
-#define MODULES_CONTROLLERS_SLIDINGMODE_H
+#ifndef MISC_IIR_H
+#define MISC_IIR_H
 
-#include <stddef.h>
-#include <stdlib.h>
-
-#include "Parameters.h"
-
-class SlidingMode
+template <int ORDER>
+class IIR
 {
-	public:
-		SlidingMode(Parameters& params);
-		~SlidingMode();
+		public:
+			IIR();
+			IIR(const float coeff_a[], const float coeff_b[]);
+			void Initialize(const float coeff_a[], const float coeff_b[]);
+			float Filter(float input);
 
-			void Step(float X[12], float q_ref[4], float tau[3], float S[3]);
-		void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4]);
-		void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4]);
+		private:
+			float a[ORDER+1];
+			float b[ORDER+1];
 
-	private:
-		void Saturation(float * in, int size, float epsilon, float * out);
-		void Sign(float * in, int size, float * out);
-
-	private:
-		Parameters& _params;
+			float u_old[ORDER];
+			float y_old[ORDER];
 };
 	
 	

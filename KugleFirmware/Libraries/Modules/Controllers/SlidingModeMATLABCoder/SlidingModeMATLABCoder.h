@@ -17,27 +17,21 @@
  * ------------------------------------------
  */
  
-#ifndef MODULES_CONTROLLERS_SLIDINGMODE_H
-#define MODULES_CONTROLLERS_SLIDINGMODE_H
+#ifndef MODULES_CONTROLLERS_SLIDINGMODE_MATLABCODER_H
+#define MODULES_CONTROLLERS_SLIDINGMODE_MATLABCODER_H
 
 #include <stddef.h>
 #include <stdlib.h>
 
 #include "Parameters.h"
 
-class SlidingMode
+class SlidingModeMATLABCoder
 {
 	public:
-		SlidingMode(Parameters& params);
-		~SlidingMode();
+		SlidingModeMATLABCoder(Parameters& params);
+		~SlidingModeMATLABCoder();
 
-			void Step(float X[12], float q_ref[4], float tau[3], float S[3]);
-		void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4]);
-		void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4]);
-
-	private:
-		void Saturation(float * in, int size, float epsilon, float * out);
-		void Sign(float * in, int size, float * out);
+		void Step(float X[12], float q_ref[4], float tau[3], float S[3]);
 
 	private:
 		Parameters& _params;

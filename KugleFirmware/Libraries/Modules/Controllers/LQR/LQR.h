@@ -20,15 +20,21 @@
 #ifndef MODULES_CONTROLLERS_LQR_H
 #define MODULES_CONTROLLERS_LQR_H
 
+#include <stddef.h>
+#include <stdlib.h>
+
+#include "Parameters.h"
+
 class LQR
 {
+	public:
+		LQR(Parameters& params);
+		~LQR();
 
-public:
-	LQR();	
-	~LQR();
+		void Step(float X[12], float q_ref[4], float omeg_ref[3], float tau[3]);
 
-private:
-	
+	private:
+		Parameters& _params;
 };
 	
 	

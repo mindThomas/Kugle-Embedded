@@ -12,6 +12,8 @@
 #include "IO.h"
 #include "QuadratureKnob.h"
 #include "LSPC.hpp"
+#include "Parameters.h"
+#include "MATLABCoderInit.h"
 
 void handl(const std::vector<uint8_t>& payload);
 
@@ -32,10 +34,14 @@ void MainTask(void const * argument)
 	lspc::Socket<USBCDC> * mySocket = new lspc::Socket<USBCDC>(usb, osPriorityNormal); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
 	mySocket->registerCallback(1, handl);*/
 
+	MATLABCoder_initialize();
+	Parameters& params = Parameters::Get();
+
 	TestBench_Init();
 
 	while (1)
 	{
+		params.test.var2++;
 		osDelay(100);
 	}
 }
