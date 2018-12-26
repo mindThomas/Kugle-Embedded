@@ -67,10 +67,10 @@ typedef enum mpu9250_dlpf_bandwidth
 } mpu9250_dlpf_bandwidth;
 
 
-template <class PORT, class BUS>
 class MPU9250{
     public:
-		MPU9250(PORT * port);
+		MPU9250(SPI * spi);
+		MPU9250(I2C * i2c);
 		//MPU9250(PORT sensorPort, uint8_t address = 0x68);
         int Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRange);
         int setFilt(mpu9250_dlpf_bandwidth accel_bandwidth, mpu9250_dlpf_bandwidth gyro_bandwidth, uint8_t SRD = 0);
@@ -103,7 +103,7 @@ class MPU9250{
         uint8_t whoAmIAK8963();
 
     private:
-        BUS _bus;
+        MPU9250_Bus * _bus;
         IO * _interruptPin;
         SemaphoreHandle_t _interruptSemaphore;
         float _accelScale;

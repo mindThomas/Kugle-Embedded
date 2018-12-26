@@ -43,26 +43,23 @@ SlidingMode::~SlidingMode()
 {
 }
 
-void SlidingMode::Step(float X[12], float q_ref[4], float tau[3], float S[3])
+/**
+ * @brief 	Compute control output with Sliding mode controller given a quaternion attitude reference
+ * @param	q[4]      Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]     Input: current quaternion derivative estimate defined in inertial frame
+ * @param	xy[2]	  Input: current ball (center) position defined in inertial frame
+ * @param	dxy[2]    Input: current ball (center) velocity defined in inertial frame
+ * @param	q_ref[4]  Input: desired/reference quaternion defined in inertial frame
+ * @param	tau[3]    Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	S[3]      Output: sliding manifold values for the three surfaces used for the attitude control
+ */
+void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], float tau[3], float S[3])
 {
-    float * x = &X[0];
-    float * y = &X[1];
-    float * q0 = &X[2];
-    float * q1 = &X[3];
-    float * q2 = &X[4];
-    float * q3 = &X[5];
-    float * dx = &X[6];
-    float * dy = &X[7];
-    float * dq0 = &X[8];
-    float * dq1 = &X[9];
-    float * dq2 = &X[10];
-    float * dq3 = &X[11];
-
     // See ARM-CMSIS DSP library for matrix operations: https://www.keil.com/pack/doc/CMSIS/DSP/html/group__groupMatrix.html
-    float q[4] = {*q0, *q1, *q2, *q3}; arm_matrix_instance_f32 q_; arm_mat_init_f32(&q_, 4, 1, (float32_t *)q);
-    float dq[4] = {*dq0, *dq1, *dq2, *dq3}; arm_matrix_instance_f32 dq_; arm_mat_init_f32(&dq_, 4, 1, (float32_t *)dq);
-    float chi[6] = {*x, *y, *q0, *q1, *q2, *q3}; arm_matrix_instance_f32 chi_; arm_mat_init_f32(&chi_, 6, 1, (float32_t *)chi);
-    float dchi[6] = {*dx, *dy, *dq0, *dq1, *dq2, *dq3}; arm_matrix_instance_f32 dchi_; arm_mat_init_f32(&dchi_, 6, 1, (float32_t *)dchi);
+    arm_matrix_instance_f32 q_; arm_mat_init_f32(&q_, 4, 1, (float32_t *)q);
+    arm_matrix_instance_f32 dq_; arm_mat_init_f32(&dq_, 4, 1, (float32_t *)dq);
+    float chi[6] = {xy[0], xy[1], q[0], q[1], q[2], q[3]}; arm_matrix_instance_f32 chi_; arm_mat_init_f32(&chi_, 6, 1, (float32_t *)chi);
+    float dchi[6] = {dxy[0], dxy[1], dq[0], dq[1], dq[2], dq[3]}; arm_matrix_instance_f32 dchi_; arm_mat_init_f32(&dchi_, 6, 1, (float32_t *)dchi);
 
     float M[6*6]; arm_matrix_instance_f32 M_; arm_mat_init_f32(&M_, 6, 6, M);
     float C[6*6]; arm_matrix_instance_f32 C_; arm_mat_init_f32(&C_, 6, 6, C);
@@ -73,11 +70,11 @@ void SlidingMode::Step(float X[12], float q_ref[4], float tau[3], float S[3])
     #if DEBUG
     tic();
     #endif
-    mass(_params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jk, _params.model.Jw, _params.model.Mb, _params.model.Mk, *q0, *q1, *q2, *q3, _params.model.rk, _params.model.rw, M);
-    coriolis(_params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.Mb, 0.0f, *dq0, *dq1, *dq2, *dq3, *dx, *dy, *q0, *q1, *q2, *q3, _params.model.rk, _params.model.rw, C); // beta = 0
-    gravity(_params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z, _params.model.Mb, 0.0f, _params.model.g, *q0, *q1, *q2, *q3, G); // beta = 0
-    friction(_params.model.Bvb, _params.model.Bvk, _params.model.Bvm, 0.0f, *dq0, *dq1, *dq2, *dq3, *dx, *dy, *q0, *q1, *q2, *q3, _params.model.rk, _params.model.rw, D);
-    input_forces(*q0, *q1, *q2, *q3, _params.model.rk, _params.model.rw, Q);
+    mass(_params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jk, _params.model.Jw, _params.model.Mb, _params.model.Mk, q[0], q[1], q[2], q[3], _params.model.rk, _params.model.rw, M);
+    coriolis(_params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.Mb, 0.0f, dq[0], dq[1], dq[2], dq[3], dxy[0], dxy[1], q[0], q[1], q[2], q[3], _params.model.rk, _params.model.rw, C); // beta = 0
+    gravity(_params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z, _params.model.Mb, 0.0f, _params.model.g, q[0], q[1], q[2], q[3], G); // beta = 0
+    friction(_params.model.Bvb, _params.model.Bvk, _params.model.Bvm, 0.0f, dq[0], dq[1], dq[2], dq[3], dxy[0], dxy[1], q[0], q[1], q[2], q[3], _params.model.rk, _params.model.rw, D);
+    input_forces(q[0], q[1], q[2], q[3], _params.model.rk, _params.model.rw, Q);
     #if DEBUG
     toc();
     #endif

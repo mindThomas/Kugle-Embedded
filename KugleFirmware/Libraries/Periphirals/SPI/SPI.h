@@ -56,6 +56,13 @@ class SPI
 		void Read(uint8_t reg, uint8_t * buffer, uint8_t readLength);
 		uint8_t Read(uint8_t reg);
 
+		void BeginTransaction();
+		void EndTransaction();
+		void TransactionWrite8(uint8_t value);
+		void TransactionWrite16(uint16_t value);
+		void TransactionWrite32(uint32_t value);
+		uint8_t TransactionRead();
+
 	public:
 		typedef struct hardware_resource_t {
 			port_t port;
@@ -75,6 +82,7 @@ class SPI
 		hardware_resource_t * _hRes;
 		GPIO_TypeDef * _csPort;
 		uint32_t _csPin;
+		bool _ongoingTransaction;
 };
 	
 	

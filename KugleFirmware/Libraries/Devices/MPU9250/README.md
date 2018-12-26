@@ -1,4 +1,4 @@
-This folder contains a modified version of the MPU9250 from https://github.com/bolderflight/MPU9250
+This folder contains a modified version of the MPU9250 library from https://github.com/bolderflight/MPU9250
 
 # MPU9250
 Library for communicating with the [MPU-9250](https://www.invensense.com/products/motion-tracking/9-axis/mpu-9250/) nine-axis Inertial Measurement Unit (IMU) using Teensy 3.x and Teensy LC devices.
