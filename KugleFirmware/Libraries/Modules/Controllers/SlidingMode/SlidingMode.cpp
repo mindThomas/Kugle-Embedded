@@ -44,7 +44,7 @@ SlidingMode::~SlidingMode()
 }
 
 /**
- * @brief 	Compute control output with Sliding mode controller given a quaternion attitude reference
+ * @brief 	Compute control output with Sliding mode controller given a quaternion attitude reference and angular velocity reference
  * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
  * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
@@ -137,8 +137,9 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
     Matrix_Print(gq, 4, 3);
     #endif
 
-    float q_err[4];
+    /* Quaternion error in Inertial frame */
     // q_err = Gamma(q_ref)' * q
+    float q_err[4];
     Quaternion_GammaT(q_ref, q, q_err);
     if (q_err[0] < 0)
       arm_negate_f32(q_err, q_err, 4); // invert the quaternion to get the shortest path
