@@ -21,6 +21,7 @@
 #include "stm32h7xx_hal.h"
 #include "Debug.h"
 #include <string.h> // for memset
+#include <cmath>
 
 Timer::hardware_resource_t * Timer::resTIMER6 = 0;
 Timer::hardware_resource_t * Timer::resTIMER7 = 0;
@@ -33,7 +34,7 @@ extern "C" __EXPORT void TIM7_IRQHandler(void);
 extern "C" __EXPORT void TIM8_BRK_TIM12_IRQHandler(void);
 extern "C" __EXPORT void TIM8_UP_TIM13_IRQHandler(void);
 
-Timer::Timer(timer_t timer, uint32_t frequency) : _TimerCallbackSoft(0)
+Timer::Timer(timer_t timer, uint32_t frequency) : _TimerCallbackSoft(0), _waitSemaphore(0)
 {
 	if (timer == TIMER6 && !resTIMER6) {
 		resTIMER6 = new Timer::hardware_resource_t;
@@ -196,7 +197,7 @@ void Timer::SetMaxValue(uint16_t maxValue)
 	__HAL_TIM_SET_AUTORELOAD(&_hRes->handle, maxValue);
 }
 
-uint32_t Timer::Get()
+uint16_t Timer::Get()
 {
 	if (!_hRes) return 0;
 	return (uint32_t)__HAL_TIM_GET_COUNTER(&_hRes->handle);
@@ -209,12 +210,47 @@ void Timer::Reset()
 	__HAL_TIM_SET_COUNTER(&_hRes->handle, 0);
 }
 
+void Timer::Wait(uint32_t MicrosToWait)
+{
+	if (!_hRes) return;
+
+	if (_hRes->TimerCallback || _TimerCallbackSoft || _hRes->callbackSemaphore != _waitSemaphore) {
+		ERROR("Timer interrupt already registered elsewhere");
+		return;
+	}
+
+	if (!_waitSemaphore) {
+		_waitSemaphore = xSemaphoreCreateBinary();
+		_hRes->callbackSemaphore = _waitSemaphore;
+	}
+
+	float MicrosTimerCountPeriod = 1000000.0f / _hRes->frequency;
+	uint16_t CountsToWait = ceilf((float)MicrosToWait / MicrosTimerCountPeriod) - 1;
+	Reset();
+	SetMaxValue(CountsToWait);
+
+	__HAL_TIM_ENABLE_IT(&_hRes->handle, TIM_IT_UPDATE);
+
+	xSemaphoreTake( _waitSemaphore, ( TickType_t ) portMAX_DELAY );
+}
+
+float Timer::GetDeltaMicros(uint16_t prevTimerValue)
+{
+	if (!_hRes) return -1;
+
+	uint16_t timerNow = Get();
+	uint16_t timerDelta = ((int32_t)timerNow - (int32_t)prevTimerValue) % (_hRes->maxValue + 1);
+
+	float microsTime = (float)timerDelta / (float)_hRes->frequency;
+	return microsTime;
+}
+
 void Timer::RegisterInterruptSoft(uint32_t frequency, void (*TimerCallbackSoft)()) // note that the frequency should be a multiple of the configured timer count frequency
 {
 	if (!_hRes) return;
 
-	uint16_t prescaleValue = (_hRes->frequency / frequency) - 1;
-	SetMaxValue(prescaleValue);
+	uint16_t interruptValue = (_hRes->frequency / frequency) - 1;
+	SetMaxValue(interruptValue);
 
 	_TimerCallbackSoft = TimerCallbackSoft;
 	xTaskCreate(Timer::CallbackThread, (char *)"Timer callback", 128, (void*) this, 3, &_hRes->callbackTaskHandle);
@@ -226,8 +262,8 @@ void Timer::RegisterInterrupt(uint32_t frequency, void (*TimerCallback)()) // no
 {
 	if (!_hRes) return;
 
-	uint16_t prescaleValue = (_hRes->frequency / frequency) - 1;
-	SetMaxValue(prescaleValue);
+	uint16_t interruptValue = (_hRes->frequency / frequency) - 1;
+	SetMaxValue(interruptValue);
 
 	_hRes->TimerCallback = TimerCallback;
 
@@ -239,8 +275,8 @@ void Timer::RegisterInterrupt(uint32_t frequency, SemaphoreHandle_t semaphore)
 	if (!_hRes) return;
 	if (!semaphore) return;
 
-	uint16_t prescaleValue = (_hRes->frequency / frequency) - 1;
-	SetMaxValue(prescaleValue);
+	uint16_t interruptValue = (_hRes->frequency / frequency) - 1;
+	SetMaxValue(interruptValue);
 
 	_hRes->callbackSemaphore = semaphore;
 

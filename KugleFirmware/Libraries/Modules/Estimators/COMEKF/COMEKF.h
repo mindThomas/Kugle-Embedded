@@ -21,15 +21,32 @@
 #define MODULES_ESTIMATORS_COMEKF_H
 
 #include "Parameters.h"
+#include "Timer.h"
 
 class COMEKF
 {
 	public:
 		COMEKF(Parameters& params);
+		COMEKF(Parameters& params, Timer * microsTimer);
 		~COMEKF();
+
+		void Reset();
+		void Step(const float dxyEst[2], const float Cov_dxy[2*2], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4]);
+		void Step(const float dxyEst[2], const float Cov_dxy[2*2], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float dt);
+
+		void GetCOM(float COM[3]);
+		void GetCOMCovariance(float Cov_COM[2*2]);
 	
 	private:
 		Parameters& _params;
+		Timer * _microsTimer;
+		uint16_t _prevTimerValue;
+
+		int32_t _prevVelocity[2];
+
+		/* State estimate */
+		float X[2];   // state estimates = { COM_X, COM_Y }
+		float P[2*2]; // covariance matrix
 };
 	
 	

@@ -21,15 +21,33 @@
 #define MODULES_ESTIMATORS_QEKF_H
 
 #include "Parameters.h"
+#include "Timer.h"
 
 class QEKF
 {
 	public:
+		QEKF(Parameters& params, Timer * microsTimer);
 		QEKF(Parameters& params);
 		~QEKF();
-	
+
+		void Reset();
+		void Reset(const float accelerometer[3]);
+		void Step(const float accelerometer[3], const float gyroscope[3]);
+		void Step(const float accelerometer[3], const float gyroscope[3], const float dt);
+
+		void GetQuaternion(float q[4]);
+		void GetQuaternionDerivative(float dq[4]);
+		void GetQuaternionCovariance(float Cov_q[4*4]);
+		void GetQuaternionDerivativeCovariance(float Cov_dq[4*4]);
+
 	private:
 		Parameters& _params;
+		Timer * _microsTimer;
+		uint16_t _prevTimerValue;
+
+		/* State estimate */
+		float X[10];    // state estimates = { q[0], q[1], q[2], q[3], dq[0], dq[1], dq[2], dq[3], gyro_bias[0], gyro_bias[1] }
+		float P[10*10]; // covariance matrix
 };
 	
 	
