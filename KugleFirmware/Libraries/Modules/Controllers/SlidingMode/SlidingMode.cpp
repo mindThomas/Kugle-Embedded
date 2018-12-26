@@ -45,15 +45,16 @@ SlidingMode::~SlidingMode()
 
 /**
  * @brief 	Compute control output with Sliding mode controller given a quaternion attitude reference
- * @param	q[4]      Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     Input: current quaternion derivative estimate defined in inertial frame
- * @param	xy[2]	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    Input: current ball (center) velocity defined in inertial frame
- * @param	q_ref[4]  Input: desired/reference quaternion defined in inertial frame
- * @param	tau[3]    Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
- * @param	S[3]      Output: sliding manifold values for the three surfaces used for the attitude control
+ * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
+ * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
+ * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
+ * @param	omega_ref[3]  Input: desired/reference angular velocity defined in inertial frame
+ * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	S[3]      	  Output: sliding manifold values for the three surfaces used for the attitude control
  */
-void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], float tau[3], float S[3])
+void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3], float S[3])
 {
     // See ARM-CMSIS DSP library for matrix operations: https://www.keil.com/pack/doc/CMSIS/DSP/html/group__groupMatrix.html
     arm_matrix_instance_f32 q_; arm_mat_init_f32(&q_, 4, 1, (float32_t *)q);
@@ -154,6 +155,14 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
     Quaternion_Print(q_err);
     #endif
 
+    /* Inertial angular velocity */
+    /* dq_ref = 1/2 * Gamma(q_ref) * [0;omega_ref]; */
+    float dq_ref[4];
+    float omega_ref_q[4] = {0, omega_ref[0], omega_ref[1], omega_ref[2]};
+    Quaternion_Gamma(q_ref, omega_ref_q, dq_ref); // Gamma(q_ref) * [0;omega_ref]
+    arm_scale_f32(dq_ref, 0.5f, dq_ref, 4);
+
+    /* Inertial angular velocity */
     /* InputInv = inv(2 * devec*Gamma(q)' * gq) */
     #if DEBUG
     tic();
@@ -178,30 +187,35 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
     Matrix_Print(InputInv, 3, 3);
     #endif
 
-    /* tau_eq = InputInv * (-2*devec*Gamma(dq)'*dq - 2*devec*Gamma(q)'*fq - K*devec*Gamma(q_ref)'*dq); */
+    /* tau_eq = InputInv * (-2*devec*Gamma(dq)'*dq - 2*devec*Gamma(q)'*fq - K*devec*Gamma(dq_ref)'*q - K*devec*Gamma(q_ref)'*dq); */
     float sum[3]; arm_matrix_instance_f32 sum_; arm_mat_init_f32(&sum_, 3, 1, sum);
     float tmp3[3]; arm_matrix_instance_f32 tmp3_; arm_mat_init_f32(&tmp3_, 3, 1, tmp3);
     float tmp4[4]; arm_matrix_instance_f32 tmp4_; arm_mat_init_f32(&tmp4_, 4, 1, tmp4);
 
     float K[3] = {_params.controller.K[0], _params.controller.K[1], _params.controller.K[2]};
+
     float devecGammaQref_T[3*4]; arm_matrix_instance_f32 devecGammaQref_T_; arm_mat_init_f32(&devecGammaQref_T_, 3, 4, devecGammaQref_T);
-    Quaternion_mat_devecGammaT(q_ref, devecGammaQ_T);
+    Quaternion_mat_devecGammaT(q_ref, devecGammaQ_T); // devec*Gamma(q_ref)'
     arm_mat_mult_f32(&devecGammaQref_T_, &dq_, &tmp3_); // devec*Gamma(q_ref)'*dq
-    arm_mult_f32(K, tmp3, sum, 3); // K*devec*Gamma(q_ref)'*dq
-    //arm_mult_f32(devec(dq), K, sum, 3); // K*devec*dq
+    arm_mult_f32(K, tmp3, sum, 3); // sum = K*devec*Gamma(q_ref)'*dq
+
+    float devecGammaDQref_T[3*4]; arm_matrix_instance_f32 devecGammaDQref_T_; arm_mat_init_f32(&devecGammaDQref_T_, 3, 4, devecGammaDQref_T);
+    Quaternion_mat_devecGammaT(dq_ref, devecGammaDQref_T); // devec*Gamma(dq_ref)'
+    arm_mat_mult_f32(&devecGammaDQref_T_, &q_, &tmp3_); // devec*Gamma(dq_ref)'*q
+    arm_mult_f32(K, tmp3, tmp3, 3); // K*devec*Gamma(q_ref)'*dq
+    arm_add_f32(tmp3, sum, sum, 3); // sum += K*devec*Gamma(q_ref)'*dq
 
     arm_mat_mult_f32(&devecGammaQ_T_, &fq_, &tmp3_); // devec*Gamma(q)'*fq
     arm_scale_f32(tmp3, 2.f, tmp3, 3); // 2*devec*Gamma(q)'*fq
-    arm_add_f32(tmp3, sum, sum, 3);
+    arm_add_f32(tmp3, sum, sum, 3); // sum += 2*devec*Gamma(q)'*fq
 
     float devecGammaDQ_T[3*4]; arm_matrix_instance_f32 devecGammaDQ_T_; arm_mat_init_f32(&devecGammaDQ_T_, 3, 4, devecGammaDQ_T);
-    Quaternion_mat_devecGammaT(dq, devecGammaDQ_T);
-
+    Quaternion_mat_devecGammaT(dq, devecGammaDQ_T); // devec*Gamma(dq)'
     arm_mat_mult_f32(&devecGammaDQ_T_, &dq_, &tmp3_); // devec*Gamma(dq)'*dq
     arm_scale_f32(tmp3, 2.f, tmp3, 3); // 2*devec*Gamma(dq)'*dq
-    arm_add_f32(tmp3, sum, sum, 3);
+    arm_add_f32(tmp3, sum, sum, 3); // sum += 2*devec*Gamma(dq)'*dq
 
-    arm_negate_f32(sum, sum, 3);
+    arm_negate_f32(sum, sum, 3); // negate the sum to get minus in front of all parts
 
     #if DEBUG
     Serial.println("sum = ");
@@ -209,26 +223,28 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
     #endif
 
     float tau_eq[3]; arm_matrix_instance_f32 tau_eq_; arm_mat_init_f32(&tau_eq_, 3, 1, tau_eq);
-    arm_mat_mult_f32(&InputInv_, &sum_, &tau_eq_); // InputInv * (-2*devec*Gamma(dq)'*dq - 2*devec*Gamma(q)'*fq - K*devec*Gamma(q_ref)'*dq)
+    arm_mat_mult_f32(&InputInv_, &sum_, &tau_eq_); // InputInv * (-2*devec*Gamma(dq)'*dq - 2*devec*Gamma(q)'*fq - K*devec*Gamma(dq_ref)'*q - K*devec*Gamma(q_ref)'*dq)
 
     #if DEBUG
     Serial.println("tau_eq = ");
     Matrix_Print(tau_eq, 3, 1);
     #endif
 
-    /* omeg = 2*devec*Gamma(q)'*dq; % inertial angular velocity */
-    float omeg[3]; arm_matrix_instance_f32 omeg_; arm_mat_init_f32(&omeg_, 3, 1, omeg);
-    arm_mat_mult_f32(&devecGammaQ_T_, &dq_, &omeg_);
-    arm_scale_f32(omeg, 2.f, omeg, 3);
+    /* Inertial angular velocity */
+    /* omega = 2*devec*Gamma(q)'*dq; */
+    float omega[3]; arm_matrix_instance_f32 omega_; arm_mat_init_f32(&omega_, 3, 1, omega);
+    arm_mat_mult_f32(&devecGammaQ_T_, &dq_, &omega_); // devec*Gamma(q)'*dq
+    arm_scale_f32(omega, 2.f, omega, 3); // 2*devec*Gamma(q)'*dq
 
     #if DEBUG
-    Serial.println("omeg = ");
-    Matrix_Print(omeg, 3, 1);
+    Serial.println("omega = ");
+    Matrix_Print(omega, 3, 1);
     #endif
 
-    /* S = omeg + K*devec*q_err */
-    arm_mult_f32(devec(q_err), K, S, 3);
-    arm_add_f32(omeg, S, S, 3);
+    /* S = omega - omega_ref + K*devec*q_err */
+    arm_mult_f32(devec(q_err), K, S, 3); // S = K*devec*q_err
+    arm_add_f32(omega, S, S, 3); // S += omega  -->  S = omega + K*devec*q_err
+    arm_sub_f32((float*)omega_ref, S, S, 3); // S -= omega_ref  -->  S = omega - omega_ref + K*devec*q_err
 
     #if DEBUG
     Serial.println("S = ");
@@ -362,7 +378,7 @@ void SlidingMode::HeadingIndependentReferenceManual(const float q_ref[4], const 
 
 void SlidingMode::HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4])
 {
-  /* omeg = 2*Phi(q)'*dq    % body
+  /* omega = 2*Phi(q)'*dq    % body
      removeYaw = [eye(3), zeros(3,1); zeros(1,3), 0];
      dq_withoutYaw = SimplifyWithQuatConstraint(1/2 * Phi(q) * removeYaw * 2*Phi(q)' * dq, q)
   */
@@ -372,14 +388,14 @@ void SlidingMode::HeadingIndependentQdot(const float dq[4], const float q[4], fl
   q_dot_out[3] = dq[3]*q[1]*q[1] + dq[2]*q[0]*q[1] + dq[3]*q[2]*q[2] - dq[1]*q[0]*q[2] + dq[3]*q[3]*q[3] + dq[0]*q[0]*q[3];*/
 
   /* No body angular velocity */
-  /* omeg = devec*2*Phi(q)'*dq    % body
-     omeg_noYaw = [omeg(1:2); 0]
-     dq_noYaw = 1/2 * Phi(q) * vec*omeg_noYaw
+  /* omega = devec*2*Phi(q)'*dq    % body
+     omega_noYaw = [omega(1:2); 0]
+     dq_noYaw = 1/2 * Phi(q) * vec*omega_noYaw
   */
   q_dot_out[0] = dq[0]*q[1]*q[1] + dq[0]*q[2]*q[2] - dq[1]*q[0]*q[1] - dq[2]*q[0]*q[2] + dq[1]*q[2]*q[3] - dq[2]*q[1]*q[3];
   q_dot_out[1] = dq[1]*q[0]*q[0] + dq[1]*q[3]*q[3] - dq[0]*q[0]*q[1] + dq[0]*q[2]*q[3] - dq[3]*q[0]*q[2] - dq[3]*q[1]*q[3];
   q_dot_out[2] = dq[2]*q[0]*q[0] + dq[2]*q[3]*q[3] - dq[0]*q[0]*q[2] - dq[0]*q[1]*q[3] + dq[3]*q[0]*q[1] - dq[3]*q[2]*q[3];
   q_dot_out[3] = dq[3]*q[1]*q[1] + dq[3]*q[2]*q[2] - dq[1]*q[0]*q[2] + dq[2]*q[0]*q[1] - dq[1]*q[1]*q[3] - dq[2]*q[2]*q[3];
 
-  // The second method is only slightly different from the first, in the sense that it forces the q0 component of omeg to be 0 (sort of a rectification)
+  // The second method is only slightly different from the first, in the sense that it forces the q0 component of omega to be 0 (sort of a rectification)
 }
