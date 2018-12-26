@@ -39,25 +39,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "IO.h"
 #include "I2C.h"  // I2C library
 #include "SPI.h" // SPI Library
-#include "MPU9250_Bus.h"
+#include "MPU9250_bus.h"
 #include "MPU9250.h"
 #include "Debug.h"
 #include "cmsis_os.h"
 #include <math.h>
 
 /* MPU9250 object */
-
-template <class PORT, class BUS>
-MPU9250<PORT, BUS>::MPU9250(PORT * port) : _bus(BUS(port)), _interruptPin(0), _accelScale(0), _gyroScale(0), _magScaleX(0), _magScaleY(0), _magScaleZ(0)
+MPU9250::MPU9250(SPI * spi) : _interruptPin(0), _interruptSemaphore(0), _accelScale(0), _gyroScale(0), _magScaleX(0), _magScaleY(0), _magScaleZ(0)
 {
+	_bus = new MPU9250_SPI(spi);
 }
 
-/*MPU9250<PORT, BUS>::MPU9250(PORT sensorPort, uint8_t address) : _accelScale(0), _gyroScale(0), _magScaleX(0), _magScaleY(0), _magScaleZ(0)
+MPU9250::MPU9250(I2C * i2c) : _interruptPin(0), _interruptSemaphore(0), _accelScale(0), _gyroScale(0), _magScaleX(0), _magScaleY(0), _magScaleZ(0)
+{
+	_bus = new MPU9250_I2C(i2c);
+}
+
+/*MPU9250::MPU9250(PORT sensorPort, uint8_t address) : _accelScale(0), _gyroScale(0), _magScaleX(0), _magScaleY(0), _magScaleZ(0)
 {
 	_bus = new COM(sensorPort, address);
 }*/
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::ConfigureInterrupt(IO * interruptPin)
+
+void MPU9250::ConfigureInterrupt(IO * interruptPin)
 {
 	_interruptPin = interruptPin;
 
@@ -73,15 +77,13 @@ void MPU9250<PORT, BUS>::ConfigureInterrupt(IO * interruptPin)
 	_interruptPin->RegisterInterrupt(IO::TRIGGER_RISING, _interruptSemaphore);
 }
 
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::ConfigureInterrupt(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin)
+void MPU9250::ConfigureInterrupt(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin)
 {
 	IO * intIO = new IO(GPIOx, GPIO_Pin, IO::PULL_NONE);
 	ConfigureInterrupt(intIO);
 }
 
-template <class PORT, class BUS>
-uint32_t MPU9250<PORT, BUS>::WaitForNewData(uint32_t xTicksToWait) // blocking call
+uint32_t MPU9250::WaitForNewData(uint32_t xTicksToWait) // blocking call
 {
 	if (!_interruptSemaphore)
 		return pdFALSE;
@@ -90,25 +92,24 @@ uint32_t MPU9250<PORT, BUS>::WaitForNewData(uint32_t xTicksToWait) // blocking c
 }
 
 /* starts I2C communication and sets up the MPU-9250 */
-template <class PORT, class BUS>
-int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRange){
+int MPU9250::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRange){
     uint8_t buff[3];
     uint8_t data[7];
 
-    _bus.setBusLowSpeed();
+    _bus->setBusLowSpeed();
 
     // select clock source to gyro
-    if( !_bus.writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) ){
+    if( !_bus->writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) ){
         return -1;
     }
 
     // enable I2C master mode
-    if( !_bus.writeRegister(USER_CTRL,I2C_MST_EN) ){
+    if( !_bus->writeRegister(USER_CTRL,I2C_MST_EN) ){
         return -1;
     }
 
     // set the I2C bus speed to 400 kHz
-    if( !_bus.writeRegister(I2C_MST_CTRL,I2C_MST_CLK) ){
+    if( !_bus->writeRegister(I2C_MST_CTRL,I2C_MST_CLK) ){
         return -1;
     }
 
@@ -119,7 +120,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
     }*/
 
     // reset the MPU9250
-    _bus.writeRegister(PWR_MGMNT_1,PWR_RESET);
+    _bus->writeRegister(PWR_MGMNT_1,PWR_RESET);
 
     // wait for MPU-9250 to come back up
     osDelay(1);
@@ -128,7 +129,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
     writeAK8963Register(AK8963_CNTL2,AK8963_RESET);
 
     // select clock source to gyro
-    if( !_bus.writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) ){
+    if( !_bus->writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) ){
         return -1;
     }
 
@@ -138,7 +139,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
     }
 
     // enable accelerometer and gyro
-    if( !_bus.writeRegister(PWR_MGMNT_2,SEN_ENABLE) ){
+    if( !_bus->writeRegister(PWR_MGMNT_2,SEN_ENABLE) ){
         return -1;
     }
 
@@ -147,7 +148,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
 
         case ACCEL_RANGE_2G:
             // setting the accel range to 2G
-            if( !_bus.writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_2G) ){
+            if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_2G) ){
                 return -1;
             }
             _accelScale = G * 2.0f/32767.5f; // setting the accel scale to 2G
@@ -155,7 +156,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
 
         case ACCEL_RANGE_4G:
             // setting the accel range to 4G
-            if( !_bus.writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_4G) ){
+            if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_4G) ){
                 return -1;
             }
             _accelScale = G * 4.0f/32767.5f; // setting the accel scale to 4G
@@ -163,7 +164,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
 
         case ACCEL_RANGE_8G:
             // setting the accel range to 8G
-            if( !_bus.writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_8G) ){
+            if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_8G) ){
                 return -1;
             }
             _accelScale = G * 8.0f/32767.5f; // setting the accel scale to 8G
@@ -171,7 +172,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
 
         case ACCEL_RANGE_16G:
             // setting the accel range to 16G
-            if( !_bus.writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_16G) ){
+            if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_16G) ){
                 return -1;
             }
             _accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
@@ -181,7 +182,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
     switch(gyroRange) {
         case GYRO_RANGE_250DPS:
             // setting the gyro range to 250DPS
-            if( !_bus.writeRegister(GYRO_CONFIG,GYRO_FS_SEL_250DPS) ){
+            if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_250DPS) ){
                 return -1;
             }
             _gyroScale = 250.0f/32767.5f * _d2r; // setting the gyro scale to 250DPS
@@ -189,7 +190,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
 
         case GYRO_RANGE_500DPS:
             // setting the gyro range to 500DPS
-            if( !_bus.writeRegister(GYRO_CONFIG,GYRO_FS_SEL_500DPS) ){
+            if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_500DPS) ){
                 return -1;
             }
             _gyroScale = 500.0f/32767.5f * _d2r; // setting the gyro scale to 500DPS
@@ -197,7 +198,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
 
         case GYRO_RANGE_1000DPS:
             // setting the gyro range to 1000DPS
-            if( !_bus.writeRegister(GYRO_CONFIG,GYRO_FS_SEL_1000DPS) ){
+            if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_1000DPS) ){
                 return -1;
             }
             _gyroScale = 1000.0f/32767.5f * _d2r; // setting the gyro scale to 1000DPS
@@ -205,7 +206,7 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
 
         case GYRO_RANGE_2000DPS:
             // setting the gyro range to 2000DPS
-            if( !_bus.writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS) ){
+            if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS) ){
                 return -1;
             }
             _gyroScale = 2000.0f/32767.5f * _d2r; // setting the gyro scale to 2000DPS
@@ -213,12 +214,12 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
     }
 
     // enable I2C master mode
-    if( !_bus.writeRegister(USER_CTRL,I2C_MST_EN) ){
+    if( !_bus->writeRegister(USER_CTRL,I2C_MST_EN) ){
     	return -1;
     }
 
 	// set the I2C bus speed to 400 kHz
-	if( !_bus.writeRegister(I2C_MST_CTRL,I2C_MST_CLK) ){
+	if( !_bus->writeRegister(I2C_MST_CTRL,I2C_MST_CLK) ){
 		return -1;
 	}
 
@@ -260,14 +261,14 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
     osDelay(100); // long wait between AK8963 mode changes
 
     // select clock source to gyro
-    if( !_bus.writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) ){
+    if( !_bus->writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) ){
         return -1;
     }
 
     // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
     readAK8963Registers(AK8963_HXL,sizeof(data),&data[0]);
 
-    _bus.setBusHighSpeed();
+    _bus->setBusHighSpeed();
 
     // successful init, return 0
     return 0;
@@ -275,51 +276,50 @@ int MPU9250<PORT, BUS>::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_r
 
 
 /* sets the DLPF and interrupt settings */
-template <class PORT, class BUS>
-int MPU9250<PORT, BUS>::setFilt(mpu9250_dlpf_bandwidth accel_bandwidth, mpu9250_dlpf_bandwidth gyro_bandwidth, uint8_t SRD){
+int MPU9250::setFilt(mpu9250_dlpf_bandwidth accel_bandwidth, mpu9250_dlpf_bandwidth gyro_bandwidth, uint8_t SRD){
     uint8_t data[7];
 
-    _bus.setBusLowSpeed();
+    _bus->setBusLowSpeed();
 
     switch(accel_bandwidth) {
         case DLPF_BANDWIDTH_184HZ:
-            if( !_bus.writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_184) ){ // setting accel bandwidth to 184Hz
+            if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_184) ){ // setting accel bandwidth to 184Hz
                 return -1;
             }
             break;
 
         case DLPF_BANDWIDTH_92HZ:
-            if( !_bus.writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_92) ){ // setting accel bandwidth to 92Hz
+            if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_92) ){ // setting accel bandwidth to 92Hz
                 return -1;
             }
             break;
 
         case DLPF_BANDWIDTH_41HZ:
-            if( !_bus.writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_41) ){ // setting accel bandwidth to 41Hz
+            if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_41) ){ // setting accel bandwidth to 41Hz
                 return -1;
             }
             break;
 
         case DLPF_BANDWIDTH_20HZ:
-            if( !_bus.writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_20) ){ // setting accel bandwidth to 20Hz
+            if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_20) ){ // setting accel bandwidth to 20Hz
                 return -1;
             }
             break;
 
         case DLPF_BANDWIDTH_10HZ:
-            if( !_bus.writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_10) ){ // setting accel bandwidth to 10Hz
+            if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_10) ){ // setting accel bandwidth to 10Hz
                 return -1;
             }
             break;
 
         case DLPF_BANDWIDTH_5HZ:
-            if( !_bus.writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_5) ){ // setting accel bandwidth to 5Hz
+            if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_5) ){ // setting accel bandwidth to 5Hz
                 return -1;
             }
             break;
 
 					case DLPF_BANDWIDTH_OFF:
-	            if( !_bus.writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_OFF) ){ // setting accel bandwidth to 460Hz
+	            if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_OFF) ){ // setting accel bandwidth to 460Hz
 	                return -1;
 	            }
 	            break;
@@ -331,56 +331,56 @@ int MPU9250<PORT, BUS>::setFilt(mpu9250_dlpf_bandwidth accel_bandwidth, mpu9250_
 
 		switch(gyro_bandwidth) {
 			case DLPF_BANDWIDTH_250HZ:
-					if( !_bus.writeRegister(CONFIG,GYRO_DLPF_250) ){ // setting gyro bandwidth to 184Hz
+					if( !_bus->writeRegister(CONFIG,GYRO_DLPF_250) ){ // setting gyro bandwidth to 184Hz
 							return -1;
 					}
 					break;
 
 				case DLPF_BANDWIDTH_184HZ:
-						if( !_bus.writeRegister(CONFIG,GYRO_DLPF_184) ){ // setting gyro bandwidth to 184Hz
+						if( !_bus->writeRegister(CONFIG,GYRO_DLPF_184) ){ // setting gyro bandwidth to 184Hz
 								return -1;
 						}
 						break;
 
 				case DLPF_BANDWIDTH_92HZ:
-						if( !_bus.writeRegister(CONFIG,GYRO_DLPF_92) ){ // setting gyro bandwidth to 92Hz
+						if( !_bus->writeRegister(CONFIG,GYRO_DLPF_92) ){ // setting gyro bandwidth to 92Hz
 								return -1;
 						}
 						break;
 
 				case DLPF_BANDWIDTH_41HZ:
-						if( !_bus.writeRegister(CONFIG,GYRO_DLPF_41) ){ // setting gyro bandwidth to 41Hz
+						if( !_bus->writeRegister(CONFIG,GYRO_DLPF_41) ){ // setting gyro bandwidth to 41Hz
 								return -1;
 						}
 						break;
 
 				case DLPF_BANDWIDTH_20HZ:
-						if( !_bus.writeRegister(CONFIG,GYRO_DLPF_20) ){ // setting gyro bandwidth to 20Hz
+						if( !_bus->writeRegister(CONFIG,GYRO_DLPF_20) ){ // setting gyro bandwidth to 20Hz
 								return -1;
 						}
 						break;
 
 				case DLPF_BANDWIDTH_10HZ:
-						if( !_bus.writeRegister(CONFIG,GYRO_DLPF_10) ){ // setting gyro bandwidth to 10Hz
+						if( !_bus->writeRegister(CONFIG,GYRO_DLPF_10) ){ // setting gyro bandwidth to 10Hz
 								return -1;
 						}
 						break;
 
 				case DLPF_BANDWIDTH_5HZ:
-						if( !_bus.writeRegister(CONFIG,GYRO_DLPF_5) ){ // setting gyro bandwidth to 5Hz
+						if( !_bus->writeRegister(CONFIG,GYRO_DLPF_5) ){ // setting gyro bandwidth to 5Hz
 								return -1;
 						}
 						break;
 
 					case DLPF_BANDWIDTH_OFF:
-							if( !_bus.writeRegister(CONFIG,GYRO_DLPF_OFF) ){ // setting gyro bandwidth to 5Hz
+							if( !_bus->writeRegister(CONFIG,GYRO_DLPF_OFF) ){ // setting gyro bandwidth to 5Hz
 									return -1;
 							}
 							break;
 		}
 
     /* setting the sample rate divider */
-    if( !_bus.writeRegister(SMPDIV,SRD) ){ // setting the sample rate divider
+    if( !_bus->writeRegister(SMPDIV,SRD) ){ // setting the sample rate divider
         return -1;
     }
 
@@ -403,55 +403,52 @@ int MPU9250<PORT, BUS>::setFilt(mpu9250_dlpf_bandwidth accel_bandwidth, mpu9250_
     }
 
     /* setting the interrupt */
-    /*if( !_bus.writeRegister(INT_PIN_CFG,INT_PULSE_50US) ){ // setup interrupt, 50 us pulse
+    /*if( !_bus->writeRegister(INT_PIN_CFG,INT_PULSE_50US) ){ // setup interrupt, 50 us pulse
         return -1;
     }
-    if( !_bus.writeRegister(INT_ENABLE,INT_RAW_RDY_EN) ){ // set to data ready
+    if( !_bus->writeRegister(INT_ENABLE,INT_RAW_RDY_EN) ){ // set to data ready
         return -1;
     }*/
 
-    _bus.setBusHighSpeed();
+    _bus->setBusHighSpeed();
 
     // successful filter setup, return 0
     return 0;
 }
 
 /* enables and disables the interrupt */
-template <class PORT, class BUS>
-int MPU9250<PORT, BUS>::enableInt(bool enable)
+int MPU9250::enableInt(bool enable)
 {
-	_bus.setBusLowSpeed();
+	_bus->setBusLowSpeed();
 
 	if(enable){
 		/* setting the interrupt */
-	    if( !_bus.writeRegister(INT_PIN_CFG, 0) ){ // setup interrupt, 50 us pulse, active high level, push-pull configuration
+	    if( !_bus->writeRegister(INT_PIN_CFG, 0) ){ // setup interrupt, 50 us pulse, active high level, push-pull configuration
 	        return -1;
 	    }
-	    if( !_bus.writeRegister(INT_ENABLE,INT_RAW_RDY_EN) ){ // set to data ready
+	    if( !_bus->writeRegister(INT_ENABLE,INT_RAW_RDY_EN) ){ // set to data ready
 	        return -1;
 	    }
 	}
 	else{
-	    if( !_bus.writeRegister(INT_ENABLE,INT_DISABLE) ){ // disable interrupt
+	    if( !_bus->writeRegister(INT_ENABLE,INT_DISABLE) ){ // disable interrupt
 	        return -1;
 	    }
 	}
 
-	_bus.setBusHighSpeed();
+	_bus->setBusHighSpeed();
 
     // successful interrupt setup, return 0
     return 0;
 }
 
-
 /* get accelerometer data given pointers to store the three values, return data as counts */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getAccelCounts(int16_t* ax, int16_t* ay, int16_t* az){
+void MPU9250::getAccelCounts(int16_t* ax, int16_t* ay, int16_t* az){
     uint8_t buff[6];
     int16_t axx, ayy, azz;
     //_useSPIHS = true; // use the high speed SPI for data readout
 
-    _bus.readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
+    _bus->readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
 
     axx = (((int16_t)buff[0]) << 8) | buff[1];  // combine into 16 bit values
     ayy = (((int16_t)buff[2]) << 8) | buff[3];
@@ -463,8 +460,7 @@ void MPU9250<PORT, BUS>::getAccelCounts(int16_t* ax, int16_t* ay, int16_t* az){
 }
 
 /* get accelerometer data given pointers to store the three values */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getAccel(float* ax, float* ay, float* az){
+void MPU9250::getAccel(float* ax, float* ay, float* az){
     int16_t accel[3];
 
     getAccelCounts(&accel[0], &accel[1], &accel[2]);
@@ -475,13 +471,12 @@ void MPU9250<PORT, BUS>::getAccel(float* ax, float* ay, float* az){
 }
 
 /* get gyro data given pointers to store the three values, return data as counts */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getGyroCounts(int16_t* gx, int16_t* gy, int16_t* gz){
+void MPU9250::getGyroCounts(int16_t* gx, int16_t* gy, int16_t* gz){
     uint8_t buff[6];
     int16_t gxx, gyy, gzz;
     //_useSPIHS = true; // use the high speed SPI for data readout
 
-    _bus.readRegisters(GYRO_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
+    _bus->readRegisters(GYRO_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
 
     gxx = (((int16_t)buff[0]) << 8) | buff[1];  // combine into 16 bit values
     gyy = (((int16_t)buff[2]) << 8) | buff[3];
@@ -493,8 +488,7 @@ void MPU9250<PORT, BUS>::getGyroCounts(int16_t* gx, int16_t* gy, int16_t* gz){
 }
 
 /* get gyro data given pointers to store the three values */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getGyro(float* gx, float* gy, float* gz){
+void MPU9250::getGyro(float* gx, float* gy, float* gz){
     int16_t gyro[3];
 
     getGyroCounts(&gyro[0], &gyro[1], &gyro[2]);
@@ -505,13 +499,12 @@ void MPU9250<PORT, BUS>::getGyro(float* gx, float* gy, float* gz){
 }
 
 /* get magnetometer data given pointers to store the three values, return data as counts */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMagCounts(int16_t* hx, int16_t* hy, int16_t* hz){
+void MPU9250::getMagCounts(int16_t* hx, int16_t* hy, int16_t* hz){
     uint8_t buff[7];
     //_useSPIHS = true; // use the high speed SPI for data readout
 
     // read the magnetometer data off the external sensor buffer
-    _bus.readRegisters(EXT_SENS_DATA_00,sizeof(buff),&buff[0]);
+    _bus->readRegisters(EXT_SENS_DATA_00,sizeof(buff),&buff[0]);
 
     if( buff[6] == 0x10 ) { // check for overflow
         *hx = (((int16_t)buff[1]) << 8) | buff[0];  // combine into 16 bit values
@@ -526,8 +519,7 @@ void MPU9250<PORT, BUS>::getMagCounts(int16_t* hx, int16_t* hy, int16_t* hz){
 }
 
 /* get magnetometer data given pointers to store the three values */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMag(float* hx, float* hy, float* hz){
+void MPU9250::getMag(float* hx, float* hy, float* hz){
     int16_t mag[3];
 
     getMagCounts(&mag[0], &mag[1], &mag[2]);
@@ -538,19 +530,17 @@ void MPU9250<PORT, BUS>::getMag(float* hx, float* hy, float* hz){
 }
 
 /* get temperature data given pointer to store the value, return data as counts */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getTempCounts(int16_t* t){
+void MPU9250::getTempCounts(int16_t* t){
     uint8_t buff[2];
     //_useSPIHS = true; // use the high speed SPI for data readout
 
-    _bus.readRegisters(TEMP_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
+    _bus->readRegisters(TEMP_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
 
     *t = (((int16_t)buff[0]) << 8) | buff[1];  // combine into 16 bit value and return
 }
 
 /* get temperature data given pointer to store the values */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getTemp(float* t){
+void MPU9250::getTemp(float* t){
     int16_t tempCount;
 
     getTempCounts(&tempCount);
@@ -559,13 +549,12 @@ void MPU9250<PORT, BUS>::getTemp(float* t){
 }
 
 /* get accelerometer and gyro data given pointers to store values, return data as counts */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMotion6Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz){
+void MPU9250::getMotion6Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz){
     uint8_t buff[14];
     int16_t axx, ayy, azz, gxx, gyy, gzz;
     //_useSPIHS = true; // use the high speed SPI for data readout
 
-    _bus.readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
+    _bus->readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
 
     axx = (((int16_t)buff[0]) << 8) | buff[1];  // combine into 16 bit values
     ayy = (((int16_t)buff[2]) << 8) | buff[3];
@@ -585,8 +574,7 @@ void MPU9250<PORT, BUS>::getMotion6Counts(int16_t* ax, int16_t* ay, int16_t* az,
 }
 
 /* get accelerometer and gyro data given pointers to store values */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMotion6(float* ax, float* ay, float* az, float* gx, float* gy, float* gz){
+void MPU9250::getMotion6(float* ax, float* ay, float* az, float* gx, float* gy, float* gz){
     int16_t accel[3];
     int16_t gyro[3];
 
@@ -602,13 +590,12 @@ void MPU9250<PORT, BUS>::getMotion6(float* ax, float* ay, float* az, float* gx, 
 }
 
 /* get accelerometer, gyro and temperature data given pointers to store values, return data as counts */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMotion7Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* t){
+void MPU9250::getMotion7Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* t){
     uint8_t buff[14];
     int16_t axx, ayy, azz, gxx, gyy, gzz;
     //_useSPIHS = true; // use the high speed SPI for data readout
 
-    _bus.readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
+    _bus->readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
 
     axx = (((int16_t)buff[0]) << 8) | buff[1];  // combine into 16 bit values
     ayy = (((int16_t)buff[2]) << 8) | buff[3];
@@ -630,8 +617,7 @@ void MPU9250<PORT, BUS>::getMotion7Counts(int16_t* ax, int16_t* ay, int16_t* az,
 }
 
 /* get accelerometer, gyro, and temperature data (in SI units) given pointers to store values */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMotion7(float* ax, float* ay, float* az, float* gx, float* gy, float* gz, float* t){
+void MPU9250::getMotion7(float* ax, float* ay, float* az, float* gx, float* gy, float* gz, float* t){
     int16_t accel[3];
     int16_t gyro[3];
     int16_t tempCount;
@@ -650,13 +636,12 @@ void MPU9250<PORT, BUS>::getMotion7(float* ax, float* ay, float* az, float* gx, 
 }
 
 /* get accelerometer, gyro and magnetometer data given pointers to store values, return data as counts */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMotion9Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* hx, int16_t* hy, int16_t* hz){
+void MPU9250::getMotion9Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* hx, int16_t* hy, int16_t* hz){
     uint8_t buff[21];
     int16_t axx, ayy, azz, gxx, gyy, gzz;
     //_useSPIHS = true; // use the high speed SPI for data readout
 
-    _bus.readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
+    _bus->readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
 
     axx = (((int16_t)buff[0]) << 8) | buff[1];  // combine into 16 bit values
     ayy = (((int16_t)buff[2]) << 8) | buff[3];
@@ -680,8 +665,7 @@ void MPU9250<PORT, BUS>::getMotion9Counts(int16_t* ax, int16_t* ay, int16_t* az,
 }
 
 /* get accelerometer, gyro, and magnetometer data (in SI units) given pointers to store values */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMotion9(float* ax, float* ay, float* az, float* gx, float* gy, float* gz, float* hx, float* hy, float* hz){
+void MPU9250::getMotion9(float* ax, float* ay, float* az, float* gx, float* gy, float* gz, float* hx, float* hy, float* hz){
     int16_t accel[3];
     int16_t gyro[3];
     int16_t mag[3];
@@ -702,13 +686,12 @@ void MPU9250<PORT, BUS>::getMotion9(float* ax, float* ay, float* az, float* gx, 
 }
 
 /* get accelerometer, magnetometer, and temperature data (in SI units) given pointers to store values, return data as counts */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMotion10Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* hx, int16_t* hy, int16_t* hz, int16_t* t){
+void MPU9250::getMotion10Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* hx, int16_t* hy, int16_t* hz, int16_t* t){
     uint8_t buff[21];
     int16_t axx, ayy, azz, gxx, gyy, gzz;
     //_useSPIHS = true; // use the high speed SPI for data readout
 
-    _bus.readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
+    _bus->readRegisters(ACCEL_OUT, sizeof(buff), &buff[0]); // grab the data from the MPU9250
 
     axx = (((int16_t)buff[0]) << 8) | buff[1];  // combine into 16 bit values
     ayy = (((int16_t)buff[2]) << 8) | buff[3];
@@ -733,8 +716,7 @@ void MPU9250<PORT, BUS>::getMotion10Counts(int16_t* ax, int16_t* ay, int16_t* az
     *gz = tZ[0]*gxx + tZ[1]*gyy + tZ[2]*gzz;
 }
 
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::getMotion10(float* ax, float* ay, float* az, float* gx, float* gy, float* gz, float* hx, float* hy, float* hz, float* t){
+void MPU9250::getMotion10(float* ax, float* ay, float* az, float* gx, float* gy, float* gz, float* hx, float* hy, float* hz, float* t){
     int16_t accel[3];
     int16_t gyro[3];
     int16_t mag[3];
@@ -758,15 +740,14 @@ void MPU9250<PORT, BUS>::getMotion10(float* ax, float* ay, float* az, float* gx,
 }
 
 /* writes a register to the AK8963 given a register address and data */
-template <class PORT, class BUS>
-bool MPU9250<PORT, BUS>::writeAK8963Register(uint8_t subAddress, uint8_t data){
+bool MPU9250::writeAK8963Register(uint8_t subAddress, uint8_t data){
 	uint8_t count = 1;
 	uint8_t buff[1];
 
-	_bus.writeRegister(I2C_SLV0_ADDR,AK8963_I2C_ADDR); // set slave 0 to the AK8963 and set for write
-	_bus.writeRegister(I2C_SLV0_REG,subAddress); // set the register to the desired AK8963 sub address
-	_bus.writeRegister(I2C_SLV0_DO,data); // store the data for write
-	_bus.writeRegister(I2C_SLV0_CTRL,I2C_SLV0_EN | count); // enable I2C and send 1 byte
+	_bus->writeRegister(I2C_SLV0_ADDR,AK8963_I2C_ADDR); // set slave 0 to the AK8963 and set for write
+	_bus->writeRegister(I2C_SLV0_REG,subAddress); // set the register to the desired AK8963 sub address
+	_bus->writeRegister(I2C_SLV0_DO,data); // store the data for write
+	_bus->writeRegister(I2C_SLV0_CTRL,I2C_SLV0_EN | count); // enable I2C and send 1 byte
 
 	// read the register and confirm
 	readAK8963Registers(subAddress, sizeof(buff), &buff[0]);
@@ -780,31 +761,28 @@ bool MPU9250<PORT, BUS>::writeAK8963Register(uint8_t subAddress, uint8_t data){
 }
 
 /* reads registers from the AK8963 */
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::readAK8963Registers(uint8_t subAddress, uint8_t count, uint8_t* dest){
+void MPU9250::readAK8963Registers(uint8_t subAddress, uint8_t count, uint8_t* dest){
 
-	_bus.writeRegister(I2C_SLV0_ADDR,AK8963_I2C_ADDR | I2C_READ_FLAG); // set slave 0 to the AK8963 and set for read
-	_bus.writeRegister(I2C_SLV0_REG,subAddress); // set the register to the desired AK8963 sub address
-	_bus.writeRegister(I2C_SLV0_CTRL,I2C_SLV0_EN | count); // enable I2C and request the bytes
+	_bus->writeRegister(I2C_SLV0_ADDR,AK8963_I2C_ADDR | I2C_READ_FLAG); // set slave 0 to the AK8963 and set for read
+	_bus->writeRegister(I2C_SLV0_REG,subAddress); // set the register to the desired AK8963 sub address
+	_bus->writeRegister(I2C_SLV0_CTRL,I2C_SLV0_EN | count); // enable I2C and request the bytes
 	HAL_DelayHighRes(1); // 100 us wait = takes some time for these registers to fill
-	_bus.readRegisters(EXT_SENS_DATA_00,count,dest); // read the bytes off the MPU9250 EXT_SENS_DATA registers
+	_bus->readRegisters(EXT_SENS_DATA_00,count,dest); // read the bytes off the MPU9250 EXT_SENS_DATA registers
 }
 
 /* gets the MPU9250 WHO_AM_I register value, expected to be 0x71 */
-template <class PORT, class BUS>
-uint8_t MPU9250<PORT, BUS>::whoAmI(){
+uint8_t MPU9250::whoAmI(){
     uint8_t buff[1];
 
     // read the WHO AM I register
-    _bus.readRegisters(WHO_AM_I,sizeof(buff),&buff[0]);
+    _bus->readRegisters(WHO_AM_I,sizeof(buff),&buff[0]);
 
     // return the register value
     return buff[0];
 }
 
 /* gets the AK8963 WHO_AM_I register value, expected to be 0x48 */
-template <class PORT, class BUS>
-uint8_t MPU9250<PORT, BUS>::whoAmIAK8963(){
+uint8_t MPU9250::whoAmIAK8963(){
     uint8_t buff[1];
 
     // read the WHO AM I register
@@ -816,8 +794,7 @@ uint8_t MPU9250<PORT, BUS>::whoAmIAK8963(){
 
 // Accelerometer and gyroscope self test; check calibration wrt factory settings
 // From https://github.com/kriswiner/ESP8285/blob/master/MPU9250/MPU9250_MS5637_BasicAHRS2_ESP8266.ino
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::SelfTest(float * result) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
+void MPU9250::SelfTest(float * result) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
 {
    uint8_t rawData[6] = {0, 0, 0, 0, 0, 0};
    uint8_t selfTest[6];
@@ -825,21 +802,21 @@ void MPU9250<PORT, BUS>::SelfTest(float * result) // Should return percent devia
    float factoryTrim[6];
    uint8_t FS = 0;
 
-   _bus.setBusLowSpeed();
+   _bus->setBusLowSpeed();
 
-  _bus.writeRegister(SMPDIV, 0x00);    // Set gyro sample rate to 1 kHz
-  _bus.writeRegister(CONFIG, 0x02);        // Set gyro sample rate to 1 kHz and DLPF to 92 Hz
-  _bus.writeRegister(GYRO_CONFIG, FS<<3);  // Set full scale range for the gyro to 250 dps
-  _bus.writeRegister(ACCEL_CONFIG2, 0x02); // Set accelerometer rate to 1 kHz and bandwidth to 92 Hz
-  _bus.writeRegister(ACCEL_CONFIG, FS<<3); // Set full scale range for the accelerometer to 2 g
+  _bus->writeRegister(SMPDIV, 0x00);    // Set gyro sample rate to 1 kHz
+  _bus->writeRegister(CONFIG, 0x02);        // Set gyro sample rate to 1 kHz and DLPF to 92 Hz
+  _bus->writeRegister(GYRO_CONFIG, FS<<3);  // Set full scale range for the gyro to 250 dps
+  _bus->writeRegister(ACCEL_CONFIG2, 0x02); // Set accelerometer rate to 1 kHz and bandwidth to 92 Hz
+  _bus->writeRegister(ACCEL_CONFIG, FS<<3); // Set full scale range for the accelerometer to 2 g
 
   for( int ii = 0; ii < 200; ii++) {  // get average current values of gyro and acclerometer
-		_bus.readRegisters(ACCEL_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers into data array
+		_bus->readRegisters(ACCEL_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers into data array
 	  aAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
 	  aAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
 	  aAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
 
-		_bus.readRegisters(GYRO_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers sequentially into data array
+		_bus->readRegisters(GYRO_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers sequentially into data array
 	  gAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
 	  gAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
 	  gAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
@@ -851,17 +828,17 @@ void MPU9250<PORT, BUS>::SelfTest(float * result) // Should return percent devia
   }
 
 	// Configure the accelerometer for self-test
-  _bus.writeRegister(ACCEL_CONFIG, 0xE0); // Enable self test on all three axes and set accelerometer range to +/- 2 g
-	_bus.writeRegister(GYRO_CONFIG,  0xE0); // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
+  _bus->writeRegister(ACCEL_CONFIG, 0xE0); // Enable self test on all three axes and set accelerometer range to +/- 2 g
+	_bus->writeRegister(GYRO_CONFIG,  0xE0); // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
 	osDelay(25);  // osDelay a while to let the device stabilize
 
   for( int ii = 0; ii < 200; ii++) {  // get average self-test values of gyro and acclerometer
-		_bus.readRegisters(ACCEL_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers into data array
+		_bus->readRegisters(ACCEL_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers into data array
 	  aSTAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
 	  aSTAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
 	  aSTAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
 
-		_bus.readRegisters(GYRO_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers sequentially into data array
+		_bus->readRegisters(GYRO_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers sequentially into data array
 	  gSTAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
 	  gSTAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
 	  gSTAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
@@ -873,17 +850,17 @@ void MPU9250<PORT, BUS>::SelfTest(float * result) // Should return percent devia
   }
 
  	// Configure the gyro and accelerometer for normal operation
-   _bus.writeRegister(ACCEL_CONFIG, 0x00);
-   _bus.writeRegister(GYRO_CONFIG,  0x00);
+   _bus->writeRegister(ACCEL_CONFIG, 0x00);
+   _bus->writeRegister(GYRO_CONFIG,  0x00);
    osDelay(25);  // osDelay a while to let the device stabilize
 
    // Retrieve accelerometer and gyro factory Self-Test Code from USR_Reg
-	 _bus.readRegisters(SELF_TEST_X_ACCEL, 1, &selfTest[0]);  // X-axis accel self-test results
-   _bus.readRegisters(SELF_TEST_Y_ACCEL, 1, &selfTest[1]); // Y-axis accel self-test results
-   _bus.readRegisters(SELF_TEST_Z_ACCEL, 1, &selfTest[2]); // Z-axis accel self-test results
-   _bus.readRegisters(SELF_TEST_X_GYRO, 1, &selfTest[3]);  // X-axis gyro self-test results
-   _bus.readRegisters(SELF_TEST_Y_GYRO, 1, &selfTest[4]);  // Y-axis gyro self-test results
-   _bus.readRegisters(SELF_TEST_Z_GYRO, 1, &selfTest[5]);  // Z-axis gyro self-test results
+	 _bus->readRegisters(SELF_TEST_X_ACCEL, 1, &selfTest[0]);  // X-axis accel self-test results
+   _bus->readRegisters(SELF_TEST_Y_ACCEL, 1, &selfTest[1]); // Y-axis accel self-test results
+   _bus->readRegisters(SELF_TEST_Z_ACCEL, 1, &selfTest[2]); // Z-axis accel self-test results
+   _bus->readRegisters(SELF_TEST_X_GYRO, 1, &selfTest[3]);  // X-axis gyro self-test results
+   _bus->readRegisters(SELF_TEST_Y_GYRO, 1, &selfTest[4]);  // Y-axis gyro self-test results
+   _bus->readRegisters(SELF_TEST_Z_GYRO, 1, &selfTest[5]);  // Z-axis gyro self-test results
 
   // Retrieve factory self-test value from self-test code reads
    factoryTrim[0] = (float)(2620/1<<FS)*(powf( 1.01 , ((float)selfTest[0] - 1.0) )); // FT[Xa] factory trim calculation
@@ -900,17 +877,16 @@ void MPU9250<PORT, BUS>::SelfTest(float * result) // Should return percent devia
      result[i+3] = 100.0*((float)(gSTAvg[i] - gAvg[i]))/factoryTrim[i+3] - 100.; // Report percent differences
    }
 
-   _bus.setBusHighSpeed();
+   _bus->setBusHighSpeed();
 }
 
-template <class PORT, class BUS>
-void MPU9250<PORT, BUS>::CalibrateMagnetometer(float * dest1, float * dest2)
+void MPU9250::CalibrateMagnetometer(float * dest1, float * dest2)
 {
   uint16_t ii = 0, sample_count = 0;
   int32_t mag_bias[3] = {0, 0, 0}, mag_scale[3] = {0, 0, 0};
   int16_t mag_max[3] = {-32767, -32767, -32767}, mag_min[3] = {32767, 32767, 32767}, mag_temp[3] = {0, 0, 0};
 
-  _bus.setBusLowSpeed();
+  _bus->setBusLowSpeed();
 
   DEBUG("Mag Calibration: Wave device in a figure eight until done!");
   osDelay(4000);
@@ -953,12 +929,7 @@ void MPU9250<PORT, BUS>::CalibrateMagnetometer(float * dest1, float * dest2)
     dest2[1] = avg_rad/((float)mag_scale[1]);
     dest2[2] = avg_rad/((float)mag_scale[2]);
 
-    _bus.setBusHighSpeed();
+    _bus->setBusHighSpeed();
 
     DEBUG("Mag Calibration done!");
 }
-
-// Explicit define possible template instantiations to generate/compile code for them
-// This will however create possible unnecessary code, since code for unused templates will also be generated and put into flash (depending on optimization settings)
-template class MPU9250<SPI,MPU9250_SPI>;
-template class MPU9250<I2C,MPU9250_I2C>;

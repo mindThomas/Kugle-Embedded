@@ -31,7 +31,7 @@ class SlidingMode
 		SlidingMode(Parameters& params);
 		~SlidingMode();
 
-			void Step(float X[12], float q_ref[4], float tau[3], float S[3]);
+		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], float tau[3], float S[3]);
 		void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4]);
 		void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4]);
 

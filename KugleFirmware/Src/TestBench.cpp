@@ -120,11 +120,11 @@ void TestBench(void const * argument)
 }
 #endif
 
-#if 0
+#if 1
 void TestBench(void const * argument)
 {
 	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
-	MPU9250<SPI,MPU9250_SPI> * imu = new MPU9250<SPI,MPU9250_SPI>(spi);
+	MPU9250 * imu = new MPU9250(spi);
 
 	imu->Configure(ACCEL_RANGE_2G, GYRO_RANGE_250DPS);
 	imu->setFilt(DLPF_BANDWIDTH_250HZ, DLPF_BANDWIDTH_184HZ, 8);
@@ -222,7 +222,7 @@ void TestBench(void const * argument)
 }
 #endif
 
-#if 1
+#if 0
 void TestBench(void const * argument)
 {
 	Parameters& params = Parameters::Get();

@@ -39,6 +39,7 @@ SPI::SPI(port_t port, uint32_t frequency, GPIO_TypeDef * GPIOx, uint32_t GPIO_Pi
 	InitPeripheral(port, frequency);
 	InitChipSelect();
 	ConfigurePeripheral();
+	_ongoingTransaction = false;
 }
 
 SPI::SPI(port_t port, uint32_t frequency)
@@ -69,6 +70,7 @@ SPI::SPI(port_t port, uint32_t frequency)
 
 	InitChipSelect();
 	ConfigurePeripheral();
+	_ongoingTransaction = false;
 }
 
 SPI::SPI(port_t port) : SPI(port, SPI_DEFAULT_FREQUENCY)
@@ -577,6 +579,72 @@ void SPI::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
 	vPortFree(rxBuffer);
 
 	xSemaphoreGive( _hRes->resourceSemaphore ); // give hardware resource back
+}
+
+void SPI::BeginTransaction()
+{
+	if (!_hRes) return;
+	if (_ongoingTransaction) return;
+	xSemaphoreTake( _hRes->resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
+
+	if (_csPort)
+		_csPort->BSRRH = _csPin; // assert chip select  (LOW)
+}
+
+void SPI::EndTransaction()
+{
+	if (!_hRes) return;
+	if (!_ongoingTransaction) return;
+	xSemaphoreGive( _hRes->resourceSemaphore ); // give hardware resource back
+
+	if (_csPort)
+		_csPort->BSRRL = _csPin; // deassert chip select  (HIGH)     // HAL_GPIO_WritePin
+}
+
+void SPI::TransactionWrite8(uint8_t value)
+{
+	if (!_hRes) return;
+	if (!_ongoingTransaction) return;
+
+	uint8_t tx = value;
+	uint8_t rx = 0;
+	HAL_SPI_TransmitReceive(&_hRes->handle, &tx, &rx, 1, HAL_MAX_DELAY);
+}
+
+void SPI::TransactionWrite16(uint16_t value)
+{
+	if (!_hRes) return;
+	if (!_ongoingTransaction) return;
+
+	uint8_t tx[2] = {(value>>8) & 0xFF,
+					 (value) & 0xFF};
+	uint8_t rx[2] = {0};
+	HAL_SPI_TransmitReceive(&_hRes->handle, tx, rx, 2, HAL_MAX_DELAY);
+}
+
+void SPI::TransactionWrite32(uint32_t value)
+{
+	if (!_hRes) return;
+	if (!_ongoingTransaction) return;
+
+	uint8_t tx[4] = {(value>>24) & 0xFF,
+					 (value>>16) & 0xFF,
+					 (value>>8) & 0xFF,
+					 (value) & 0xFF};
+	uint8_t rx[4] = {0};
+	HAL_SPI_TransmitReceive(&_hRes->handle, tx, rx, 4, HAL_MAX_DELAY);
+}
+
+uint8_t SPI::TransactionRead()
+{
+	if (!_hRes) return 0;
+	if (!_ongoingTransaction) return 0;
+
+	uint8_t tx = 0;
+	uint8_t rx = 0;
+	HAL_SPI_TransmitReceive(&_hRes->handle, &tx, &rx, 1, HAL_MAX_DELAY);
+
+	return rx;
 }
 
 void SPI3_IRQHandler(void)
