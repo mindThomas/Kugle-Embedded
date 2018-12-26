@@ -21,21 +21,33 @@
 #define MODULES_ESTIMATORS_VELOCITYEKF_H
 
 #include "Parameters.h"
+#include "Timer.h"
 
 class VelocityEKF
 {
 	public:
 		VelocityEKF(Parameters& params);
+		VelocityEKF(Parameters& params, Timer * microsTimer);
 		~VelocityEKF();
 	
 		void Reset();
-		void Step(const float dt, const float EncoderDiffMeas[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3]);
+		void Reset(const int32_t encoderTicks[3]);
+		void Step(const int32_t encoderTicks[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3]);
+		void Step(const int32_t encoderTicks[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3], const float dt);
 
-		float X[2];
-		float P[2*2];
+		void GetVelocity(float dxy[2]);
+		void GetVelocityCovariance(float Cov_dxy[2*2]);
 
 	private:
 		Parameters& _params;
+		Timer * _microsTimer;
+		uint16_t _prevTimerValue;
+
+		int32_t _prevEncoderTicks[3];
+
+		/* State estimate */
+		float X[2];   // state estimates = { dx, dy }
+		float P[2*2]; // covariance matrix
 };
 	
 	

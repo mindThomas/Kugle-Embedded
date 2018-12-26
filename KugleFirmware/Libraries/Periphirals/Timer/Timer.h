@@ -49,8 +49,10 @@ class Timer
 		void RegisterInterrupt(uint32_t frequency, SemaphoreHandle_t semaphore);
 		void SetMaxValue(uint16_t maxValue);
 
-		uint32_t Get();
+		uint16_t Get();
 		void Reset();
+		void Wait(uint32_t MicrosToWait);
+		float GetDeltaMicros(uint16_t prevTimerValue);
 
 	public:
 		typedef struct hardware_resource_t {
@@ -72,6 +74,7 @@ class Timer
 
 	private:
 		hardware_resource_t * _hRes;
+		SemaphoreHandle_t _waitSemaphore;
 
 	public:
 		static void InterruptHandler(Timer::hardware_resource_t * timer);
