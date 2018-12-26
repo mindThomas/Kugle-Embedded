@@ -42,30 +42,17 @@ LQR::~LQR()
 }
 
 /**
- * @brief 	Compute control output with Sliding mode controller given a quaternion attitude reference
- * @param	q[4]      Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     Input: current quaternion derivative estimate defined in inertial frame
- * @param	xy[2]	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    Input: current ball (center) velocity defined in inertial frame
- * @param	q_ref[4]  Input: desired/reference quaternion defined in inertial frame
- * @param	tau[3]    Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
- * @param	S[3]      Output: sliding manifold values for the three surfaces used for the attitude control
+ * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
+ * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
+ * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
+ * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
+ * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
+ * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
-void LQR::Step(float X[12], float q_ref[4], float omeg_ref[3], float tau[3])
+void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
-	float * x = &X[0];
-	float * y = &X[1];
-	float * q0 = &X[2];
-	float * q1 = &X[3];
-	float * q2 = &X[4];
-	float * q3 = &X[5];
-	float * dx = &X[6];
-	float * dy = &X[7];
-	float * dq0 = &X[8];
-	float * dq1 = &X[9];
-	float * dq2 = &X[10];
-	float * dq3 = &X[11];
-
 	// See ARM-CMSIS DSP library for matrix operations: https://www.keil.com/pack/doc/CMSIS/DSP/html/group__groupMatrix.html
 
 	/* For equivalent torque computation the following code can be used
@@ -86,20 +73,19 @@ void LQR::Step(float X[12], float q_ref[4], float omeg_ref[3], float tau[3])
 	// we will have to convert the full state estimate vector into a reduced error state vector for the attitude
 	float X_err[7]; arm_matrix_instance_f32 X_err_; arm_mat_init_f32(&X_err_, 7, 1, (float32_t *)X_err);
 	float * q_err = &X_err[0]; arm_matrix_instance_f32 q_err_; arm_mat_init_f32(&q_err_, 4, 1, (float32_t *)q_err);
-	float * omeg_err = &X_err[4]; arm_matrix_instance_f32 omeg_err_; arm_mat_init_f32(&omeg_err_, 3, 1, (float32_t *)omeg_err);
-	float q[4] = {*q0, *q1, *q2, *q3};
-	float dq[4] = {*dq0, *dq1, *dq2, *dq3};
+	float * omega_err = &X_err[4]; arm_matrix_instance_f32 omega_err_; arm_mat_init_f32(&omega_err_, 3, 1, (float32_t *)omega_err);
 
+	/* Quaternion error in Body frame */
 	// q_err = Phi(q_ref)^T * q
 	Quaternion_PhiT(q_ref, q, q_err);
-	q_err[4] = fmax(fmin(q_err[4], 1/2*deg2rad(_params.controller.LQR_MaxYawError)), -1/2*deg2rad(_params.controller.LQR_MaxYawError)); // clamp "yaw" error
+	/* Clamp "yaw" error - this is possibly a crude way of doing it */
+	q_err[4] = fmax(fmin(q_err[4], 1/2*deg2rad(_params.controller.LQR_MaxYawError)), -1/2*deg2rad(_params.controller.LQR_MaxYawError));
 
-	// omeg_err = 2*devec*Phi(q)^T*dq - omeg_ref
-	Quaternion_devecPhiT(q, dq, omeg_err); // devec*Phi(q)^T*dq
-	arm_scale_f32(omeg_err, 2.0f, omeg_err, 3); // 2*devec*Phi(q)^T*dq
-	arm_sub_f32(omeg_err, omeg_ref, omeg_err, 3); // 2*devec*Phi(q)^T*dq - omeg_ref
-
-	//omeg_err[0] = 0.0f; omeg_err[1] = 0.0f; omeg_err[2] = 0.0f;
+	/* Body angular velocity */
+	// omeg_err = 2*devec*Phi(q)^T*dq - omega_ref
+	Quaternion_devecPhiT(q, dq, omega_err); // devec*Phi(q)^T*dq
+	arm_scale_f32(omega_err, 2.0f, omega_err, 3); // 2*devec*Phi(q)^T*dq
+	arm_sub_f32(omega_err, (float*)omega_ref, omega_err, 3); // 2*devec*Phi(q)^T*dq - omega_ref
 
 	/* Compute equillibrium/linearized torque */
 	// Initially we will just set the equillibrium/linearized torque to 0, since we have linearized around upright and with zero velocity
