@@ -45,7 +45,7 @@ class Parameters
 		
 		struct {
 			/* Controller Tuning parameters */
-			const float SampleRate = 300;
+			const float SampleRate = 200;
 			
 			const bool ContinousSwitching = true;
 			const bool DisableQdot = false;
@@ -53,7 +53,9 @@ class Parameters
 			const bool EnableTorqueLPF = true;
 			const float TorqueLPFtau = 0.02; // 0.005 (sliding mode)
 			const bool EnableTorqueSaturation = false; // saturate the torque before filtering
-			const float TauMax = 0.7; // maximum torque - related to motors and motor controller - currently maximum is 15 A = 0.8 Nm
+			const float TorqueMax = 0.7; // maximum torque - related to motors and motor controller - currently maximum is 15 A = 0.8 Nm
+			const bool TorqueRampUp = true;
+			const float TorqueRampUpTime = 1.0; // seconds to ramp up Torque after initialization
 
 			/*const float K[3] = {20, 20, 20}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
 			const float eta = 1; // switching gain
@@ -90,9 +92,10 @@ class Parameters
 
 		struct {
 			/* Estimator Tuning parameters */
-			const float SampleRate = 300;
+			const float SampleRate = 200;
 			
-			#define EnableSensorLPFfilters 	false
+			#define EnableSensorLPFfilters_ 	false
+			const bool EnableSensorLPFfilters = EnableSensorLPFfilters_;
 			const bool CreateQdotFromQDifference = false;
 			const bool UseMadgwick = false;
 			const bool EstimateBias = true;
@@ -111,7 +114,7 @@ class Parameters
 			#define GYRO_TUNING_FACTOR				1
 			#define ACC_TUNING_FACTOR					1
 
-			#if EnableSensorLPFfilters
+			#if EnableSensorLPFfilters_
 				// 250 Hz LPF
 				const float cov_gyro_mpu[9] = {0.5041E-05*GYRO_TUNING_FACTOR,    0.0094E-05*GYRO_TUNING_FACTOR,    0.0165E-05*GYRO_TUNING_FACTOR,
 															0.0094E-05*GYRO_TUNING_FACTOR,    0.5200E-05*GYRO_TUNING_FACTOR,    0.0071E-05*GYRO_TUNING_FACTOR,

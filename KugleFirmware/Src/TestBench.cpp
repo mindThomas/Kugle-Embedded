@@ -79,9 +79,9 @@ float angle = 0;
 void TestBench(void const * argument)
 {
 	PowerManagement * pm = new PowerManagement(osPriorityNormal);
-	ESCON * motor1 = new ESCON(0);
-	ESCON * motor2 = new ESCON(1);
-	ESCON * motor3 = new ESCON(2);
+	ESCON * motor1 = new ESCON(1);
+	ESCON * motor2 = new ESCON(2);
+	ESCON * motor3 = new ESCON(3);
 
 	pm->Enable(true, true);
 
@@ -123,11 +123,11 @@ void TestBench(void const * argument)
 #if 1
 void TestBench(void const * argument)
 {
-	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
+	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
 	MPU9250 * imu = new MPU9250(spi);
 
-	imu->Configure(ACCEL_RANGE_2G, GYRO_RANGE_250DPS);
-	imu->setFilt(DLPF_BANDWIDTH_250HZ, DLPF_BANDWIDTH_184HZ, 8);
+	imu->Configure(MPU9250::ACCEL_RANGE_2G, MPU9250::GYRO_RANGE_250DPS);
+	imu->setFilt(MPU9250::DLPF_BANDWIDTH_250HZ, MPU9250::DLPF_BANDWIDTH_184HZ, 8);
 	imu->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
 
 	while (1) {

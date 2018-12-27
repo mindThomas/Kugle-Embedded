@@ -17,24 +17,9 @@
  * ------------------------------------------
  */
  
-#include "IMU.h"
- 
-// Class for sensor abstraction and sampling
-// Should eg. configure MPU-9250 interrupt
+#ifndef DEVICES_LCD_H
+#define DEVICES_LCD_H
 
-#if 0
-void MPU9250_Sampling(void const * argument)
-{
-	SPI * spi = new SPI(SPI::PORT_SPI3, MPU9250_SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
-	MPU9250<SPI,MPU9250_SPI> * imu = new MPU9250<SPI,MPU9250_SPI>(spi);
-
-	imu->Configure(ACCEL_RANGE_2G, GYRO_RANGE_250DPS);
-	imu->setFilt(DLPF_BANDWIDTH_250HZ, DLPF_BANDWIDTH_184HZ, 8);
-	imu->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
-
-	while (1) {
-		imu->WaitForNewData();
-	    imu->getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-	}
-}
+#include "Adafruit_SPITFT.h"
+	
 #endif

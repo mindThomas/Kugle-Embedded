@@ -38,8 +38,8 @@
  #define pgm_read_pointer(addr) ((void *)pgm_read_word(addr))
 #endif
 
-#ifndef min
-#define min(a,b) (((a) < (b)) ? (a) : (b))
+#ifndef MIN
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
 #ifndef _swap_int16_t

@@ -144,7 +144,7 @@ uint32_t USBCDC::Write(uint8_t * buffer, uint32_t length)
 		memcpy(package.data, buffer, packageLength);
 		package.length = packageLength;
 
-		xQueueSend(_TXqueue, (void *)&package, (TickType_t) 1);
+		xQueueSend(_TXqueue, (void *)&package, (TickType_t) portMAX_DELAY);
 
 		buffer += packageLength;
 		txLength -= packageLength;

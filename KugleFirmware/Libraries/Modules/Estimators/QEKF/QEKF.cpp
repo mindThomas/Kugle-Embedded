@@ -60,7 +60,7 @@ void QEKF::Reset(const float accelerometer[3])
  * @param	accelerometer[3]   Input: acceleration measurement in body frame [m/s^2]
  * @param	gyroscope[3]       Input: angular velocity measurement in body frame [rad/s]
  */
-void QEKF::Step(const float accelerometer[3], const float gyroscope[3])
+void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias)
 {
 	float dt;
 
@@ -68,8 +68,7 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3])
 	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	if (dt == 0) return; // no time has passed
-	Step(accelerometer, gyroscope, dt);
+	Step(accelerometer, gyroscope, EstimateBias);
 }
 
 /**
@@ -78,8 +77,10 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3])
  * @param	gyroscope[3]       Input: angular velocity measurement in body frame [rad/s]
  * @param	dt    			   Input: time passed since last estimate
  */
-void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float dt)
+void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float dt)
 {
+	if (dt == 0) return; // no time has passed
+
 	float X_prev[10];
 	memcpy(X_prev, X, sizeof(X_prev));
 

@@ -28,7 +28,7 @@ COMEKF::COMEKF(Parameters& params, Timer * microsTimer) : _params(params), _micr
 	Reset();
 }
 
-COMEKF::COMEKF(Parameters& params) : _params(params)
+COMEKF::COMEKF(Parameters& params) : _params(params), _microsTimer(0)
 {
 	Reset();
 }
@@ -58,7 +58,6 @@ void COMEKF::Step(const float dxyEst[2], const float Cov_dxy[2*2], const float q
 	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	if (dt == 0) return; // no time has passed
 	Step(dxyEst, Cov_dxy, qEst, Cov_qEst, qDotEst, dt);
 }
 
@@ -73,6 +72,8 @@ void COMEKF::Step(const float dxyEst[2], const float Cov_dxy[2*2], const float q
  */
 void COMEKF::Step(const float dxyEst[2], const float Cov_dxy[2*2], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float dt)
 {
+	if (dt == 0) return; // no time has passed
+
 	float X_prev[2];
 	memcpy(X_prev, X, sizeof(X_prev));
 

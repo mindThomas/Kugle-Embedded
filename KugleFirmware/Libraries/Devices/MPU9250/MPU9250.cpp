@@ -933,3 +933,16 @@ void MPU9250::CalibrateMagnetometer(float * dest1, float * dest2)
 
     DEBUG("Mag Calibration done!");
 }
+
+void MPU9250::Get(Measurement_t& measurement)
+{
+	getMotion9(&measurement.Accelerometer[0],
+			   &measurement.Accelerometer[1],
+			   &measurement.Accelerometer[2],
+			   &measurement.Gyroscope[0],
+			   &measurement.Gyroscope[1],
+			   &measurement.Gyroscope[2],
+			   &measurement.Magnetometer[0],
+			   &measurement.Magnetometer[1],
+			   &measurement.Magnetometer[2]);
+}

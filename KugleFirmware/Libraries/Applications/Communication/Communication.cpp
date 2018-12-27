@@ -34,7 +34,7 @@ Communication::~Communication()
 int Communication::Start()
 {
 	if (_isRunning) return 0; // task already running
-	return xTaskCreate( Communication::Run, (char *)"Health Monitor", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
+	return xTaskCreate( Communication::Thread, (char *)"Communication", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
 }
 
 int Communication::Stop(uint32_t timeout)
@@ -55,7 +55,7 @@ int Communication::Restart(uint32_t timeout)
 	return Start();
 }
 
-void Communication::Run(void * pvParameters)
+void Communication::Thread(void * pvParameters)
 {
 	Communication * task = (Communication *)pvParameters;
 	task->_isRunning = true;
@@ -68,3 +68,4 @@ void Communication::Run(void * pvParameters)
 	task->_TaskHandle = 0;
 	vTaskDelete(NULL); // delete/stop this current task
 }
+

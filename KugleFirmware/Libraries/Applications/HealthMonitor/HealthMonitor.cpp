@@ -34,7 +34,7 @@ HealthMonitor::~HealthMonitor()
 int HealthMonitor::Start()
 {
 	if (_isRunning) return 0; // task already running
-	return xTaskCreate( HealthMonitor::Run, (char *)"Health Monitor", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
+	return xTaskCreate( HealthMonitor::Thread, (char *)"Health Monitor", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
 }
 
 int HealthMonitor::Stop(uint32_t timeout)
@@ -55,7 +55,7 @@ int HealthMonitor::Restart(uint32_t timeout)
 	return Start();
 }
 
-void HealthMonitor::Run(void * pvParameters)
+void HealthMonitor::Thread(void * pvParameters)
 {
 	HealthMonitor * task = (HealthMonitor *)pvParameters;
 	task->_isRunning = true;
