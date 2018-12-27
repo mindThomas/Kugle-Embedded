@@ -62,7 +62,7 @@ ESCON::ESCON(uint8_t MotorIndex) :
 	_deleteObjectsAtDestruction(true)
 {
 	// Instantiate periphiral objects according to selected motor index
-	if (MotorIndex == 0)
+	if (MotorIndex == 1)
 	{
 		_torqueSetpoint = new PWM(PWM::TIMER1, PWM::CH1, ESCON_PWM_FREQUENCY, ESCON_PWM_RANGE);
 		_enablePin = new IO(GPIOC, GPIO_PIN_6); // configure as output
@@ -71,7 +71,7 @@ ESCON::ESCON(uint8_t MotorIndex) :
 		_encoder = new Encoder(Encoder::TIMER2);
 		_directionFeedbackPin = new IO(GPIOD, GPIO_PIN_2, IO::PULL_UP); // configure as input
 	}
-	else if (MotorIndex == 1)
+	else if (MotorIndex == 2)
 	{
 		_torqueSetpoint = new PWM(PWM::TIMER1, PWM::CH2, ESCON_PWM_FREQUENCY, ESCON_PWM_RANGE);
 		_enablePin = new IO(GPIOC, GPIO_PIN_7); // configure as output
@@ -80,7 +80,7 @@ ESCON::ESCON(uint8_t MotorIndex) :
 		_encoder = new Encoder(Encoder::TIMER3);
 		_directionFeedbackPin = new IO(GPIOD, GPIO_PIN_8, IO::PULL_UP); // configure as input
 	}
-	else if (MotorIndex == 2)
+	else if (MotorIndex == 3)
 	{
 		_torqueSetpoint = new PWM(PWM::TIMER1, PWM::CH3, ESCON_PWM_FREQUENCY, ESCON_PWM_RANGE);
 		_enablePin = new IO(GPIOC, GPIO_PIN_8); // configure as output

@@ -21,6 +21,12 @@
 #define APPLICATION_ATTITUDECONTROLLER_H
 
 #include "cmsis_os.h"
+#include "LSPC.hpp"
+#include "ESCON.h"
+#include "IMU.h"
+#include "Timer.h"
+#include "Parameters.h"
+#include "QuaternionVelocityControl.h"
 
 class AttitudeController
 {
@@ -29,20 +35,49 @@ class AttitudeController
 		const uint32_t THREAD_PRIORITY = osPriorityNormal;
 
 	public:
-		AttitudeController();	
+		AttitudeController(Parameters& params_, IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_);
 		~AttitudeController();
 
 		int Start();
 		int Stop(uint32_t timeout = 1000);
 		int Restart(uint32_t timeout = 1000);
 
+		void SetReference(const float q_ref_[4], const float omega_ref_[3]);
+		void SetReference(const float omega_ref_[3]);
+
 	private:
-		static void Run(void * pvParameters);
+		void ReferenceGeneration(QuaternionVelocityControl& velocityController);
+
+	private:
+		static void Thread(void * pvParameters);
 
 	private:
 		TaskHandle_t _TaskHandle;
 		bool _isRunning;
 		bool _shouldStop;
+
+	private:
+		Parameters& params;
+		IMU& imu;
+		ESCON& motor1;
+		ESCON& motor2;
+		ESCON& motor3;
+		LSPC& com;
+		Timer& microsTimer;
+
+		// State estimates
+		float q[4];
+		float dq[4];
+		float dxy[2];
+		float COM[3];
+
+		// For references
+		bool PropagateQuaternionReference; // if only omega_ref is set, then propagate quaternion reference based on this angular velocity reference
+		float q_ref[4];
+		float omega_ref[3];
+		float headingReference;
+		int ReferenceGenerationStep;
+		uint16_t prevTimerValue;
 
 };
 	

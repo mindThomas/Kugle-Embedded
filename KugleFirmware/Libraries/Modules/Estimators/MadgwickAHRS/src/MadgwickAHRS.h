@@ -27,6 +27,12 @@
 #define MadgwickAHRS_h
 #include <math.h>
 
+//-------------------------------------------------------------------------------------------
+// Definitions
+
+#define sampleFreqDef   512.0f          // sample frequency in Hz
+#define betaDef         0.1f            // 2 * proportional gain
+
 //--------------------------------------------------------------------------------------------
 // Variable declaration
 class Madgwick{
@@ -44,9 +50,9 @@ private:
 //-------------------------------------------------------------------------------------------
 // Function declarations
 public:
-    Madgwick(void);
-    void begin(float sampleFrequency) { invSampleFreq = 1.0f / sampleFrequency;  }
-    void begin(float sampleFrequency, float _beta) { invSampleFreq = 1.0f / sampleFrequency; beta = _beta; }
+    Madgwick(float sampleFrequency = sampleFreqDef, float _beta = betaDef);
+    void Reset();
+    void Reset(float ax, float ay, float az);
     void update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz);
     void updateIMU(float gx, float gy, float gz, float ax, float ay, float az);
     void updateIMU(float gx, float gy, float gz, float ax, float ay, float az, float _beta) { float beta_prev = beta; beta = _beta; updateIMU(gx,gy,gz,ax,ay,az); beta = beta_prev; } // hack to allow temporary beta values

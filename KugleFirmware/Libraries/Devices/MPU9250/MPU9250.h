@@ -33,41 +33,43 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #ifndef MPU9250_h
 #define MPU9250_h
 
+#include "IMU.h"
 #include "IO.h"
 #include "I2C.h"  // I2C library
 #include "SPI.h" // SPI Library
+#include "cmsis_os.h"
 #include "MPU9250_Bus.h"
 
-typedef enum mpu9250_gyro_range
-{
-	GYRO_RANGE_250DPS,
-	GYRO_RANGE_500DPS,
-	GYRO_RANGE_1000DPS,
-	GYRO_RANGE_2000DPS
-} mpu9250_gyro_range;
+class MPU9250 : public IMU {
+	public:
+		typedef enum mpu9250_gyro_range
+		{
+			GYRO_RANGE_250DPS,
+			GYRO_RANGE_500DPS,
+			GYRO_RANGE_1000DPS,
+			GYRO_RANGE_2000DPS
+		} mpu9250_gyro_range;
 
-typedef enum mpu9250_accel_range
-{
-	ACCEL_RANGE_2G,
-	ACCEL_RANGE_4G,
-	ACCEL_RANGE_8G,
-	ACCEL_RANGE_16G
-} mpu9250_accel_range;
+		typedef enum mpu9250_accel_range
+		{
+			ACCEL_RANGE_2G,
+			ACCEL_RANGE_4G,
+			ACCEL_RANGE_8G,
+			ACCEL_RANGE_16G
+		} mpu9250_accel_range;
 
-typedef enum mpu9250_dlpf_bandwidth
-{
-	DLPF_BANDWIDTH_250HZ,
-	DLPF_BANDWIDTH_184HZ,
-	DLPF_BANDWIDTH_92HZ,
-	DLPF_BANDWIDTH_41HZ,
-	DLPF_BANDWIDTH_20HZ,
-	DLPF_BANDWIDTH_10HZ,
-	DLPF_BANDWIDTH_5HZ,
-	DLPF_BANDWIDTH_OFF
-} mpu9250_dlpf_bandwidth;
+		typedef enum mpu9250_dlpf_bandwidth
+		{
+			DLPF_BANDWIDTH_250HZ,
+			DLPF_BANDWIDTH_184HZ,
+			DLPF_BANDWIDTH_92HZ,
+			DLPF_BANDWIDTH_41HZ,
+			DLPF_BANDWIDTH_20HZ,
+			DLPF_BANDWIDTH_10HZ,
+			DLPF_BANDWIDTH_5HZ,
+			DLPF_BANDWIDTH_OFF
+		} mpu9250_dlpf_bandwidth;
 
-
-class MPU9250{
     public:
 		MPU9250(SPI * spi);
 		MPU9250(I2C * i2c);
@@ -95,6 +97,8 @@ class MPU9250{
         void getMotion7Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* t);
         void getMotion9Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* hx, int16_t* hy, int16_t* hz);
         void getMotion10Counts(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* hx, int16_t* hy, int16_t* hz, int16_t* t);
+
+        void Get(Measurement_t& measurement);
 
         void SelfTest(float * result);
         void CalibrateMagnetometer(float * dest1, float * dest2);

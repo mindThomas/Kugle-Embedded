@@ -32,6 +32,7 @@ class LQR
 		~LQR();
 
 		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3]);
+		void Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float tau[3]);
 
 	private:
 		Parameters& _params;

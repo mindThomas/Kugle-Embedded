@@ -27,7 +27,7 @@ VelocityEKF::VelocityEKF(Parameters& params, Timer * microsTimer) : _params(para
 	Reset();
 }
 
-VelocityEKF::VelocityEKF(Parameters& params) : _params(params)
+VelocityEKF::VelocityEKF(Parameters& params) : _params(params), _microsTimer(0)
 {
 	Reset();
 }
@@ -75,7 +75,6 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
 	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	if (dt == 0) return; // no time has passed
 	Step(encoderTicks, qEst, Cov_qEst, qDotEst, COMest, dt);
 }
 
@@ -90,6 +89,8 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
  */
 void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3], const float dt)
 {
+	if (dt == 0) return; // no time has passed
+
 	float X_prev[2];
 	memcpy(X_prev, X, sizeof(X_prev));
 

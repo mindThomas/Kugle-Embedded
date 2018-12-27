@@ -41,6 +41,7 @@ LQR::~LQR()
 {
 }
 
+
 /**
  * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
  * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
@@ -52,6 +53,21 @@ LQR::~LQR()
  * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3])
+{
+	Step(q, dq, q_ref, omega_ref, tau);
+}
+
+/**
+ * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
+ * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
+ * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
+ * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
+ * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
+ * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ */
+void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
 	// See ARM-CMSIS DSP library for matrix operations: https://www.keil.com/pack/doc/CMSIS/DSP/html/group__groupMatrix.html
 

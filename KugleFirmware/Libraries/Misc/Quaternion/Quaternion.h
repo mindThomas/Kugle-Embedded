@@ -75,6 +75,9 @@ extern void Quaternion_eul2quat_zyx(const float yaw, const float pitch, const fl
 extern void Quaternion_quat2eul_zyx(const float q[4], float yaw_pitch_roll[3]);
 extern void Quaternion_AngleClamp(float q[4], float angleMax, float q_clamped[4]);
 
+extern void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4]);
+extern void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4]);
+
 extern float invSqrt(float x);
 
 #endif

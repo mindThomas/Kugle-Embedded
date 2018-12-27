@@ -20,7 +20,9 @@
 #ifndef DEVICES_MTI200_H
 #define DEVICES_MTI200_H
 
-class MTI200
+#include "IMU.h"
+
+class MTI200 : public IMU
 {
 
 public:

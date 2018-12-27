@@ -74,10 +74,10 @@ void MPU9250_SPI::readRegisters(uint8_t subAddress, uint8_t count, uint8_t* dest
 
 void MPU9250_SPI::setBusLowSpeed()
 {
-	_bus->ReconfigureFrequency(MPU9250_SPI_LOW_FREQUENCY);
+	_bus->ReconfigureFrequency(SPI_LOW_FREQUENCY);
 }
 
 void MPU9250_SPI::setBusHighSpeed()
 {
-	_bus->ReconfigureFrequency(MPU9250_SPI_HIGH_FREQUENCY);
+	_bus->ReconfigureFrequency(SPI_HIGH_FREQUENCY);
 }

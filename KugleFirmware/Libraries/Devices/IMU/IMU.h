@@ -20,15 +20,24 @@
 #ifndef DEVICES_IMU_H
 #define DEVICES_IMU_H
 
+#include "cmsis_os.h"
+
 class IMU
 {
+	public:
+		typedef struct Measurement_t {
+			float Accelerometer[3];
+			float Gyroscope[3];
+			float Magnetometer[3];
+		} Measurement_t;
 
-public:
-	IMU();	
-	~IMU();
+	public:
+		virtual ~IMU() {};
 
-private:
-	
+		virtual uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY) { return pdFALSE; };
+		virtual void Get(Measurement_t& measurement) {};
+
+	private:
 };
 	
 	

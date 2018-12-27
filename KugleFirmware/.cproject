@@ -28,7 +28,7 @@
 							<option id="fr.ac6.managedbuild.option.gnu.cross.fpu.1199197787" name="Floating point hardware" superClass="fr.ac6.managedbuild.option.gnu.cross.fpu" useByScannerDiscovery="false" value="fr.ac6.managedbuild.option.gnu.cross.fpu.fpv5-d16" valueType="enumerated"/>
 							<option id="fr.ac6.managedbuild.option.gnu.cross.floatabi.1563162206" name="Floating-point ABI" superClass="fr.ac6.managedbuild.option.gnu.cross.floatabi" useByScannerDiscovery="false" value="fr.ac6.managedbuild.option.gnu.cross.floatabi.hard" valueType="enumerated"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="fr.ac6.managedbuild.targetPlatform.gnu.cross.335653060" isAbstract="false" osList="all" superClass="fr.ac6.managedbuild.targetPlatform.gnu.cross"/>
-							<builder buildPath="C:\Users\Thomas\Documents\Kugle-Embedded\KugleFirmware\Debug" errorParsers="org.eclipse.cdt.core.GmakeErrorParser;org.eclipse.cdt.core.CWDLocator" id="fr.ac6.managedbuild.builder.gnu.cross.906225226" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="fr.ac6.managedbuild.builder.gnu.cross">
+							<builder buildPath="${workspace_loc:/KugleFirmware}/Debug" errorParsers="org.eclipse.cdt.core.GmakeErrorParser;org.eclipse.cdt.core.CWDLocator" id="fr.ac6.managedbuild.builder.gnu.cross.906225226" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" parallelBuildOn="true" parallelizationNumber="optimal" superClass="fr.ac6.managedbuild.builder.gnu.cross">
 								<outputEntries>
 									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="Debug"/>
 								</outputEntries>
@@ -70,16 +70,20 @@
 								<option id="gnu.cpp.compiler.option.debugging.level.165604567" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1025994982" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Libraries/Devices/Battery"/>
+									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Watchdog"/>
 									<listOptionValue builtIn="false" value="../Libraries/Applications/HealthMonitor"/>
 									<listOptionValue builtIn="false" value="../Libraries/Applications/AttitudeController"/>
 									<listOptionValue builtIn="false" value="../Libraries/Applications/Communication"/>
-									<listOptionValue builtIn="false" value="../Libraries/Applications/PathFollowing"/>
+									<listOptionValue builtIn="false" value="../Libraries/Applications/PathFollowingController"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/UserInterface/Joystick"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/UserInterface/FrontPanel"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/MATLABCoderInit"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/FirstOrderLPF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/IIR"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/ModelMatrices"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/QuaternionVelocityControl"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingModeMATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingModeMATLABCoder/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/QuadratureKnob"/>
@@ -94,7 +98,7 @@
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/QEKF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/QEKF/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/PowerManagement"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/MadgwickAHRS"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/MadgwickAHRS/src"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityEKF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityEKF/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF"/>
@@ -118,10 +122,12 @@
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/I2C"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/IO"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/PWM"/>
+									<listOptionValue builtIn="false" value="../Libraries/Periphirals/InputCapture"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/ADC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SPI"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/UART"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Timer"/>
+									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SMBus"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/USBCDC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/Quaternion"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/Matrix"/>
@@ -249,7 +255,7 @@
 					<sourceEntries>
 						<entry excluding="STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_sdmmc.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_fmc.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_swpmi.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sram.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spdifrx.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_smartcard.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_smartcard_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sdram.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sd.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sd_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sai.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sai_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_qspi.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_opamp.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_opamp_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_nor.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_nand.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mmc.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mmc_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdios.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_jpeg.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_irda.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hash.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hash_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_eth.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_eth_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dfsdm.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dcmi.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cryp.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cryp_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cec.c|CMSIS/DSP|CMSIS/Device/ST/STM32H7xx/Source|CMSIS/RTOS2/Template|CMSIS/DSP/Examples|CMSIS/Device/ST/STM32H7xx/Source/Templates/iar|CMSIS/Device/ST/STM32H7xx/Source/Templates/arm|CMSIS/Device/ST/STM32H7xx/Source/Templates/gcc|CMSIS/RTOS" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc"/>
-						<entry excluding="Devices/LCD/fontconvert|Devices/LCD/examples|Devices/MPU9250/examples|Devices/LSPC/LSPC/tests|Devices/LSPC/LSPC/lspc/boost|Devices/LSPC/LSPC/lspc/arduino" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Libraries"/>
+						<entry excluding="Modules/Estimators/MadgwickAHRS/extras|Modules/Estimators/MadgwickAHRS/examples|Devices/LCD/fontconvert|Devices/LCD/examples|Devices/MPU9250/examples|Devices/LSPC/LSPC/tests|Devices/LSPC/LSPC/lspc/boost|Devices/LSPC/LSPC/lspc/arduino" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Libraries"/>
 						<entry excluding="ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc_if_template.c|ST/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc_if_template.h|ST/STM32_USB_Device_Library/Core/Inc/usbd_conf_template.h|ST/STM32_USB_Device_Library/Core/Src/usbd_conf_template.c|Third_Party/FreeRTOS/Source/include/FreeRTOSConfig_template.h|Third_Party/FreeRTOS/Source/portable/MemMang/heap_1.c|Third_Party/FreeRTOS/Source/portable/MemMang/heap_2.c|Third_Party/FreeRTOS/Source/portable/MemMang/heap_3.c|Third_Party/FreeRTOS/Source/portable/MemMang/heap_5.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup"/>

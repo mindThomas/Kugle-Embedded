@@ -37,7 +37,7 @@ class HealthMonitor
 		int Restart(uint32_t timeout = 1000);
 
 	private:
-		static void Run(void * pvParameters);
+		static void Thread(void * pvParameters);
 
 	private:
 		TaskHandle_t _TaskHandle;

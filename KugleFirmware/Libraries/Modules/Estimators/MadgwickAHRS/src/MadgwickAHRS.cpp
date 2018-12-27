@@ -31,27 +31,37 @@
 #include "MadgwickAHRS.h"
 #include <math.h>
 
-//-------------------------------------------------------------------------------------------
-// Definitions
-
-#define sampleFreqDef   512.0f          // sample frequency in Hz
-#define betaDef         0.1f            // 2 * proportional gain
-
-
 //============================================================================================
 // Functions
 
 //-------------------------------------------------------------------------------------------
 // AHRS algorithm update
 
-Madgwick::Madgwick() {
-	beta = betaDef;
+Madgwick::Madgwick(float sampleFrequency, float _beta) {
+	beta = _beta;
 	q0 = 1.0f;
 	q1 = 0.0f;
 	q2 = 0.0f;
 	q3 = 0.0f;
 	invSampleFreq = 1.0f / sampleFreqDef;
 	anglesComputed = 0;
+}
+
+void Madgwick::Reset()
+{
+	q0 = 1.0f;
+	q1 = 0.0f;
+	q2 = 0.0f;
+	q3 = 0.0f;
+}
+
+/* Reset quaternion to attitude determined from current accelerometer measurement */
+void Madgwick::Reset(float ax, float ay, float az)
+{
+	q0 = 1.0f;
+	q1 = 0.0f;
+	q2 = 0.0f;
+	q3 = 0.0f;
 }
 
 void Madgwick::update(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz) {

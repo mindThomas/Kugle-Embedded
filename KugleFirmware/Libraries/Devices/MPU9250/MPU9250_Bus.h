@@ -20,15 +20,17 @@
 #ifndef MPU9250_BUS_H
 #define MPU9250_BUS_H
 
+#include "IMU.h"
 #include "I2C.h"  // I2C library
 #include "SPI.h" // SPI Library
 
-#define MPU9250_I2C_FREQUENCY 		400000		// 400 kHz
-#define MPU9250_SPI_LOW_FREQUENCY	1000000		// 1 MHz
-#define MPU9250_SPI_HIGH_FREQUENCY	1000000		// 10 MHz
-
 class MPU9250_Bus
 {
+	public:
+		static const int I2C_FREQUENCY = 400000;			// 400 kHz
+		static const int SPI_LOW_FREQUENCY = 1000000;		// 1 MHz
+		static const int SPI_HIGH_FREQUENCY = 1000000;		// 10 MHz
+
 	public:
 		virtual ~MPU9250_Bus() {};
 		virtual bool writeRegister(uint8_t subAddress, uint8_t data) { return false; };

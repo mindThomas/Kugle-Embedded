@@ -32,8 +32,8 @@ class QEKF
 
 		void Reset();
 		void Reset(const float accelerometer[3]);
-		void Step(const float accelerometer[3], const float gyroscope[3]);
-		void Step(const float accelerometer[3], const float gyroscope[3], const float dt);
+		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias = true);
+		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float dt);
 
 		void GetQuaternion(float q[4]);
 		void GetQuaternionDerivative(float dq[4]);
