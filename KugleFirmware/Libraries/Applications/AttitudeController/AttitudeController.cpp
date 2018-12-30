@@ -299,6 +299,7 @@ void AttitudeController::Thread(void * pvParameters)
 
 	/* Clear controller and estimator objects */
 	delete(&lqr);
+	delete(&velocityController);
 	delete(&qEKF);
 	delete(&madgwick);
 	delete(&velocityEKF);
