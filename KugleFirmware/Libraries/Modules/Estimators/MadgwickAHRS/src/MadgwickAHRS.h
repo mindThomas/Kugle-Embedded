@@ -107,14 +107,14 @@ public:
         if (!anglesComputed) computeAngles();
         return yaw_vel;
     }
-    float getQuaternion(float q_out[4])
+    void getQuaternion(float q_out[4])
     {
         q_out[0] = q0;
         q_out[1] = q1;
         q_out[2] = q2;
         q_out[3] = q3;
     }
-    float getQuaternionDerivative(float q_dot_out[4])
+    void getQuaternionDerivative(float q_dot_out[4])
     {
         q_dot_out[0] = qDot0;
         q_dot_out[1] = qDot1;

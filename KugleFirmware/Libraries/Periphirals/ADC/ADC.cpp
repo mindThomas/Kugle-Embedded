@@ -170,8 +170,6 @@ void ADC::ConfigureADCPeripheral()
 {
 	if (!_hRes) return;
 
-	ADC_MultiModeTypeDef multimode = {0};
-
 	if (_hRes->adc == ADC_1) {
 		__HAL_RCC_ADC12_CLK_ENABLE();
 		_hRes->handle.Instance = ADC1;
@@ -220,9 +218,9 @@ void ADC::ConfigureADCPeripheral()
 		return;
 	}
 
-	/**Configure the ADC multi-mode
-	*/
-	/*multimode.Mode = ADC_MODE_INDEPENDENT;
+	/*Configure the ADC multi-mode */
+	/*ADC_MultiModeTypeDef multimode = {0};
+	multimode.Mode = ADC_MODE_INDEPENDENT;
 	if (HAL_ADCEx_MultiModeConfigChannel(&_hRes->handle, &multimode) != HAL_OK)
 	{
 		_hRes = 0;

@@ -184,7 +184,7 @@ void AttitudeController::Thread(void * pvParameters)
 	        for (int d = 0; d < 4; d++) {
 	        	Cov_q[4*d + d] = 3*1E-7; // set q covariance when MADGWICK is used
 	        }
-		} else {
+		} else { // use QEKF
 			qEKF.Step(imuMeas.Accelerometer, imuMeas.Gyroscope);
 			qEKF.GetQuaternion(task->q);
 			qEKF.GetQuaternionDerivative(task->dq);
@@ -267,6 +267,7 @@ void AttitudeController::Thread(void * pvParameters)
 	    	Torque[2] = fmax(fmin(Torque[2], params.controller.TorqueMax), -params.controller.TorqueMax);
 	    }
 
+	    /* Initial Torque ramp up */
 	    if (params.controller.TorqueRampUp && !TorqueRampUpFinished) {
 	    	Torque[0] *= TorqueRampUpGain;
 	    	Torque[1] *= TorqueRampUpGain;

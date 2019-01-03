@@ -331,7 +331,7 @@ void I2C::Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
 		DEBUG("Failed I2C transmission");
 	}
 
-	uint32_t errCode = HAL_I2C_GetError(&_hRes->handle);
+	//uint32_t errCode = HAL_I2C_GetError(&_hRes->handle);
 
 	//vPortFree(txBuffer);
 
@@ -369,7 +369,7 @@ void I2C::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
 		DEBUG("Failed I2C transmission");
 	}
 
-	uint32_t errCode = HAL_I2C_GetError(&_hRes->handle);
+	//uint32_t errCode = HAL_I2C_GetError(&_hRes->handle);
 
 	/*memcpy(buffer, &rxBuffer[1], readLength);
 

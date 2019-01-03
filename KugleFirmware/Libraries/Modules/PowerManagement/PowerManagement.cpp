@@ -99,7 +99,7 @@ void PowerManagement::SetLEDmode(LEDmode_t ledMode)
 
 void PowerManagement::PowerButtonInterrupt(void * params)
 {
-	PowerManagement * pm = (PowerManagement *)params;
+	//PowerManagement * pm = (PowerManagement *)params;
 
 }
 

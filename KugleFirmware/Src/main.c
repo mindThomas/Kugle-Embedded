@@ -22,7 +22,9 @@
 #include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
+#include "MainTask.h"
 #include "ProcessorInit.h"
+#include "MemoryManagement.h"
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -77,15 +79,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM16) {
     HAL_IncTick();
   }
-}
-
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-
 }
 
 #ifdef  USE_FULL_ASSERT
