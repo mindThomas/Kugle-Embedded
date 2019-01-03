@@ -1,4 +1,4 @@
-#include "main.h"
+#include "MainTask.h"
 #include "cmsis_os.h"
 
 /* Include Periphiral drivers */
@@ -46,6 +46,8 @@
 
 /* Miscellaneous includes */
 #include "MATLABCoderInit.h"
+#include <stdlib.h>
+#include <vector>
 
 void handl(const std::vector<uint8_t>& payload);
 

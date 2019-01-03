@@ -39,7 +39,7 @@ void Print::write(const uint8_t *buffer, size_t size)
 }
 void Print::print(const std::string &s)
 {
-  for (int i = 0; i < s.length(); i++) {
+  for (unsigned int i = 0; i < s.length(); i++) {
     write(s[i]);
   }
 }

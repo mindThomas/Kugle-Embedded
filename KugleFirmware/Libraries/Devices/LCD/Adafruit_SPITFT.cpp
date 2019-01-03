@@ -361,9 +361,9 @@ void Adafruit_SPITFT::writeColor(uint16_t color, uint32_t len) {
 
     if(!len) return; // Avoid 0-byte transfers
 
-    uint8_t hi = color >> 8, lo = color;
-
 #ifdef USE_SPI_DMA
+
+    	uint8_t hi = color >> 8, lo = color;
 
         int i, d, numDescriptors;
         if(hi == lo) { // If high & low bytes are same...
@@ -462,6 +462,8 @@ void Adafruit_SPITFT::writeColor(uint16_t color, uint32_t len) {
             len -= xferLen;
         }
   #else
+        uint8_t hi = color >> 8, lo = color;
+
         while(len--) {
             HSPI_WRITE(hi);
             HSPI_WRITE(lo);

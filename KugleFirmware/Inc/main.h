@@ -69,8 +69,6 @@ extern "C" {
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported functions prototypes ---------------------------------------------*/
-void MainTask(void const * argument);
-void Error_Handler(void);
 void TestBench_Init(void);
 
 /* Private defines -----------------------------------------------------------*/

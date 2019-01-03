@@ -1,5 +1,5 @@
-#ifndef __MAIN_H
-#define __MAIN_H
+#ifndef __STM32H7xx_HAL_TIMEBASE_TIM_H
+#define __STM32H7xx_HAL_TIMEBASE_TIM_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,4 +17,4 @@ void HAL_DelayHighRes(uint32_t Delay);
 }
 #endif
 
-#endif /* __MAIN_H */
+#endif /* __STM32H7xx_HAL_TIMEBASE_TIM_H */

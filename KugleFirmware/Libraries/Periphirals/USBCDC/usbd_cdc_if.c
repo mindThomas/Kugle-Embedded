@@ -353,7 +353,7 @@ uint8_t CDC_Transmit_FS_ThreadBlocking(uint8_t* Buf, uint16_t Len)
 {
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
-  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS->pClassData;
+  //USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS->pClassData;
   if (USB_TX_FinishedSemaphore) {
 	  if( xSemaphoreTake( USB_TX_FinishedSemaphore, portMAX_DELAY ) != pdTRUE )
 		  return USBD_BUSY;

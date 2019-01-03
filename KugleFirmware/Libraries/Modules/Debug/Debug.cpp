@@ -19,6 +19,9 @@
  
 #include "Debug.h"
  
+// Necessary to export for compiler such that the Error_Handler function can be called by C code
+extern "C" __EXPORT void Error_Handler(void);
+
 Debug::Debug()
 {
 	
@@ -66,4 +69,13 @@ void Debug::ErrorHandler()
 	{
 		i++;
 	}
+}
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+	Debug::ErrorHandler();
 }

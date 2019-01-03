@@ -52,6 +52,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "main.h"
+#include "stm32h7xx_hal_timebase_tim.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     

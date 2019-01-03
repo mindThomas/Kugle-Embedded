@@ -312,7 +312,7 @@ void SMBus::Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
 		DEBUG("Failed SMBus transmission");
 	}
 
-	uint32_t errCode = HAL_SMBUS_GetError(&_hRes->handle);
+	//uint32_t errCode = HAL_SMBUS_GetError(&_hRes->handle);
 
 	vPortFree(txBuffer);
 
@@ -345,7 +345,7 @@ void SMBus::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
 		DEBUG("Failed SMBus transmission");
 	}
 
-	uint32_t errCode = HAL_SMBUS_GetError(&_hRes->handle);
+	//uint32_t errCode = HAL_SMBUS_GetError(&_hRes->handle);
 
 	// Read data requested from register address
 	if (HAL_SMBUS_Master_Receive_IT(&_hRes->handle, (uint16_t)_devAddr, buffer, readLength, XferOptions) == HAL_OK)
@@ -356,7 +356,7 @@ void SMBus::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
 		DEBUG("Failed SMBus transmission");
 	}
 
-	uint32_t errCode2 = HAL_SMBUS_GetError(&_hRes->handle);
+	//uint32_t errCode2 = HAL_SMBUS_GetError(&_hRes->handle);
 
 	xSemaphoreGive( _hRes->resourceSemaphore ); // give hardware resource back
 }

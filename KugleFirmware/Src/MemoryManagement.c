@@ -5,6 +5,7 @@
 #include "task.h"
 #include "string.h" // for memset
 #include <malloc.h>
+#include "MemoryManagement.h"
 
 /* Adjustments of the Dynamic Memory scheme
  * See: https://mcuoneclipse.com/2017/07/02/using-freertos-with-newlib-and-newlib-nano/

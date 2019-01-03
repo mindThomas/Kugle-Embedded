@@ -18,6 +18,8 @@
  */
  
 #include "stm32h7xx_hal.h"
+#include "main.h"
+#include "Debug.h" // for Error_Handler
 
 /* Configure clocks to:
 	- 400 MHz CPU clock

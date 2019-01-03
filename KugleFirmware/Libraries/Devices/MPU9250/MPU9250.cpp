@@ -39,7 +39,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include "IO.h"
 #include "I2C.h"  // I2C library
 #include "SPI.h" // SPI Library
-#include "MPU9250_bus.h"
 #include "MPU9250.h"
 #include "Debug.h"
 #include "cmsis_os.h"

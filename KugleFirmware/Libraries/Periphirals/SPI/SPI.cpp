@@ -616,8 +616,8 @@ void SPI::TransactionWrite16(uint16_t value)
 	if (!_hRes) return;
 	if (!_ongoingTransaction) return;
 
-	uint8_t tx[2] = {(value>>8) & 0xFF,
-					 (value) & 0xFF};
+	uint8_t tx[2] = {(uint8_t)((value>>8) & 0xFF),
+					 (uint8_t)((value) & 0xFF)};
 	uint8_t rx[2] = {0};
 	HAL_SPI_TransmitReceive(&_hRes->handle, tx, rx, 2, HAL_MAX_DELAY);
 }
@@ -627,10 +627,10 @@ void SPI::TransactionWrite32(uint32_t value)
 	if (!_hRes) return;
 	if (!_ongoingTransaction) return;
 
-	uint8_t tx[4] = {(value>>24) & 0xFF,
-					 (value>>16) & 0xFF,
-					 (value>>8) & 0xFF,
-					 (value) & 0xFF};
+	uint8_t tx[4] = {(uint8_t)((value>>24) & 0xFF),
+					 (uint8_t)((value>>16) & 0xFF),
+					 (uint8_t)((value>>8) & 0xFF),
+					 (uint8_t)((value) & 0xFF)};
 	uint8_t rx[4] = {0};
 	HAL_SPI_TransmitReceive(&_hRes->handle, tx, rx, 4, HAL_MAX_DELAY);
 }

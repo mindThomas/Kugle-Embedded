@@ -52,6 +52,7 @@
 #include "stm32h7xx_hal.h"
 #include "usbd_def.h"
 #include "usbd_core.h"
+#include "Debug.h" // for Error_Handler
 
 /* USER CODE BEGIN Includes */
 

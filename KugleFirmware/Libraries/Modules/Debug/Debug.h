@@ -20,6 +20,8 @@
 #ifndef MODULES_DEBUG_H
 #define MODULES_DEBUG_H
 
+#ifdef __cplusplus // for C++ usage
+
 #include <string>
 #include <stdlib.h>
 
@@ -45,6 +47,12 @@ public:
 private:
 	
 };
+
+#else  // for C usage
+
+void Error_Handler(void);
+
+#endif
 	
 	
 #endif
