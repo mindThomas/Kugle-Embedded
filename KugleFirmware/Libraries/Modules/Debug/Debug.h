@@ -22,30 +22,42 @@
 
 #ifdef __cplusplus // for C++ usage
 
-#include <string>
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <cstring>
+#include <string>
 
 #define DEBUG(msg)	Debug::Message("DEBUG: ", __func__, msg)
 #define ERROR(msg)	{Debug::Message("ERROR: ", __func__, msg); Debug::ErrorHandler();}
 
+#define MAX_DEBUG_TEXT_LENGTH	250
+
 class Debug
 {
 
-public:
-	static void Message(const char * type, const char * functionName, const char * msg);
-	static void Message(std::string type, const char * functionName, std::string msg);
-	static void Message(const char * functionName, const char * msg);
-	static void Message(const char * functionName, std::string msg);
-	static void Message(const char * msg);
-	static void Message(std::string msg);
-	static void ErrorHandler();
-
-public:
-	Debug();	
-	~Debug();
-
-private:
+	public:
+		Debug(void * com);
+		~Debug();
 	
+		static void Message(const char * type, const char * functionName, const char * msg);
+		static void Message(std::string type, const char * functionName, std::string msg);
+		static void Message(const char * functionName, const char * msg);
+		static void Message(const char * functionName, std::string msg);
+		static void Message(const char * msg);
+		static void Message(std::string msg);
+		static void print(const char * msg);
+		static void printf( const char *msgFmt, ... );
+		static void ErrorHandler();
+
+	private:
+		void * com_; // LSPC object pointer
+
+
+	public:
+		static Debug * debugHandle;
+
 };
 
 #else  // for C usage

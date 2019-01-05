@@ -78,14 +78,23 @@ void MainTask(void * pvParameters)
 	/* Initialize communication */
 	USBCDC * usb = new USBCDC(3);
 	LSPC * lspcUSB = new LSPC(usb, 11, 10); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
+	Debug * dbg = new Debug(lspcUSB); // pair debug module with configured LSPC module to enable "Debug::print" functionality
 
-	lspcUSB->registerCallback(0x01, MessageCallback);
+	lspcUSB->registerCallback(lspc::MessageTypesIn::Test, MessageCallback);
 
+	int step = 0;
+	int count = 0;
 	while (1)
 	{
 		const uint8_t package[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, count};
-		lspcUSB->TransmitAsync(0x01, package, sizeof(package));
+		lspcUSB->TransmitAsync(lspc::MessageTypesOut::Test, package, sizeof(package));
 		osDelay(5);
+
+		if (count++ > 200) {
+			count = 0;
+			//Debug::print("Test\n");
+			Debug::printf("Test: %d\n", step++);
+		}
 	}
 
 	/* Initialize and configure IMU */
