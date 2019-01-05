@@ -32,16 +32,17 @@
 class USBCDC
 {
 	private:
-		const int USBCDC_TX_PROCESSING_THREAD_STACK_SIZE = 128;
+		const int USBCDC_TX_PROCESSING_THREAD_STACK_SIZE = 256;
 		const int USBCDC_TX_QUEUE_LENGTH = 10;
 		const int USBCDC_RX_QUEUE_LENGTH = 10;
 
 	public:
-		USBCDC(uint32_t processingTaskPriority);
+		USBCDC(uint32_t transmitterTaskPriority);
 		~USBCDC();
 		bool GetPackage(USB_CDC_Package_t * packageBuffer);
 		void Write(uint8_t byte);
 		uint32_t Write(uint8_t * buffer, uint32_t length);
+		uint32_t WriteBlocking(uint8_t * buffer, uint32_t length);
 		int16_t Read();
 		bool Available();
 		uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY);
@@ -57,7 +58,7 @@ class USBCDC
 		SemaphoreHandle_t _resourceSemaphore;
 
 	private:
-		static void ProcessingThread(void * pvParameters);
+		static void TransmitterThread(void * pvParameters);
 
 	public:
 		static USBCDC * usbHandle;

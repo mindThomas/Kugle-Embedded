@@ -19,6 +19,7 @@
  
 #include "SPI.h"
 #include "stm32h7xx_hal.h"
+#include "Priorities.h"
 #include "Debug.h"
 #include <math.h>
 #include <string.h> // for memset

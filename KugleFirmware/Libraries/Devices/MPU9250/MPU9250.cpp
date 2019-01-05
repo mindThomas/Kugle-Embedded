@@ -60,6 +60,12 @@ MPU9250::MPU9250(I2C * i2c) : _interruptPin(0), _interruptSemaphore(0), _accelSc
 	_bus = new COM(sensorPort, address);
 }*/
 
+MPU9250::~MPU9250()
+{
+	if (_bus)
+		delete(_bus);
+}
+
 void MPU9250::ConfigureInterrupt(IO * interruptPin)
 {
 	_interruptPin = interruptPin;
@@ -94,6 +100,8 @@ uint32_t MPU9250::WaitForNewData(uint32_t xTicksToWait) // blocking call
 int MPU9250::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRange){
     uint8_t buff[3];
     uint8_t data[7];
+
+    if (!_bus) return -1;
 
     _bus->setBusLowSpeed();
 

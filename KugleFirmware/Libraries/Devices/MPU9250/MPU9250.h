@@ -73,6 +73,7 @@ class MPU9250 : public IMU {
     public:
 		MPU9250(SPI * spi);
 		MPU9250(I2C * i2c);
+		~MPU9250();
 		//MPU9250(PORT sensorPort, uint8_t address = 0x68);
         int Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRange);
         int setFilt(mpu9250_dlpf_bandwidth accel_bandwidth, mpu9250_dlpf_bandwidth gyro_bandwidth, uint8_t SRD = 0);

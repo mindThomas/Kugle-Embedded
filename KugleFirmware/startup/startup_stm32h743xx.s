@@ -123,9 +123,30 @@ LoopFillZerobss:
 */
     .section  .text.Default_Handler,"ax",%progbits
 Default_Handler:
+  /* Load the address of the interrupt control register into r3. */
+  ldr r3, NVIC_INT_CTRL_CONST
+  /* Load the value of the interrupt control register into r2 from the
+  address held in r3. */
+  ldr r2, [r3, #0]
+  /* See https://www.freertos.org/Debugging-Hard-Faults-On-Cortex-M-Microcontrollers.html */
+  /*
+  * Interrupt numbers read from the NVIC in this way are relative to the start of the vector table,
+  * in which entries for system exceptions (such as the hard fault) appear before entries for peripheral interrupts.
+  * If r2 contains the value 3 then, a hard fault exception is being handled. If r2 contains a value equal to or greater than 16,
+  * then a peripheral interrupt is being handled - and the interrupting peripheral can be determined by subtracting 16 from the interrupt number.
+  */
+  /* The interrupt number is in the least significant byte - clear all
+  other bits. */
+  uxtb r2, r2
 Infinite_Loop:
+  /* Now sit in an infinite loop - the number of the executing interrupt
+  is held in r2. */
   b  Infinite_Loop
   .size  Default_Handler, .-Default_Handler
+
+.align 4
+/* The address of the NVIC interrupt control register. */
+NVIC_INT_CTRL_CONST: .word 0xe000ed04   /* NVIC ICSR (Interrupt Control State Register) */
 /******************************************************************************
 *
 * The minimal vector table for a Cortex M. Note that the proper constructs

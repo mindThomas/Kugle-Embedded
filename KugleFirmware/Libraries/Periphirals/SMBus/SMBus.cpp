@@ -19,6 +19,7 @@
  
 #include "SMBus.h"
 #include "stm32h7xx_hal.h"
+#include "Priorities.h"
 #include "Debug.h"
 #include <math.h>
 #include <string.h> // for memset
@@ -178,9 +179,9 @@ void SMBus::InitPeripheral(port_t port, uint32_t frequency)
 		    __HAL_RCC_I2C2_CLK_ENABLE();
 
 		    /* NVIC for I2C1 */
-		    HAL_NVIC_SetPriority(I2C2_ER_IRQn, 5, 0);
+		    HAL_NVIC_SetPriority(I2C2_ER_IRQn, SMBUS_INTERRUPT_PRIORITY, 0);
 		    HAL_NVIC_EnableIRQ(I2C2_ER_IRQn);
-		    HAL_NVIC_SetPriority(I2C2_EV_IRQn, 5, 0);
+		    HAL_NVIC_SetPriority(I2C2_EV_IRQn, SMBUS_INTERRUPT_PRIORITY, 0);
 		    HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
 		}
 		else if (port == PORT_I2C4)
@@ -201,9 +202,9 @@ void SMBus::InitPeripheral(port_t port, uint32_t frequency)
 		    __HAL_RCC_I2C4_CLK_ENABLE();
 
 		    /* NVIC for I2C3 */
-		    HAL_NVIC_SetPriority(I2C4_ER_IRQn, 5, 0);
+		    HAL_NVIC_SetPriority(I2C4_ER_IRQn, SMBUS_INTERRUPT_PRIORITY, 0);
 		    HAL_NVIC_EnableIRQ(I2C4_ER_IRQn);
-		    HAL_NVIC_SetPriority(I2C4_EV_IRQn, 5, 0);
+		    HAL_NVIC_SetPriority(I2C4_EV_IRQn, SMBUS_INTERRUPT_PRIORITY, 0);
 		    HAL_NVIC_EnableIRQ(I2C4_EV_IRQn);
 		}
 	}

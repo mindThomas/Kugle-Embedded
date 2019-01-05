@@ -19,6 +19,7 @@
  
 #include "Timer.h"
 #include "stm32h7xx_hal.h"
+#include "Priorities.h"
 #include "Debug.h"
 #include <string.h> // for memset
 #include <cmath>
@@ -324,22 +325,30 @@ void TIM6_DAC_IRQHandler(void)
 {
 	if (Timer::resTIMER6)
 		Timer::InterruptHandler(Timer::resTIMER6); //HAL_TIM_IRQHandler(&htim2);
+	else
+		TIM6->SR = ~(uint32_t)(TIM_IT_UPDATE | TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4 | TIM_IT_COM | TIM_IT_TRIGGER | TIM_IT_BREAK); // clear all interrupts
 }
 
 void TIM7_IRQHandler(void)
 {
 	if (Timer::resTIMER7)
 		Timer::InterruptHandler(Timer::resTIMER7); //HAL_TIM_IRQHandler(&htim2);
+	else
+		TIM7->SR = ~(uint32_t)(TIM_IT_UPDATE | TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4 | TIM_IT_COM | TIM_IT_TRIGGER | TIM_IT_BREAK); // clear all interrupts
 }
 
 void TIM8_BRK_TIM12_IRQHandler(void)
 {
 	if (Timer::resTIMER12)
 		Timer::InterruptHandler(Timer::resTIMER12); //HAL_TIM_IRQHandler(&htim2);
+	else
+		TIM12->SR = ~(uint32_t)(TIM_IT_UPDATE | TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4 | TIM_IT_COM | TIM_IT_TRIGGER | TIM_IT_BREAK); // clear all interrupts
 }
 
 void TIM8_UP_TIM13_IRQHandler(void)
 {
 	if (Timer::resTIMER13)
 		Timer::InterruptHandler(Timer::resTIMER13); //HAL_TIM_IRQHandler(&htim2);
+	else
+		TIM13->SR = ~(uint32_t)(TIM_IT_UPDATE | TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4 | TIM_IT_COM | TIM_IT_TRIGGER | TIM_IT_BREAK); // clear all interrupts
 }

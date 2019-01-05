@@ -19,6 +19,7 @@
  
 #include "Encoder.h"
 #include "stm32h7xx_hal.h"
+#include "Priorities.h"
 #include "Debug.h"
 #include <string.h> // for memset
  
@@ -132,13 +133,13 @@ void Encoder::ConfigureEncoderGPIO()
 		*/
 		GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
 		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 	    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 		GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
 		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 		/* TIM2 interrupt Init */
-		HAL_NVIC_SetPriority(TIM2_IRQn, 5, 0);
+		HAL_NVIC_SetPriority(TIM2_IRQn, ENCODER_TIMER_OVERFLOW_PRIORITY, 0);
 		HAL_NVIC_EnableIRQ(TIM2_IRQn);
 	}
 	else if (_hRes->timer == TIMER3)
@@ -153,13 +154,13 @@ void Encoder::ConfigureEncoderGPIO()
 		*/
 		GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5;
 		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 	    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 		GPIO_InitStruct.Alternate = GPIO_AF2_TIM3;
 		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 		/* TIM3 interrupt Init */
-		HAL_NVIC_SetPriority(TIM3_IRQn, 5, 0);
+		HAL_NVIC_SetPriority(TIM3_IRQn, ENCODER_TIMER_OVERFLOW_PRIORITY, 0);
 		HAL_NVIC_EnableIRQ(TIM3_IRQn);
 	}
 	else if (_hRes->timer == TIMER4)
@@ -174,13 +175,13 @@ void Encoder::ConfigureEncoderGPIO()
 		*/
 		GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13;
 		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
 	    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 		GPIO_InitStruct.Alternate = GPIO_AF2_TIM4;
 		HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
 		/* TIM4 interrupt Init */
-		HAL_NVIC_SetPriority(TIM4_IRQn, 5, 0);
+		HAL_NVIC_SetPriority(TIM4_IRQn, ENCODER_TIMER_OVERFLOW_PRIORITY, 0);
 		HAL_NVIC_EnableIRQ(TIM4_IRQn);
 	}
 }
@@ -271,16 +272,22 @@ void TIM2_IRQHandler(void)
 {
 	if (Encoder::resTIMER2)
 		Encoder::InterruptHandler(Encoder::resTIMER2); //HAL_TIM_IRQHandler(&htim2);
+	else
+		TIM2->SR = ~(uint32_t)(TIM_IT_UPDATE | TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4 | TIM_IT_COM | TIM_IT_TRIGGER | TIM_IT_BREAK); // clear all interrupts
 }
 
 void TIM3_IRQHandler(void)
 {
 	if (Encoder::resTIMER3)
 		Encoder::InterruptHandler(Encoder::resTIMER3); //HAL_TIM_IRQHandler(&htim2);
+	else
+		TIM3->SR = ~(uint32_t)(TIM_IT_UPDATE | TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4 | TIM_IT_COM | TIM_IT_TRIGGER | TIM_IT_BREAK); // clear all interrupts
 }
 
 void TIM4_IRQHandler(void)
 {
 	if (Encoder::resTIMER4)
 		Encoder::InterruptHandler(Encoder::resTIMER4); //HAL_TIM_IRQHandler(&htim2);
+	else
+		TIM4->SR = ~(uint32_t)(TIM_IT_UPDATE | TIM_IT_CC1 | TIM_IT_CC2 | TIM_IT_CC3 | TIM_IT_CC4 | TIM_IT_COM | TIM_IT_TRIGGER | TIM_IT_BREAK); // clear all interrupts
 }

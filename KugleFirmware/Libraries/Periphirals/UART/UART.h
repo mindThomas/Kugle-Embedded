@@ -24,7 +24,6 @@
 #include "cmsis_os.h" // for memory allocation (for the buffer) and callback
 
 #define UART_CALLBACK_PARAMS (uint8_t * buffer, uint32_t bufLen)
-#define UART_INTERRUPT_PRIORITY		5
 
 class UART
 {
@@ -49,6 +48,7 @@ class UART
 
 		void Write(uint8_t byte);
 		uint32_t Write(uint8_t * buffer, uint32_t length);
+		uint32_t WriteBlocking(uint8_t * buffer, uint32_t length);
 		int16_t Read();
 		bool Available();
 		uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY);

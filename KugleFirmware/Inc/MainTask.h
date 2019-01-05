@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-void MainTask(void const * argument);
+void MainTask(void * pvParameters);
 	
 #ifdef __cplusplus
 }

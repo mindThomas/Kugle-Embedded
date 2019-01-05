@@ -143,6 +143,7 @@ uint8_t CDC_Transmit_FS_ThreadBlocking(uint8_t* Buf, uint16_t Len);
 void CDC_RegisterUsbDeviceObject(USBD_HandleTypeDef * usbDevice);
 void CDC_RegisterReceiveQueue(QueueHandle_t queue);
 void CDC_RegisterRXsemaphore(SemaphoreHandle_t semaphore);
+uint8_t CDC_IsConnected(void);
 /* USER CODE END EXPORTED_FUNCTIONS */
 
 /**

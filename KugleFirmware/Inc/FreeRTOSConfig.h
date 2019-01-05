@@ -105,17 +105,19 @@
 #define configUSE_TICK_HOOK                      0
 #define configCPU_CLOCK_HZ                       ( SystemCoreClock )
 #define configTICK_RATE_HZ                       ((TickType_t)1000)
-#define configMAX_PRIORITIES                     ( 20 )
+#define configMAX_PRIORITIES                     ( 10 )
 #define configMINIMAL_STACK_SIZE                 ((uint16_t)256)
-#define configTOTAL_HEAP_SIZE                    ((size_t)262144)//((size_t)65535)//
-#define configMAX_TASK_NAME_LEN                  ( 16 )
+#define configTOTAL_HEAP_SIZE                    ((size_t)2*262144)//((size_t)65535)//
+#define configMAX_TASK_NAME_LEN                  ( 20 )
 #define configGENERATE_RUN_TIME_STATS            1
+#define configIDLE_SHOULD_YIELD           		 1
 #define configUSE_TRACE_FACILITY                 1
 #define configUSE_STATS_FORMATTING_FUNCTIONS     1
 #define configUSE_16_BIT_TICKS                   0
 #define configUSE_MUTEXES                        1
 #define configUSE_COUNTING_SEMAPHORES    	 	 1
 #define configQUEUE_REGISTRY_SIZE                20
+#define configCHECK_FOR_STACK_OVERFLOW    		 1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION  1
 
 #define configRECORD_STACK_HIGH_ADDRESS           1  /* 1: record stack high address for the debugger, 0: do not record stack high address */
@@ -154,7 +156,7 @@ function. */
 routine that makes calls to interrupt safe FreeRTOS API functions.  DO NOT CALL
 INTERRUPT SAFE FREERTOS API FUNCTIONS FROM ANY INTERRUPT THAT HAS A HIGHER
 PRIORITY THAN THIS! (higher priorities are lower numeric values. */
-#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 4
+#define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 3
 
 /* Interrupt priorities used by the kernel port layer itself.  These are generic
 to all Cortex-M ports, and do not rely on any particular library functions. */
@@ -173,9 +175,6 @@ header file. */
 standard names. */
 #define vPortSVCHandler    SVC_Handler
 #define xPortPendSVHandler PendSV_Handler
-
-/* IMPORTANT: This define is commented when used with STM32Cube firmware, when timebase is systick,
-              to prevent overwriting SysTick_Handler defined within STM32Cube HAL */
 #define xPortSysTickHandler SysTick_Handler
 
 /* USER CODE BEGIN 2 */    

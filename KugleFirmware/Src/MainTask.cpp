@@ -1,5 +1,6 @@
 #include "MainTask.h"
 #include "cmsis_os.h"
+#include "Priorities.h"
 
 /* Include Periphiral drivers */
 #include "ADC.h"
@@ -49,9 +50,11 @@
 #include <stdlib.h>
 #include <vector>
 
-void handl(const std::vector<uint8_t>& payload);
+void MessageCallback(const std::vector<uint8_t>& payload);
+uint8_t count = 0;
 
-void MainTask(void const * argument)
+
+void MainTask(void * pvParameters)
 {
 	/* Use this task to:
 	 * - Create objects for each module
@@ -68,9 +71,22 @@ void MainTask(void const * argument)
 	Parameters& params = Parameters::Get();
 	MATLABCoder_initialize();
 
+	/* Initialize power management */
+	PowerManagement * pm = new PowerManagement(1);
+	pm->Enable(false, true); // enable 19V and 5V power
+
 	/* Initialize communication */
 	USBCDC * usb = new USBCDC(3);
-	LSPC * lspcUSB = new LSPC(usb, osPriorityNormal, osPriorityNormal); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
+	LSPC * lspcUSB = new LSPC(usb, 11, 10); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
+
+	lspcUSB->registerCallback(0x01, MessageCallback);
+
+	while (1)
+	{
+		const uint8_t package[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, count};
+		lspcUSB->TransmitAsync(0x01, package, sizeof(package));
+		osDelay(5);
+	}
 
 	/* Initialize and configure IMU */
 	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
@@ -97,8 +113,8 @@ void MainTask(void const * argument)
 	ESCON * motor3 = new ESCON(3);
 
 	/******* APPLICATION LAYERS *******/
-	AttitudeController * attitudeController = new AttitudeController(params, *imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
-	if (!attitudeController) ERROR("Could not initialize attitude controller");
+	/*AttitudeController * attitudeController = new AttitudeController(params, *imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
+	if (!attitudeController) ERROR("Could not initialize attitude controller");*/
 
 	while (1)
 	{
@@ -106,8 +122,9 @@ void MainTask(void const * argument)
 	}
 }
 
-void handl(const std::vector<uint8_t>& payload)
+void MessageCallback(const std::vector<uint8_t>& payload)
 {
 	uint8_t * buffer = const_cast<uint8_t *>(payload.data());
 	uint32_t length = payload.size();
+	count++;
 }

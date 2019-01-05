@@ -19,6 +19,7 @@
  
 #include "IO.h"
 #include "stm32h7xx_hal.h"
+#include "Priorities.h"
 #include "Debug.h"
 
 IO * IO::interruptObjects[16] = {0};

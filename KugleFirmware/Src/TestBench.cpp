@@ -20,6 +20,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
+#include "Priorities.h"
 
 #include <string>
 #include <stdlib.h>
@@ -40,8 +41,8 @@
 #include "HealthMonitor.h"
 #include "VelocityEKF.h"
 
-void TestBench(void const * argument);
-osThreadId testBenchTaskHandle;
+void TestBench(void * pvParameters);
+TaskHandle_t testBenchTaskHandle;
 UART * uart;
 I2C * i2c;
 PWM * pwm;
@@ -55,8 +56,7 @@ ADC * adc;
 void TestBench_Init()
 {
 	/* Create Test bench thread */
-	osThreadDef(testBenchTask, TestBench, osPriorityRealtime, 0, 128);
-	testBenchTaskHandle = osThreadCreate(osThread(testBenchTask), NULL);
+	xTaskCreate(TestBench, "testBenchTask", 128, (void*) NULL, TEST_BENCH_PRIORITY, &testBenchTaskHandle);
 }
 
 void UART_Callback(uint8_t * buffer, uint32_t bufLen)
@@ -76,7 +76,7 @@ float ax, ay, az, gx, gy, gz, mx, my, mz;
 float angle = 0;
 
 #if 0
-void TestBench(void const * argument)
+void TestBench(void * pvParameters)
 {
 	PowerManagement * pm = new PowerManagement(osPriorityNormal);
 	ESCON * motor1 = new ESCON(1);
@@ -121,7 +121,7 @@ void TestBench(void const * argument)
 #endif
 
 #if 1
-void TestBench(void const * argument)
+void TestBench(void * pvParameters)
 {
 	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
 	MPU9250 * imu = new MPU9250(spi);
@@ -142,7 +142,7 @@ void TestBench(void const * argument)
 #endif
 
 #if 0
-void TestBench(void const * argument)
+void TestBench(void * pvParameters)
 {
 	uart = new UART(UART::PORT_UART3, 115200, 100);
 	spi = new SPI(SPI::PORT_SPI6, 500000);
@@ -223,7 +223,7 @@ void TestBench(void const * argument)
 #endif
 
 #if 0
-void TestBench(void const * argument)
+void TestBench(void * pvParameters)
 {
 	Parameters& params = Parameters::Get();
 	HealthMonitor * hm = new HealthMonitor();
