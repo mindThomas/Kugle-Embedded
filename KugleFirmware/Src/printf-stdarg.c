@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "FreeRTOS.h"
+#include "Debug.h"
 
 #define PAD_RIGHT 1
 #define PAD_ZERO 2
@@ -34,7 +35,10 @@
  */
 extern BaseType_t xApplicationMemoryPermissions( uint32_t aAddress );
 
-extern void vOutputChar( const char cChar, const TickType_t xTicksToWait  );
+void vOutputChar( const char cChar, const TickType_t xTicksToWait  )
+{
+	// DO NOTHING! Should otherwise be implemented elsewhere
+}
 static const TickType_t xTicksToWait = pdMS_TO_TICKS( 20 );
 
 int tiny_printf( const char *format, ... );
@@ -160,12 +164,14 @@ static BaseType_t prints(struct SStringBuf *apBuf, const char *apString )
 	register int padchar = ' ';
 	int i,len;
 
+#if 0
 	if( xApplicationMemoryPermissions( ( uint32_t )apString ) == 0 )
 	{
 		/* The user has probably made a mistake with the parameter
 		for '%s', the memory is not readbale. */
 		apString = "INV_MEM";
 	}
+#endif
 
 	if( apBuf->flags.width > 0 )
 	{

@@ -8,6 +8,7 @@
 #include "cmsis_os.h" // for task creation
 #include "USBCDC.h"
 #include "UART.h"
+#include "MessageTypes.h"
 
 #define LSPC_MAX_ASYNCHRONOUS_PACKAGE_SIZE			100  // bytes
 #define LSPC_MAXIMUM_PACKAGE_LENGTH					255
@@ -40,6 +41,7 @@ public:
 		xTaskCreate(Socket::TransmitterThread, (char *)"LSPC transmitter", LSPC_TX_TRANSMITTER_THREAD_STACK_SIZE, (void*) this, transmitterTaskPriority, &_transmitterTaskHandle);
   };
 
+private:
   using SocketBase::send;
 
   // Send a package with lspc
@@ -62,18 +64,6 @@ public:
       return false;
   };
 
-  void TransmitAsync(uint8_t type, const uint8_t * payload, uint16_t payloadLength)
-  {
-	  LSPC_Async_Package_t package;
-	  package.type = type;
-	  package.payloadPtr = new std::vector<uint8_t>(payloadLength);
-	  if (!package.payloadPtr) return;
-	  memcpy(package.payloadPtr->data(), payload, payloadLength);
-	  if (xQueueSend(_TXqueue, (void *)&package, (TickType_t) 0) != pdTRUE) {
-		  delete(package.payloadPtr); // could not add package to queue, probably because it is full
-	  }
-  }
-
 
   // Process incoming data on serial link
   //
@@ -91,6 +81,22 @@ public:
 	return;
   };
 
+
+public:
+  void TransmitAsync(uint8_t type, const uint8_t * payload, uint16_t payloadLength)
+  {
+	  LSPC_Async_Package_t package;
+	  package.type = type;
+	  package.payloadPtr = new std::vector<uint8_t>(payloadLength);
+	  if (!package.payloadPtr) return;
+	  memcpy(package.payloadPtr->data(), payload, payloadLength);
+	  if (xQueueSend(_TXqueue, (void *)&package, (TickType_t) 0) != pdTRUE) {
+		  delete(package.payloadPtr); // could not add package to queue, probably because it is full
+	  }
+  }
+
+
+private:
   static void ProcessingThread(void * pvParameters)
   {
   	Socket<COM> * lspc = (Socket<COM> *)pvParameters;
