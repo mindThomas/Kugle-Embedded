@@ -23,8 +23,6 @@
 #include "stm32h7xx_hal.h"
 #include "cmsis_os.h" // for memory allocation (for the buffer) and callback
 
-#define I2C_INTERRUPT_PRIORITY	5
-
 class I2C
 {
 	private:

@@ -1,18 +1,19 @@
 #ifndef LSPC_TEMPLATED_HPP
 #define LSPC_TEMPLATED_HPP
 
-#include "lspc/Packet.hpp"
-#include "lspc/Serializable.hpp"
-#include "lspc/SocketBase.hpp"
+#include "Packet.hpp"
+#include "Serializable.hpp"
+#include "SocketBase.hpp"
 #include "Debug.h"
 #include "cmsis_os.h" // for task creation
 #include "USBCDC.h"
 #include "UART.h"
 
 #define LSPC_MAX_ASYNCHRONOUS_PACKAGE_SIZE			100  // bytes
-#define LSPC_ASYNCHRONOUS_QUEUE_LENGTH				10   // maximum 10 asynchronous packages in queue
-#define LSPC_RX_PROCESSING_THREAD_STACK_SIZE		128
-#define LSPC_TX_TRANSMITTER_THREAD_STACK_SIZE		128
+#define LSPC_MAXIMUM_PACKAGE_LENGTH					255
+#define LSPC_ASYNCHRONOUS_QUEUE_LENGTH				30   // maximum 30 asynchronous packages in queue
+#define LSPC_RX_PROCESSING_THREAD_STACK_SIZE		256
+#define LSPC_TX_TRANSMITTER_THREAD_STACK_SIZE		256
 
 namespace lspc
 {
@@ -66,7 +67,11 @@ public:
 	  LSPC_Async_Package_t package;
 	  package.type = type;
 	  package.payloadPtr = new std::vector<uint8_t>(payloadLength);
-	  xQueueSend(_TXqueue, (void *)&package, (TickType_t) portMAX_DELAY);
+	  if (!package.payloadPtr) return;
+	  memcpy(package.payloadPtr->data(), payload, payloadLength);
+	  if (xQueueSend(_TXqueue, (void *)&package, (TickType_t) 0) != pdTRUE) {
+		  delete(package.payloadPtr); // could not add package to queue, probably because it is full
+	  }
   }
 
 
@@ -76,18 +81,21 @@ public:
   // relevant message handling callback function.
   void processSerial()
   {
-    size_t bytecount = 0;
-    while (com->Available() && bytecount < 10)
-    {
-      processIncomingByte(com->Read());
-      bytecount++;
-    }
-    return;
+	int16_t readChar = 0;
+	while (com->Available())
+	{
+		readChar = com->Read();
+		if (readChar >= 0)
+			processIncomingByte(readChar);
+	}
+	return;
   };
 
   static void ProcessingThread(void * pvParameters)
   {
   	Socket<COM> * lspc = (Socket<COM> *)pvParameters;
+
+  	lspc->incoming_data.reserve(LSPC_MAXIMUM_PACKAGE_LENGTH);
 
 	// LSPC incoming data processing loop
 	while (1)
@@ -109,11 +117,12 @@ public:
  			    // Send it if possible
  				Packet outPacket(package.type, *package.payloadPtr);
  			    if (outPacket.encodedDataSize() ==
- 			    		lspc->com->Write(outPacket.encodedDataPtr(), outPacket.encodedDataSize())) {
+ 			    		lspc->com->WriteBlocking(outPacket.encodedDataPtr(), outPacket.encodedDataSize())) {
  			    	delete(package.payloadPtr); // clear memory used for payload data
 				}
 				else { // if not, re-add it to the queue
-					xQueueSend(lspc->_TXqueue, (void *)&package, (TickType_t) 1);
+					//xQueueSend(lspc->_TXqueue, (void *)&package, (TickType_t) 1); // re-add it to the queue is probably not a good idea
+					delete(package.payloadPtr); // clear memory used for payload data
 				}
  			}
 	  }

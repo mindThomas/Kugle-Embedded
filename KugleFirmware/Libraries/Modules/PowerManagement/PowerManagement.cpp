@@ -31,7 +31,7 @@ PowerManagement::PowerManagement(uint32_t powerManagementTaskPriority) : _powerM
 	_enable5V = new IO(GPIOC, GPIO_PIN_3); // configure as output
 	_bat1 = 0;
 	_bat2 = 0;
-	_powerButton = new IO(GPIOC, GPIO_PIN_3, IO::PULL_DOWN); // configure as input
+	_powerButton = new IO(GPIOB, GPIO_PIN_6, IO::PULL_DOWN); // configure as input
 	_powerLED = new PWM(PWM::TIMER17, PWM::CH1, POWER_LED_PWM_FREQUENCY, POWER_LED_PWM_RANGE);
 
 	_powerButton->RegisterInterrupt(IO::TRIGGER_RISING, PowerManagement::PowerButtonInterrupt, this);
@@ -63,15 +63,19 @@ PowerManagement::~PowerManagement()
 
 void PowerManagement::Enable(bool enable19V, bool enable5V)
 {
-	if (enable19V)
-		_enable19V->Set(true);
-	else
-		_enable19V->Set(false);
+	if (_enable19V) {
+		if (enable19V)
+			_enable19V->Set(true);
+		else
+			_enable19V->Set(false);
+	}
 
-	if (enable5V)
-		_enable5V->Set(true);
-	else
-		_enable5V->Set(false);
+	if (_enable5V) {
+		if (enable5V)
+			_enable5V->Set(true);
+		else
+			_enable5V->Set(false);
+	}
 }
 
 void PowerManagement::SetLEDmode(LEDmode_t ledMode)
@@ -80,10 +84,12 @@ void PowerManagement::SetLEDmode(LEDmode_t ledMode)
 	_ledMode = ledMode;
 
 	if (_ledMode == ON) {
-		_powerLED->SetRaw(POWER_LED_PWM_RANGE);
+		if (_powerLED)
+			_powerLED->SetRaw(POWER_LED_PWM_RANGE);
 	}
 	else if (_ledMode == OFF) {
-		_powerLED->SetRaw(0);
+		if (_powerLED)
+			_powerLED->SetRaw(0);
 	}
 	else if (_ledMode == PULSING) {
 		if (prevLedMode == ON) {
@@ -106,6 +112,12 @@ void PowerManagement::PowerButtonInterrupt(void * params)
 void PowerManagement::PowerManagementThread(void * pvParameters)
 {
 	PowerManagement * pm = (PowerManagement *)pvParameters;
+
+	if (!pm->_powerLED) {
+		while (1) {
+			osDelay(10);
+		}
+	}
 
 	while (1) {
 		if (pm->_ledMode != PULSING)

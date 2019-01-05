@@ -27,12 +27,13 @@
 #include "Timer.h"
 #include "Parameters.h"
 #include "QuaternionVelocityControl.h"
+#include "Priorities.h"
 
 class AttitudeController
 {
 	private:
-		const int THREAD_STACK_SIZE = 128;
-		const uint32_t THREAD_PRIORITY = osPriorityNormal;
+		const int THREAD_STACK_SIZE = 256;
+		const uint32_t THREAD_PRIORITY = ATTITUDE_CONTROLLER_PRIORITY;
 
 	public:
 		AttitudeController(Parameters& params_, IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_);

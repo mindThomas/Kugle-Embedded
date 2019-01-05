@@ -23,8 +23,6 @@
 #include "stm32h7xx_hal.h"
 #include "cmsis_os.h" // for semaphore support
 
-#define TIMER_INTERRUPT_PRIORITY		5
-
 class Timer
 {
 	private:

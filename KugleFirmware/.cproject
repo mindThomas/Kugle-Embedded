@@ -94,7 +94,6 @@
 									<listOptionValue builtIn="false" value="../Libraries/Devices/MPU9250"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/MTI200"/>
 									<listOptionValue builtIn="false" value="../Libraries/Devices/LSPC"/>
-									<listOptionValue builtIn="false" value="../Libraries/Devices/LSPC/LSPC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Debug"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/QEKF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/QEKF/MATLABCoder"/>

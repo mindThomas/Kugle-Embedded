@@ -535,7 +535,7 @@ static uint8_t  USBD_CDC_Init (USBD_HandleTypeDef *pdev,
 	  HandleUsed = 1;
   }
   else {
-	  pdev->pClassData = 0;
+	  pdev->pClassData = NULL; // static handle is already in use
   }
   
   if(pdev->pClassData == NULL)
@@ -606,7 +606,8 @@ static uint8_t  USBD_CDC_DeInit (USBD_HandleTypeDef *pdev,
     ((USBD_CDC_ItfTypeDef *)pdev->pUserData)->DeInit();
     // freeing disabled since we provide it as static (pre-allocated) memory
     //USBD_free(pdev->pClassData);
-    //pdev->pClassData = NULL;
+    pdev->pClassData = NULL;
+    HandleUsed = 0; // static handle is no longer in use
   }
   
   return ret;

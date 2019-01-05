@@ -23,8 +23,6 @@
 #include "stm32h7xx_hal.h"
 #include "cmsis_os.h" // for memory allocation (for the buffer) and callback
 
-#define SPI_INTERRUPT_PRIORITY	5
-
 class SPI
 {
 	private:

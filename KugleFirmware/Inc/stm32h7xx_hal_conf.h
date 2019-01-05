@@ -38,6 +38,8 @@
 #ifndef __STM32H7xx_HAL_CONF_H
 #define __STM32H7xx_HAL_CONF_H
 
+#include "Priorities.h"
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -167,7 +169,7 @@
   * @brief This is the HAL system configuration section
   */     
 #define  VDD_VALUE                    ((uint32_t)3300U) /*!< Value of VDD in mv */
-#define  TICK_INT_PRIORITY            ((uint32_t)0U) /*!< tick interrupt priority */
+#define  TICK_INT_PRIORITY            ((uint32_t)HIGH_RES_TIMER_TICK_PRIORITY) /*!< tick interrupt priority */
 #define  USE_RTOS                     0U
 #define  USE_SD_TRANSCEIVER           1U               /*!< use uSD Transceiver */
 /* ########################## Assert Selection ############################## */

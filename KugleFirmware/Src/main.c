@@ -25,6 +25,7 @@
 #include "MainTask.h"
 #include "ProcessorInit.h"
 #include "MemoryManagement.h"
+#include "Priorities.h"
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -33,7 +34,7 @@
 /* Private macro -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
-osThreadId mainTaskHandle;
+TaskHandle_t mainTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -54,8 +55,7 @@ int main(void)
   ZeroInitFreeRTOSheap();
 
   /* Create the main thread which creates objects and spawns the rest of the threads */
-  osThreadDef(mainTask, MainTask, osPriorityIdle, 0, 128);
-  mainTaskHandle = osThreadCreate(osThread(mainTask), NULL);
+  xTaskCreate(MainTask, "mainTask", 256, (void*) NULL, MAIN_TASK_PRIORITY, &mainTaskHandle);
 
   /* Start scheduler */
   osKernelStart();
@@ -64,21 +64,6 @@ int main(void)
 
   /* Infinite loop */
   while (1);
-}
-
-/**
-  * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM16 interrupt took place, inside
-  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
-  * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  if (htim->Instance == TIM16) {
-    HAL_IncTick();
-  }
 }
 
 #ifdef  USE_FULL_ASSERT

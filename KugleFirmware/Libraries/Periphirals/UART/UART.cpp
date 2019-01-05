@@ -19,6 +19,7 @@
  
 #include "UART.h"
 #include "stm32h7xx_hal.h"
+#include "Priorities.h"
 #include "Debug.h"
  
 UART * UART::objUART3 = 0;
@@ -387,6 +388,11 @@ uint32_t UART::Write(uint8_t * buffer, uint32_t length)
 
 	xSemaphoreGive( _resourceSemaphore ); // give hardware resource back
 	return length;
+}
+
+uint32_t UART::WriteBlocking(uint8_t * buffer, uint32_t length)
+{
+	return Write(buffer, length);
 }
 
 int16_t UART::Read()
