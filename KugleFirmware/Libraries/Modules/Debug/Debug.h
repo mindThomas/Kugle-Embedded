@@ -29,10 +29,12 @@
 #include <cstring>
 #include <string>
 
+#include "cmsis_os.h" // for semaphore
+
 #define DEBUG(msg)	Debug::Message("DEBUG: ", __func__, msg)
 #define ERROR(msg)	{Debug::Message("ERROR: ", __func__, msg); Debug::ErrorHandler();}
 
-#define MAX_DEBUG_TEXT_LENGTH	250
+#define MAX_DEBUG_TEXT_LENGTH	LSPC_MAXIMUM_PACKAGE_LENGTH
 
 class Debug
 {
@@ -53,6 +55,7 @@ class Debug
 
 	private:
 		void * com_; // LSPC object pointer
+		SemaphoreHandle_t mutex_;
 
 
 	public:

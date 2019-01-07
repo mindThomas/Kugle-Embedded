@@ -262,7 +262,7 @@ void Quaternion_quat2eul_zyx(const float q[4], float yaw_pitch_roll[3])
 	yaw_pitch_roll[2] = atan2( 2*(qy*qz+qw*qx), qw*qw - qx*qx - qy*qy + qz*qz ); // roll
 }
 
-void Quaternion_AngleClamp(float q[4], float angleMax, float q_clamped[4])
+void Quaternion_AngleClamp(const float q[4], const float angleMax, float q_clamped[4])
 {
 	// Bound/clamp quaternion rotation amount by angle
 	float cosAngle, sinAngle, currentAngle, clampedAngle; // tan = sin/cos
@@ -286,6 +286,60 @@ void Quaternion_AngleClamp(float q[4], float angleMax, float q_clamped[4])
 	q_clamped[1] = (q[1] / sinAngle) * sinf(clampedAngle / 2);
 	q_clamped[2] = (q[2] / sinAngle) * sinf(clampedAngle / 2);
 	q_clamped[3] = (q[3] / sinAngle) * sinf(clampedAngle / 2);
+}
+
+void Quaternion_Integration_Body(const float q[4], const float omega_body[3], const float dt, float q_out[4])
+{
+    /* Quaternion Exponential method
+     * q_out = q o exp(1/2*dt*q_omeg)
+     * q_omeg = [0,omeg_x,omeg_y,omeg_z]
+     */
+	float omega_norm = sqrtf(omega_body[0]*omega_body[0] + omega_body[1]*omega_body[1] + omega_body[2]*omega_body[2]);
+	float q_exp[4];
+
+    if (omega_norm > 0) {
+    	float sinOmeg = sinf(0.5f * dt * omega_norm);
+        q_exp[0] = cosf(0.5f * dt * omega_norm); // scalar part
+        q_exp[1] = sinOmeg * omega_body[0] / omega_norm;
+        q_exp[2] = sinOmeg * omega_body[1] / omega_norm;
+        q_exp[3] = sinOmeg * omega_body[2] / omega_norm;
+    } else {
+        // unit quaternion since the angular velocity is zero (no movement)
+        q_exp[0] = 1.0f;
+        q_exp[1] = 0.0f;
+        q_exp[2] = 0.0f;
+        q_exp[3] = 0.0f;
+    }
+
+    // q_out = Phi(q) o q_exp
+    Quaternion_Phi(q, q_exp, q_out);
+}
+
+void Quaternion_Integration_Inertial(const float q[4], const float omega_inertial[3], const float dt, float q_out[4])
+{
+    /* Quaternion Exponential method
+     * q_out = exp(1/2*dt*q_omeg) o q
+     * q_omeg = [0,omeg_x,omeg_y,omeg_z]
+     */
+	float omega_norm = sqrtf(omega_inertial[0]*omega_inertial[0] + omega_inertial[1]*omega_inertial[1] + omega_inertial[2]*omega_inertial[2]);
+	float q_exp[4];
+
+    if (omega_norm > 0) {
+    	float sinOmeg = sinf(0.5f * dt * omega_norm);
+        q_exp[0] = cosf(0.5f * dt * omega_norm); // scalar part
+        q_exp[1] = sinOmeg * omega_inertial[0] / omega_norm;
+        q_exp[2] = sinOmeg * omega_inertial[1] / omega_norm;
+        q_exp[3] = sinOmeg * omega_inertial[2] / omega_norm;
+    } else {
+        // unit quaternion since the angular velocity is zero (no movement)
+        q_exp[0] = 1.0f;
+        q_exp[1] = 0.0f;
+        q_exp[2] = 0.0f;
+        q_exp[3] = 0.0f;
+    }
+
+    // q_out = Gamma(q) o q_exp
+    Quaternion_Gamma(q, q_exp, q_out);
 }
 
 void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4])

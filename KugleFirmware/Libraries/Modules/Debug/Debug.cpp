@@ -38,6 +38,14 @@ Debug::Debug(void * com) : com_(com)
 		return;
 	}
 
+	mutex_ = xSemaphoreCreateBinary();
+	if (mutex_ == NULL) {
+		ERROR("Could not create Debug mutex");
+		return;
+	}
+	vQueueAddToRegistry(mutex_, "Debug mutex");
+	xSemaphoreGive( mutex_ ); // give the semaphore the first time
+
 	debugHandle = this;
 }
 
@@ -50,7 +58,13 @@ void Debug::Message(const char * msg)
 {
 	if (!debugHandle) return;
 	if (!debugHandle->com_) return;
+
+	uint16_t stringLength = strlen(msg);
+	if (stringLength > MAX_DEBUG_TEXT_LENGTH) stringLength = MAX_DEBUG_TEXT_LENGTH; // "cut away" any parts above the maximum string length
+
+	xSemaphoreTake( debugHandle->mutex_, ( TickType_t ) portMAX_DELAY ); // take debug mutex to avoid message mixup   (maybe this is not actually necessary due to the queue handling of the LSPC messages)
 	((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)msg, (uint16_t)strlen(msg));
+	xSemaphoreGive( debugHandle->mutex_ ); // give hardware resource back
 }
 
 void Debug::Message(std::string msg)
