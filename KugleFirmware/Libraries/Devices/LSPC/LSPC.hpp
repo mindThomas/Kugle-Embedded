@@ -11,7 +11,7 @@
 #include "MessageTypes.h"
 
 #define LSPC_MAX_ASYNCHRONOUS_PACKAGE_SIZE			100  // bytes
-#define LSPC_MAXIMUM_PACKAGE_LENGTH					255
+#define LSPC_MAXIMUM_PACKAGE_LENGTH					250
 #define LSPC_ASYNCHRONOUS_QUEUE_LENGTH				30   // maximum 30 asynchronous packages in queue
 #define LSPC_RX_PROCESSING_THREAD_STACK_SIZE		256
 #define LSPC_TX_TRANSMITTER_THREAD_STACK_SIZE		256
@@ -86,6 +86,8 @@ public:
   void TransmitAsync(uint8_t type, const uint8_t * payload, uint16_t payloadLength)
   {
 	  LSPC_Async_Package_t package;
+	  if (payloadLength > LSPC_MAXIMUM_PACKAGE_LENGTH) return; // payload size is too big
+
 	  package.type = type;
 	  package.payloadPtr = new std::vector<uint8_t>(payloadLength);
 	  if (!package.payloadPtr) return;
