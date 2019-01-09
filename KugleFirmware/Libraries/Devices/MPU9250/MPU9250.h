@@ -25,8 +25,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 /* Modified version for use in STM32H7 project by
  * ------------------------------------------
  * Thomas Jespersen, TKJ Electronics
- * Web      :  http://www.tkjelectronics.com
- * e-mail   :  thomasj@tkjelectronics.com
+ * Web      :  http://www.tkjelectronics.dk
+ * e-mail   :  thomasj@tkjelectronics.dk
  * ------------------------------------------
  */
 

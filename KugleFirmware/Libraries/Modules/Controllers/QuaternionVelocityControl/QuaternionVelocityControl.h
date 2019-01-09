@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Thomas Jespersen, TKJ Electronics. All rights reserved.
+/* Copyright (C) 2018-2019 Thomas Jespersen, TKJ Electronics. All rights reserved.
  *
  * This program is free software: you can redistribute it and/or modify  
  * it under the terms of the GNU General Public License as published by  
@@ -12,8 +12,8 @@
  * Contact information
  * ------------------------------------------
  * Thomas Jespersen, TKJ Electronics
- * Web      :  http://www.tkjelectronics.com
- * e-mail   :  thomasj@tkjelectronics.com
+ * Web      :  http://www.tkjelectronics.dk
+ * e-mail   :  thomasj@tkjelectronics.dk
  * ------------------------------------------
  */
  
