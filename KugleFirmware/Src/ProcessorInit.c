@@ -16,9 +16,10 @@
  * e-mail   :  thomasj@tkjelectronics.dk
  * ------------------------------------------
  */
- 
-#include "stm32h7xx_hal.h"
+
+#include "ProcessorInit.h"
 #include "main.h"
+#include "cmsis_os.h"
 #include "Debug.h" // for Error_Handler
 
 /* Configure clocks to:
@@ -122,4 +123,22 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+void Enter_DFU_Bootloader(void)
+{
+	//call this at any time to initiate a reboot into bootloader
+	//__disable_irq();
+	//SCB_CleanDCache();
+	//SCB_DisableDCache();
+	HAL_SuspendTick();
+	/* Disable SysTick Interrupt */
+    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+    taskENTER_CRITICAL();
+    portDISABLE_INTERRUPTS();
+    *BOOTLOADER_MAGIC_ADDR = BOOTLOADER_MAGIC_TOKEN;
+    //SCB_DisableDCache();
+    //__DSB();
+	//(*(__IO uint32_t *) (BKPSRAM_BASE + 0)) = A_VALUE;
+    NVIC_SystemReset();
 }

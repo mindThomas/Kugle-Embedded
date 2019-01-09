@@ -75,6 +75,15 @@ defined in linker script */
   .weak  Reset_Handler
   .type  Reset_Handler, %function
 Reset_Handler:  
+  //bl  OnBoot_Check_DFU_Reqeust  /* check bootloader DFU request */
+
+  LDR R0, =0x2001FFF0 // Address for RAM signature
+  LDR R1, =0xDEADBEEF
+  LDR R2, [R0, #0]
+  STR R0, [R0, #0] // Invalidate
+  CMP R2, R1
+  BEQ Reboot_Loader
+
   ldr   sp, =_estack      /* set stack pointer */
 
 /* Copy the data segment initializers from flash to SRAM */  
@@ -111,7 +120,21 @@ LoopFillZerobss:
     bl __libc_init_array
 /* Call the application's entry point.*/
   bl  main
-  bx  lr    
+  bx  lr   
+
+Reboot_Loader:
+ /*LDR R0, =0x1FF00000 // ROM BASE (STM32F7)
+ LDR SP, [R0, #0] 	 // SP @ +0
+ LDR R0, [R0, #4] 	 // PC @ +4
+ BX R0*/
+
+  LDR     R1, =0xE000ED00  // SCB
+  LDR     R0, =0x1FF09800  // ROM BASE
+  STR     R0, [R1, #8]     // VTOR
+  LDR     SP,[R0, #0]      // ROM Stack Pointer
+  LDR     R0,[R0, #4]      // ROM Program Counter
+  BX      R0
+ 
 .size  Reset_Handler, .-Reset_Handler
 
 /**

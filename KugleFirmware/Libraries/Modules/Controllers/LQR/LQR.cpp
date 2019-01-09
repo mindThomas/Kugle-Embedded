@@ -83,7 +83,7 @@ void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const 
  * @param   gainMatrix    Input: LQR gain matrix array
  * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
-void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float * gainMatrix, float tau[3])
+void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], const float * gainMatrix, float tau[3])
 {
 	// See ARM-CMSIS DSP library for matrix operations: https://www.keil.com/pack/doc/CMSIS/DSP/html/group__groupMatrix.html
 
