@@ -408,6 +408,11 @@ bool UART::Available()
 	return (_bufferWriteIdx != _bufferReadIdx);
 }
 
+bool UART::Connected()
+{
+	return true; // UART is always connected after initializing and configuring the periphiral (port is opened)
+}
+
 void UART::CallbackThread(void * pvParameters)
 {
 	UART * uart = (UART *)pvParameters;

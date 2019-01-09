@@ -97,6 +97,11 @@ public:
 	  }
   }
 
+  bool Connected(void)
+  {
+	  return com->Connected();
+  }
+
 
 private:
   static void ProcessingThread(void * pvParameters)
@@ -123,15 +128,18 @@ private:
 	  {
  			if ( xQueueReceive( lspc->_TXqueue, &package, ( TickType_t ) portMAX_DELAY ) == pdPASS ) {
  			    // Send it if possible
- 				Packet outPacket(package.type, *package.payloadPtr);
- 			    if (outPacket.encodedDataSize() ==
- 			    		lspc->com->WriteBlocking(outPacket.encodedDataPtr(), outPacket.encodedDataSize())) {
+ 				Packet * outPacket = new Packet(package.type, *package.payloadPtr);
+ 				if (!outPacket) continue;
+
+ 			    if (outPacket->encodedDataSize() ==
+ 			    		lspc->com->WriteBlocking(outPacket->encodedDataPtr(), outPacket->encodedDataSize())) {
  			    	delete(package.payloadPtr); // clear memory used for payload data
 				}
 				else { // if not, re-add it to the queue
 					//xQueueSend(lspc->_TXqueue, (void *)&package, (TickType_t) 1); // re-add it to the queue is probably not a good idea
 					delete(package.payloadPtr); // clear memory used for payload data
 				}
+ 			    delete(outPacket);
  			}
 	  }
   }

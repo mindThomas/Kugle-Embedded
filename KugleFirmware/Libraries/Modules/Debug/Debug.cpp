@@ -46,6 +46,10 @@ Debug::Debug(void * com) : com_(com)
 	vQueueAddToRegistry(mutex_, "Debug mutex");
 	xSemaphoreGive( mutex_ ); // give the semaphore the first time
 
+	currentBufferLocation_ = 0;
+	memset(messageBuffer_, 0, MAX_DEBUG_TEXT_LENGTH);
+	xTaskCreate( Debug::PackageGeneratorThread, (char *)"Attitude Controller", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
+
 	debugHandle = this;
 }
 
@@ -54,42 +58,85 @@ Debug::~Debug()
 	debugHandle = 0;
 }
 
+
+void Debug::PackageGeneratorThread(void * pvParameters)
+{
+	Debug * debug = (Debug *)pvParameters;
+
+	while (1)
+	{
+		osDelay(1);
+		xSemaphoreTake( debug->mutex_, ( TickType_t ) portMAX_DELAY ); // take debug mutex
+		if (debug->currentBufferLocation_ > 0) {
+			((LSPC*)debug->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)debug->messageBuffer_, debug->currentBufferLocation_);
+			debug->currentBufferLocation_ = 0;
+		}
+		xSemaphoreGive( debug->mutex_ ); // give hardware resource back
+	}
+}
+
 void Debug::Message(const char * msg)
 {
 	if (!debugHandle) return;
 	if (!debugHandle->com_) return;
+	if (!((LSPC*)debugHandle->com_)->Connected()) return;
+
+	xSemaphoreTake( debugHandle->mutex_, ( TickType_t ) portMAX_DELAY ); // take debug mutex
 
 	uint16_t stringLength = strlen(msg);
-	if (stringLength > MAX_DEBUG_TEXT_LENGTH) stringLength = MAX_DEBUG_TEXT_LENGTH; // "cut away" any parts above the maximum string length
+	if (stringLength > MAX_DEBUG_TEXT_LENGTH) return; // message is too long
+	if (stringLength > (MAX_DEBUG_TEXT_LENGTH-debugHandle->currentBufferLocation_)) {// stringLength = (MAX_DEBUG_TEXT_LENGTH-debugHandle->currentBufferLocation_); // "cut away" any parts above the maximum string length
+		// Send package now and clear buffer
+		((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)debugHandle->messageBuffer_, debugHandle->currentBufferLocation_);
+		debugHandle->currentBufferLocation_ = 0;
+	}
 
-	xSemaphoreTake( debugHandle->mutex_, ( TickType_t ) portMAX_DELAY ); // take debug mutex to avoid message mixup   (maybe this is not actually necessary due to the queue handling of the LSPC messages)
-	((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)msg, (uint16_t)strlen(msg));
+	memcpy(&debugHandle->messageBuffer_[debugHandle->currentBufferLocation_], msg, stringLength);
+	debugHandle->currentBufferLocation_ += stringLength;
 	xSemaphoreGive( debugHandle->mutex_ ); // give hardware resource back
 }
 
 void Debug::Message(std::string msg)
 {
-
+	Message(msg.c_str());
+	Message("\n");
 }
 
 void Debug::Message(const char * functionName, const char * msg)
 {
-
+	Message("[");
+	Message(functionName);
+	Message("] ");
+	Message(msg);
+	Message("\n");
 }
 
 void Debug::Message(const char * functionName, std::string msg)
 {
-
+	Message("[");
+	Message(functionName);
+	Message("] ");
+	Message(msg.c_str());
+	Message("\n");
 }
 
 void Debug::Message(const char * type, const char * functionName, const char * msg)
 {
-
+	Message(type);
+	Message("[");
+	Message(functionName);
+	Message("] ");
+	Message(msg);
+	Message("\n");
 }
 
 void Debug::Message(std::string type, const char * functionName, std::string msg)
 {
-
+	Message("[");
+	Message(functionName);
+	Message("] ");
+	Message(msg.c_str());
+	Message("\n");
 }
 
 void Debug::print(const char * msg)
@@ -101,23 +148,31 @@ void Debug::printf( const char *msgFmt, ... )
 {
 	va_list args;
 
+	if (!debugHandle) return;
+	if (!debugHandle->com_) return;
+	if (!((LSPC*)debugHandle->com_)->Connected()) return;
+
 	va_start( args,  msgFmt );
 
 	char * strBuf = (char *) pvPortMalloc(MAX_DEBUG_TEXT_LENGTH);
+	if (!strBuf) return;
 
 	vsnprintf( strBuf, MAX_DEBUG_TEXT_LENGTH, msgFmt, args );
 
 	Message(strBuf);
 
+	vPortFree(strBuf);
+
 	va_end( args );
 }
 
-void Debug::ErrorHandler()
+void Debug::Error(const char * type, const char * functionName, const char * msg)
 {
-	uint32_t i;
+	// At errors do not continue current task/thread but print instead the error message repeatedly
 	while (1)
 	{
-		i++;
+		Debug::Message(type, functionName, msg);
+		osDelay(500);
 	}
 }
 
@@ -127,5 +182,5 @@ void Debug::ErrorHandler()
   */
 void Error_Handler(void)
 {
-	Debug::ErrorHandler();
+	Debug::Error("ERROR: ", "Error_Handler", "Global ");
 }

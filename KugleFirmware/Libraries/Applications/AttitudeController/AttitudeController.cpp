@@ -87,6 +87,7 @@ void AttitudeController::Thread(void * pvParameters)
 
 	/* Create and initialize controller and estimator objects */
 	LQR& lqr = *(new LQR(task->params));
+	SlidingMode& sm = *(new SlidingMode(task->params));
 	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(task->params, &task->microsTimer, 1.0f / task->params.controller.SampleRate));
 	QEKF& qEKF = *(new QEKF(task->params, &task->microsTimer));
 	Madgwick& madgwick = *(new Madgwick(task->params.controller.SampleRate, task->params.estimator.MadgwickBeta));
@@ -109,9 +110,21 @@ void AttitudeController::Thread(void * pvParameters)
 	bool TorqueRampUpFinished = false;
 
 	/* Control output filtering objects */
-	FirstOrderLPF Motor1_LPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau);
-	FirstOrderLPF Motor2_LPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau);
-	FirstOrderLPF Motor3_LPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau);
+	FirstOrderLPF& Motor1_LPF = *(new FirstOrderLPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau));
+	FirstOrderLPF& Motor2_LPF = *(new FirstOrderLPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau));
+	FirstOrderLPF& Motor3_LPF = *(new FirstOrderLPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau));
+
+	if (!lqr.UnitTest()) {
+		ERROR("LQR Unit test failed!");
+	}
+
+	if (!sm.UnitTest()) {
+		ERROR("Sliding Mode Unit test failed!");
+	}
+
+	if (!qEKF.UnitTest()) {
+		ERROR("qEKF Unit test failed!");
+	}
 
 	/* Reset estimators */
 	imu.Get(imuMeas);
@@ -133,6 +146,10 @@ void AttitudeController::Thread(void * pvParameters)
 	task->COM[0] = 0;
 	task->COM[1] = 0;
 	task->COM[2] = params.model.l; // initialize COM directly above center of ball at height L
+
+	/* Reset position estimate */
+	task->xy[0] = 0;
+	task->xy[1] = 0;
 
 	/* Reset reference variables */
 	task->q_ref[0] = 1; // attitude reference = just upright
@@ -185,7 +202,7 @@ void AttitudeController::Thread(void * pvParameters)
 	        	Cov_q[4*d + d] = 3*1E-7; // set q covariance when MADGWICK is used
 	        }
 		} else { // use QEKF
-			qEKF.Step(imuMeas.Accelerometer, imuMeas.Gyroscope);
+			qEKF.Step(imuMeas.Accelerometer, imuMeas.Gyroscope, params.estimator.EstimateBias);
 			qEKF.GetQuaternion(task->q);
 			qEKF.GetQuaternionDerivative(task->dq);
 			qEKF.GetQuaternionCovariance(Cov_q);
@@ -252,6 +269,8 @@ void AttitudeController::Thread(void * pvParameters)
 
 		/* Compute control output based on references */
 	    lqr.Step(task->q, task->dq, task->q_ref, task->omega_ref, Torque);
+	    float S[3];
+	    sm.Step(task->q, task->dq, task->xy, task->dxy, task->q_ref, task->omega_ref, Torque, S);
 
 	    /* Check if any of the torque outputs is NaN - if so, turn off the outputs */
 	    if (isnan(Torque[0]) || isnan(Torque[1]) || isnan(Torque[2])) {

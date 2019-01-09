@@ -111,7 +111,7 @@ class Parameters
 											  //      since it is weighting the LPF filtered accelerometer more
 
 			// Use these tuning parameters to trust the accelerometer or gyroscope more than the other - eg. to reduce trust in the accelerometer due to induced vibrational noise
-			#define GYRO_TUNING_FACTOR				1
+			#define GYRO_TUNING_FACTOR					1
 			#define ACC_TUNING_FACTOR					1
 
 			#if EnableSensorLPFfilters_
@@ -145,6 +145,8 @@ class Parameters
 		
 		struct {
 			/* Model parameters (defined in SI units) */	
+			const float l = 0.35f;
+
 			const float COM_X = 0.0f;
 			const float COM_Y = 0.0f;
 			const float COM_Z = l;
@@ -162,7 +164,6 @@ class Parameters
 			const float Jm = 1.21f * 0.0001f;
 			const float Jw = (Jow + i_gear*i_gear*Jm);
 
-			const float l = 0.35f;
 			const float Mb = (8.205f + 5.856f);
 
 			const float Jbx = (0.958f + Mb * l*l);

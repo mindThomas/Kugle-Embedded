@@ -54,7 +54,7 @@ LQR::~LQR()
  */
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
-	Step(q, dq, q_ref, omega_ref, tau);
+	Step(q, dq, q_ref, omega_ref, tau, (float32_t *)_params.controller.LQR_K);
 }
 
 /**
@@ -68,6 +68,22 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
  * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float tau[3])
+{
+	Step(q, dq, q_ref, omega_ref, (float *)_params.controller.LQR_K, tau);
+}
+
+/**
+ * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
+ * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
+ * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
+ * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
+ * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
+ * @param   gainMatrix    Input: LQR gain matrix array
+ * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ */
+void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float * gainMatrix, float tau[3])
 {
 	// See ARM-CMSIS DSP library for matrix operations: https://www.keil.com/pack/doc/CMSIS/DSP/html/group__groupMatrix.html
 
@@ -108,7 +124,7 @@ void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const 
 	float tau0[3] = {0, 0, 0};
 
 	/* Compute control torque by matrix multiplication with LQR gain */
-	arm_matrix_instance_f32 LQR_K_; arm_mat_init_f32(&LQR_K_, 3, 6, (float32_t *)_params.controller.LQR_K);
+	arm_matrix_instance_f32 LQR_K_; arm_mat_init_f32(&LQR_K_, 3, 6, (float32_t *)gainMatrix);
 	arm_matrix_instance_f32 X_err_reduced_; arm_mat_init_f32(&X_err_reduced_, 6, 1, (float32_t *)&X_err[1]); // removes q0 (first element)
 	float tau_control[3]; arm_matrix_instance_f32 tau_control_; arm_mat_init_f32(&tau_control_, 3, 1, (float32_t *)tau_control);
 	arm_mat_mult_f32(&LQR_K_, &X_err_reduced_, &tau_control_); // tau = -K * X_err_reduced
@@ -116,4 +132,36 @@ void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const 
 
 	/* Add linearized torque and computed torque and set output */
 	arm_add_f32(tau0, tau_control, tau, 3); // tau = tau0 + tau_control
+}
+
+bool LQR::UnitTest(void)
+{
+	// Perform a unit test to verify if it passes
+	const float UnitTestGain[3*6] = {22.0217540086999,	1.1248573671829e-14,	-0.182574185835055,	2.71774528131163,	1.44298962102302e-15,	-0.101363312648735,
+								    -11.01087700435,	19.0713984074259,	-0.182574185835056,	-1.35887264065581,	2.35481794807652,	-0.101363312648735,
+									-11.01087700435,	-19.0713984074259,	-0.182574185835055,	-1.35887264065582,	-2.35481794807652,	-0.101363312648735};
+
+	float q[4];
+	Quaternion_eul2quat_zyx(deg2rad(10), deg2rad(-2), deg2rad(5), q);
+	float omega_b_vec[4] = {0, 0.5, 0.2, 0.1};
+
+	float dq[4];
+	Quaternion_Phi(q, omega_b_vec, dq); // Phi(q)*[0;omega_b]
+	arm_scale_f32(dq, 1.0f/2.0f, dq, 4); // 1/2 * Phi(q)*[0;omega_b]
+
+	float q_ref[4];
+	Quaternion_eul2quat_zyx(deg2rad(0), deg2rad(0), deg2rad(10), q_ref);
+
+	float omega_b_ref[3] = {0, 0, 0};
+
+	float Torque[3];
+	Step(q, dq, q_ref, omega_b_ref, (float *)UnitTestGain, Torque);
+
+	float Torque_Expected[3] = {-0.4092, -0.1150, 0.6033};
+	if (Math_Round(Torque[0], 4) == Math_Round(Torque_Expected[0], 4) &&
+		Math_Round(Torque[1], 4) == Math_Round(Torque_Expected[1], 4) &&
+		Math_Round(Torque[2], 4) == Math_Round(Torque_Expected[2], 4))
+		return true;
+	else
+		return false;
 }

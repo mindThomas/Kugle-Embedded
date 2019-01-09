@@ -17,30 +17,12 @@
  * ------------------------------------------
  */
  
-#ifndef MODULES_CONTROLLERS_LQR_H
-#define MODULES_CONTROLLERS_LQR_H
-
-#include <stddef.h>
+#include "Math.h"
+#include <math.h>
 #include <stdlib.h>
 
-#include <arm_math.h>
-#include "Parameters.h"
-
-class LQR
+float Math_Round(float num, unsigned int dec)
 {
-	public:
-		LQR(Parameters& params);
-		~LQR();
-
-		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3]);
-		void Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float tau[3]);
-		void Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float * gainMatrix, float tau[3]);
-
-		bool UnitTest(void);
-
-	private:
-		Parameters& _params;
-};
-	
-	
-#endif
+	float power = powf(10, dec);
+	return roundf(num * power) / power;
+}

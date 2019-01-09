@@ -22,11 +22,8 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include "Math.h"
 
-#define M_PI 3.14159265358979323846264338327950288
-
-#define deg2rad(x) (M_PI*x/180.f)
-#define rad2deg(x) (180.f*x/M_PI)
 #define devec(x) (&x[1]) // devectorize from dimension 4 to dimension 3 (take bottom 3 elements) - works only on vector (float array)
 
 // Quaternion class for computations with quaternions of the format
