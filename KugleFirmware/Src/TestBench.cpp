@@ -12,8 +12,8 @@
  * Contact information
  * ------------------------------------------
  * Thomas Jespersen, TKJ Electronics
- * Web      :  http://www.tkjelectronics.com
- * e-mail   :  thomasj@tkjelectronics.com
+ * Web      :  http://www.tkjelectronics.dk
+ * e-mail   :  thomasj@tkjelectronics.dk
  * ------------------------------------------
  */
  
