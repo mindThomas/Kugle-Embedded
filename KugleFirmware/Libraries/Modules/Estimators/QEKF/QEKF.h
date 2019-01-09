@@ -32,13 +32,17 @@ class QEKF
 
 		void Reset();
 		void Reset(const float accelerometer[3]);
-		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias = true);
+		void Step(const float accelerometer[3], const float gyroscope[3]);
+		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias);
 		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float dt);
+		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float cov_acc[9], const float cov_gyro[9], const float sigma2_bias, const float g, const float dt);
 
 		void GetQuaternion(float q[4]);
 		void GetQuaternionDerivative(float dq[4]);
 		void GetQuaternionCovariance(float Cov_q[4*4]);
 		void GetQuaternionDerivativeCovariance(float Cov_dq[4*4]);
+
+		bool UnitTest(void);
 
 	private:
 		Parameters& _params;

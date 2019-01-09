@@ -205,6 +205,13 @@ static int8_t CDC_DeInit_FS(void)
 {
   /* USER CODE BEGIN 4 */
   Connected = 0;
+
+  portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+  if (USB_TX_FinishedSemaphore)
+	  xSemaphoreGiveFromISR( USB_TX_FinishedSemaphore, &xHigherPriorityTaskWoken );
+
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+
   return (USBD_OK);
   /* USER CODE END 4 */
 }
@@ -322,7 +329,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   USBD_CDC_SetRxBuffer(hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(hUsbDeviceFS);
 
-  //portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
   return (USBD_OK);
   /* USER CODE END 6 */

@@ -43,9 +43,14 @@
  * Low values denote low priority tasks. The idle task has priority 0 (tskIDLE_PRIORITY)
  * Task priority has to be between 0 - configMAX_PRIORITIES
  */
-#define MAIN_TASK_PRIORITY		0
-#define TEST_BENCH_PRIORITY		2
-#define ATTITUDE_CONTROLLER_PRIORITY	5
+#define MAIN_TASK_PRIORITY				0
+#define POWER_MANAGEMENT_PRIORITY		1
+#define TEST_BENCH_PRIORITY				2
+#define DEBUG_MESSAGE_PRIORITY			5
+#define ATTITUDE_CONTROLLER_PRIORITY	6
+#define USBCDC_TRANSMITTER_PRIORITY		10
+#define LSPC_TRANSMITTER_PRIORITY		11
+#define LSPC_RECEIVER_PRIORITY			12
 
 
 

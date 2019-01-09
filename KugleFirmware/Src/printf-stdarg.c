@@ -646,6 +646,52 @@ static void tiny_print( struct SStringBuf *apBuf, const char *format, va_list ar
 			continue;
 		}
 
+		if( ch == 'f' )
+		{
+			double value;
+			value = va_arg( args, double );
+			int integer, integerAbs, decimal, decimalAbs;
+			integer = value;
+			integerAbs = abs(value);
+			decimal = (int)((value - (double)integer) * 1000000);
+			decimalAbs = abs(decimal);
+			_Bool neg = (decimal != decimalAbs);
+
+			int totalLength = apBuf->flags.width;
+			int decimalLength = apBuf->flags.printLimit;
+			if (decimalLength < 0) decimalLength = 2;
+
+			apBuf->flags.isSigned = 0;
+
+			apBuf->flags.width = totalLength - decimalLength - 1;
+			apBuf->flags.printLimit = apBuf->flags.width;
+			if (apBuf->flags.width < 0) break;
+
+			if (neg) {
+				if( strbuf_printchar( apBuf, '-' ) == 0 )
+				{
+					break;
+				}
+				--apBuf->flags.width;
+			}
+			if( printi( apBuf, integerAbs ) == 0 )
+			{
+				break;
+			}
+			if( strbuf_printchar( apBuf, '.' ) == 0 )
+			{
+				break;
+			}
+			apBuf->flags.width = decimalLength;
+			apBuf->flags.printLimit = apBuf->flags.width;
+			apBuf->flags.pad = PAD_ZERO;
+			if( printi( apBuf, decimalAbs ) == 0 )
+			{
+				break;
+			}
+			continue;
+		}
+
 		apBuf->flags.base = 16;		/* From here all hexadecimal */
 
 		if( ch == 'x' && format[0] == 'i' && format[1] == 'p' )

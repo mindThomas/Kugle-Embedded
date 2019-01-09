@@ -20,6 +20,7 @@
 #include "Matrix.h"
 #include <math.h>
 #include <stdlib.h>
+#include "Debug.h"
  
 Matrix::Matrix()
 {
@@ -60,12 +61,11 @@ void Matrix_Round(float * matrix, int rows, int cols)
 
 void Matrix_Print(float * matrix, int rows, int cols)
 {
-  /*for (int m = 0; m < rows; m++) {
-    Serial.print(" ");
+  for (int m = 0; m < rows; m++) {
+    Debug::print(" ");
     for (int n = 0; n < cols; n++) {
-        Serial.printf("%8.4f ", matrix[cols*m + n]);
-        //Serial.print("\t");
+    	Debug::printf("%8.4f ", matrix[cols*m + n]);
     }
-    Serial.println("");
-  }*/
+    Debug::print("\n");
+  }
 }

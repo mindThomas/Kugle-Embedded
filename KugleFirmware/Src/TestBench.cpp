@@ -142,6 +142,38 @@ void TestBench(void * pvParameters)
 #endif
 
 #if 0
+uint8_t count = 0;
+void MessageCallback(const std::vector<uint8_t>& payload)
+{
+	uint8_t * buffer = const_cast<uint8_t *>(payload.data());
+	uint32_t length = payload.size();
+	count++;
+}
+
+void TestBench(void * pvParameters)
+{
+	USBCDC * usb = new USBCDC(3);
+	LSPC * lspcUSB = new LSPC(usb, 11, 10); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
+	lspcUSB->registerCallback(lspc::MessageTypesIn::Test, MessageCallback);
+
+	int step = 0;
+	int count = 0;
+	while (1)
+	{
+		const uint8_t package[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, count};
+		lspcUSB->TransmitAsync(lspc::MessageTypesOut::Test, package, sizeof(package));
+		osDelay(5);
+
+		if (count++ > 200) {
+			count = 0;
+			//Debug::print("Test\n");
+			Debug::printf("Test: %d\n", step++);
+		}
+	}
+}
+#endif
+
+#if 0
 void TestBench(void * pvParameters)
 {
 	uart = new UART(UART::PORT_UART3, 115200, 100);

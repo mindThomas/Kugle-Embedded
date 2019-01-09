@@ -35,7 +35,7 @@ PCD_HandleTypeDef USBCDC::hpcd_USB_OTG_FS;
 // Necessary to export for compiler to generate code to be called by interrupt vector
 extern "C" __EXPORT void OTG_FS_IRQHandler(void);
 
-USBCDC::USBCDC(uint32_t transmitterTaskPriority) : _processingTaskHandle(0), _TXfinishedSemaphore(0), _RXdataAvailable(0), _TXqueue(0), _RXqueue(0)
+USBCDC::USBCDC(uint32_t transmitterTaskPriority) : _processingTaskHandle(0), _TXfinishedSemaphore(0), _RXdataAvailable(0), _TXqueue(0), _RXqueue(0), _connected(false)
 {
 	if (usbHandle) {
 		ERROR("USB object already created");
@@ -51,7 +51,6 @@ USBCDC::USBCDC(uint32_t transmitterTaskPriority) : _processingTaskHandle(0), _TX
 		return;
 	}
 	vQueueAddToRegistry(_resourceSemaphore, "USBCDC Resource");
-	xSemaphoreGive( _resourceSemaphore ); // give the semaphore the first time
 
 	_TXqueue = xQueueCreate( USBCDC_TX_QUEUE_LENGTH, sizeof(USB_CDC_Package_t) );
 	if (_TXqueue == NULL) {
@@ -162,17 +161,20 @@ uint32_t USBCDC::Write(uint8_t * buffer, uint32_t length)
 
 uint32_t USBCDC::WriteBlocking(uint8_t * buffer, uint32_t length)
 {
-	uint32_t transmittedLength = 0;
+	if (!_connected) return 0;
+
 	xSemaphoreTake( _resourceSemaphore, ( TickType_t ) portMAX_DELAY); // take hardware resource
 
 	if (CDC_IsConnected()) {
-		CDC_Transmit_FS_ThreadBlocking(buffer, length);
-		transmittedLength = length;
+		if (CDC_Transmit_FS_ThreadBlocking(buffer, length) != USBD_OK) {
+			xSemaphoreGive( _resourceSemaphore ); // give hardware resource back
+			return 0; // error, could not transmit package
+		}
 	}
 
 	xSemaphoreGive( _resourceSemaphore ); // give hardware resource back
 
-	return transmittedLength;
+	return length;
 }
 
 int16_t USBCDC::Read()
@@ -206,22 +208,46 @@ uint32_t USBCDC::WaitForNewData(uint32_t xTicksToWait) // blocking call
 	return xSemaphoreTake( _RXdataAvailable, ( TickType_t ) xTicksToWait );
 }
 
+bool USBCDC::Connected()
+{
+	return _connected;
+}
+
 void USBCDC::TransmitterThread(void * pvParameters)
 {
 	USB_CDC_Package_t package;
 	USBCDC * usb = (USBCDC *)pvParameters;
 
-	// Send initial zero package - wait for communication channel to be opened
-	memset(package.data, 0, USB_PACKAGE_MAX_SIZE);
-	while (CDC_Transmit_FS(package.data, USB_PACKAGE_MAX_SIZE) != USBD_OK) {
-		osDelay(1);
-	}
+	xSemaphoreGive( usb->_resourceSemaphore ); // give the semaphore the first time
 
-	// Transmit processing loop
 	while (1) {
-		if ( xQueueReceive( usb->_TXqueue, &package, ( TickType_t ) portMAX_DELAY ) == pdPASS ) {
-			if (CDC_IsConnected())
-				CDC_Transmit_FS_ThreadBlocking(package.data, package.length);
+		usb->_connected = false;
+		xSemaphoreTake( usb->_resourceSemaphore, ( TickType_t ) portMAX_DELAY); // take hardware resource
+
+		while (!CDC_IsConnected()) {
+			xQueueReset(usb->_TXqueue);
+			osDelay(1);
+		}
+
+		// Wait for the USB connection to be ready
+		// Send initial zero package - wait for communication channel to be opened
+		while (CDC_Transmit_FS(package.data, USB_PACKAGE_MAX_SIZE) != USBD_OK) {
+			xQueueReset(usb->_TXqueue);
+			osDelay(1);
+		}
+
+		xSemaphoreGive( usb->_resourceSemaphore ); // give hardware resource back
+
+		usb->_connected = true;
+
+		// Transmit processing loop
+		memset(package.data, 0, USB_PACKAGE_MAX_SIZE);
+		while (CDC_IsConnected()) {
+			if ( xQueueReceive( usb->_TXqueue, &package, ( TickType_t ) 100 ) == pdPASS ) { // check USB connection every 100 ms
+				if (CDC_Transmit_FS_ThreadBlocking(package.data, package.length) != USBD_OK) {
+					break; // disconnected or other problem
+				}
+			}
 		}
 	}
 }

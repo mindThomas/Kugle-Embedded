@@ -17,30 +17,22 @@
  * ------------------------------------------
  */
  
-#ifndef MODULES_CONTROLLERS_LQR_H
-#define MODULES_CONTROLLERS_LQR_H
+#ifndef MISC_MATH_H
+#define MISC_MATH_H
 
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <arm_math.h>
-#include "Parameters.h"
+#define M_PI 3.14159265358979323846264338327950288
 
-class LQR
-{
-	public:
-		LQR(Parameters& params);
-		~LQR();
+#define deg2rad(x) (M_PI*x/180.f)
+#define rad2deg(x) (180.f*x/M_PI)
 
-		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3]);
-		void Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float tau[3]);
-		void Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float * gainMatrix, float tau[3]);
+// Example number = 37.777779
+#define ROUND_DOWN_2DEC(x) (floorf(x * 100) / 100)    /* Result: 37.77 */
+#define ROUND_2DEC(x) 	   (roundf(x * 100) / 100)    /* Result: 37.78 */
+#define ROUND_UP_2DEC(x)   (ceilf(x * 100) / 100)     /* Result: 37.78 */
 
-		bool UnitTest(void);
+float Math_Round(float num, unsigned int dec);
 
-	private:
-		Parameters& _params;
-};
-	
-	
 #endif

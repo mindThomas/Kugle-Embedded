@@ -32,7 +32,7 @@
 class AttitudeController
 {
 	private:
-		const int THREAD_STACK_SIZE = 256;
+		const int THREAD_STACK_SIZE = 1024; // notice that this much stack is apparently necessary to avoid issues
 		const uint32_t THREAD_PRIORITY = ATTITUDE_CONTROLLER_PRIORITY;
 
 	public:
@@ -67,6 +67,7 @@ class AttitudeController
 		Timer& microsTimer;
 
 		// State estimates
+		float xy[2];
 		float q[4];
 		float dq[4];
 		float dxy[2];

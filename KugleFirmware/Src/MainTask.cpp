@@ -50,10 +50,6 @@
 #include <stdlib.h>
 #include <vector>
 
-void MessageCallback(const std::vector<uint8_t>& payload);
-uint8_t count = 0;
-
-
 void MainTask(void * pvParameters)
 {
 	/* Use this task to:
@@ -72,30 +68,13 @@ void MainTask(void * pvParameters)
 	MATLABCoder_initialize();
 
 	/* Initialize power management */
-	PowerManagement * pm = new PowerManagement(1);
+	PowerManagement * pm = new PowerManagement(POWER_MANAGEMENT_PRIORITY);
 	pm->Enable(false, true); // enable 19V and 5V power
 
 	/* Initialize communication */
-	USBCDC * usb = new USBCDC(3);
-	LSPC * lspcUSB = new LSPC(usb, 11, 10); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
+	USBCDC * usb = new USBCDC(USBCDC_TRANSMITTER_PRIORITY);
+	LSPC * lspcUSB = new LSPC(usb, LSPC_RECEIVER_PRIORITY, LSPC_TRANSMITTER_PRIORITY); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
 	Debug * dbg = new Debug(lspcUSB); // pair debug module with configured LSPC module to enable "Debug::print" functionality
-
-	lspcUSB->registerCallback(lspc::MessageTypesIn::Test, MessageCallback);
-
-	int step = 0;
-	int count = 0;
-	while (1)
-	{
-		const uint8_t package[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, count};
-		lspcUSB->TransmitAsync(lspc::MessageTypesOut::Test, package, sizeof(package));
-		osDelay(5);
-
-		if (count++ > 200) {
-			count = 0;
-			//Debug::print("Test\n");
-			Debug::printf("Test: %d\n", step++);
-		}
-	}
 
 	/* Initialize and configure IMU */
 	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
@@ -122,18 +101,11 @@ void MainTask(void * pvParameters)
 	ESCON * motor3 = new ESCON(3);
 
 	/******* APPLICATION LAYERS *******/
-	/*AttitudeController * attitudeController = new AttitudeController(params, *imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
-	if (!attitudeController) ERROR("Could not initialize attitude controller");*/
+	AttitudeController * attitudeController = new AttitudeController(params, *imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
+	if (!attitudeController) ERROR("Could not initialize attitude controller");
 
 	while (1)
 	{
 		vTaskSuspend(NULL); // suspend this task
 	}
-}
-
-void MessageCallback(const std::vector<uint8_t>& payload)
-{
-	uint8_t * buffer = const_cast<uint8_t *>(payload.data());
-	uint32_t length = payload.size();
-	count++;
 }

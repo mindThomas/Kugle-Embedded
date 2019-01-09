@@ -30,14 +30,18 @@
 #include <string>
 
 #include "cmsis_os.h" // for semaphore
+#include "Priorities.h"
 
-#define DEBUG(msg)	Debug::Message("DEBUG: ", __func__, msg)
-#define ERROR(msg)	{Debug::Message("ERROR: ", __func__, msg); Debug::ErrorHandler();}
+#define DEBUG(msg)	Debug::Message("DEBUG: ", __PRETTY_FUNCTION__, msg)
+#define ERROR(msg)	Debug::Error("ERROR: ", __PRETTY_FUNCTION__, msg)
 
-#define MAX_DEBUG_TEXT_LENGTH	LSPC_MAXIMUM_PACKAGE_LENGTH
+#define MAX_DEBUG_TEXT_LENGTH	250 // LSPC_MAXIMUM_PACKAGE_LENGTH
 
 class Debug
 {
+	private:
+		const int THREAD_STACK_SIZE = 128; // notice that this much stack is apparently necessary to avoid issues
+		const uint32_t THREAD_PRIORITY = DEBUG_MESSAGE_PRIORITY;
 
 	public:
 		Debug(void * com);
@@ -51,11 +55,18 @@ class Debug
 		static void Message(std::string msg);
 		static void print(const char * msg);
 		static void printf( const char *msgFmt, ... );
-		static void ErrorHandler();
+		static void Error(const char * type, const char * functionName, const char * msg);
+
+	private:
+		static void PackageGeneratorThread(void * pvParameters);
 
 	private:
 		void * com_; // LSPC object pointer
 		SemaphoreHandle_t mutex_;
+		TaskHandle_t _TaskHandle;
+
+		char messageBuffer_[MAX_DEBUG_TEXT_LENGTH];
+		uint16_t currentBufferLocation_;
 
 
 	public:

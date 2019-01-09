@@ -46,6 +46,7 @@ class USBCDC
 		int16_t Read();
 		bool Available();
 		uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY);
+		bool Connected();
 
 	private:
 		TaskHandle_t _processingTaskHandle;
@@ -56,6 +57,7 @@ class USBCDC
 		QueueHandle_t _TXqueue;
 		QueueHandle_t _RXqueue;
 		SemaphoreHandle_t _resourceSemaphore;
+		bool _connected;
 
 	private:
 		static void TransmitterThread(void * pvParameters);
