@@ -39,6 +39,7 @@
 #include "cmsis_os.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ProcessorInit.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -180,6 +181,9 @@ void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
     lr = pulFaultStackAddress[ 5 ];
     pc = pulFaultStackAddress[ 6 ];
     psr = pulFaultStackAddress[ 7 ];
+
+    if (lr == 0) // no return address, probably a hard-fault due to reset back from DFU bootloader
+    	NVIC_SystemReset();
 
     /* When the following line is hit, the variables contain the register values. */
     for( ;; );

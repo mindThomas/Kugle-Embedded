@@ -12,3 +12,26 @@ If you get an error similar to _Could not determine GDB version using command_ t
 ```bash
 sudo apt-get install lib32ncurses5
 ```
+
+## Firmware update using DFU bootloader
+Activative the DFU bootloader through the firmware by calling the `Enter_DFU_Bootloader` function.
+
+Now a new firmware can be loaded into the board using the `dfu-util` tool from http://dfu-util.sourceforge.net/dfuse.html
+
+```bash
+./dfu-util -a 0 -s 0x08000000:leave -D KugleFirmware.bin
+```
+
+The current firmware (reading the whole flash) can also be retrieved from the board using
+
+```bash
+./dfu-util -a 0 -s 0x08000000:2097152 -U read.bin
+```
+
+OBS. If you receive a permission error you can either run the command as root (`sudo ...`) or you can install the udev rule.
+
+To reset the board out of DFU the `dfu-tool` built in to Linux can be used
+
+```bash
+dfu-tool attach
+```

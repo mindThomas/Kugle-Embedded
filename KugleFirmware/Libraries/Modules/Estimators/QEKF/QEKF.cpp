@@ -250,7 +250,5 @@ bool QEKF::UnitTest(void)
 		  Math_Round(Cov_q[3+12], 9) == Math_Round(Cov_q_diag_expected[3], 9)))
 		return false;
 
-	return false;
-
 	return true;
 }

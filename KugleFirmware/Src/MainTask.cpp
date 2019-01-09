@@ -49,6 +49,7 @@
 #include "MATLABCoderInit.h"
 #include <stdlib.h>
 #include <vector>
+#include "ProcessorInit.h"
 
 void MainTask(void * pvParameters)
 {

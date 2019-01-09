@@ -17,29 +17,35 @@
  * ------------------------------------------
  */
  
-#ifndef MODULES_CONTROLLERS_LQR_H
-#define MODULES_CONTROLLERS_LQR_H
+#ifndef MODULES_CONTROLLERS_PID_H
+#define MODULES_CONTROLLERS_PID_H
 
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <arm_math.h>
-#include "Parameters.h"
+#include "Timer.h"
 
-class LQR
+class PID
 {
 	public:
-		LQR(Parameters& params);
-		~LQR();
+		PID(const float Kp, const float Ki, const float Kd, Timer * microsTimer);
+		PID(const float Kp, const float Ki = 0.0f, const float Kd = 0.0f);
+		~PID();
 
-		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3]);
-		void Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float tau[3]);
-		void Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], const float * gainMatrix, float tau[3]);
-
-		bool UnitTest(void);
+		void Reset(void);
+		float Step(const float state, const float ref);
+		float Step(const float state, const float ref, const float dt);
 
 	private:
-		Parameters& _params;
+		Timer * _microsTimer;
+		uint16_t _prevTimerValue;
+
+		float Kp_;
+		float Ki_;
+		float Kd_;
+
+		float prev_error_;
+		float integral_;
 };
 	
 	
