@@ -48,7 +48,7 @@ Debug::Debug(void * com) : com_(com)
 
 	currentBufferLocation_ = 0;
 	memset(messageBuffer_, 0, MAX_DEBUG_TEXT_LENGTH);
-	xTaskCreate( Debug::PackageGeneratorThread, (char *)"Attitude Controller", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
+	xTaskCreate( Debug::PackageGeneratorThread, (char *)"Debug transmitter", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
 
 	debugHandle = this;
 }
@@ -84,15 +84,29 @@ void Debug::Message(const char * msg)
 	xSemaphoreTake( debugHandle->mutex_, ( TickType_t ) portMAX_DELAY ); // take debug mutex
 
 	uint16_t stringLength = strlen(msg);
-	if (stringLength > MAX_DEBUG_TEXT_LENGTH) return; // message is too long
-	if (stringLength > (MAX_DEBUG_TEXT_LENGTH-debugHandle->currentBufferLocation_)) {// stringLength = (MAX_DEBUG_TEXT_LENGTH-debugHandle->currentBufferLocation_); // "cut away" any parts above the maximum string length
-		// Send package now and clear buffer
+	if (stringLength > MAX_DEBUG_TEXT_LENGTH) { // message is too long to fit in one package
+		// Send current buffered package now and clear buffer
 		((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)debugHandle->messageBuffer_, debugHandle->currentBufferLocation_);
 		debugHandle->currentBufferLocation_ = 0;
-	}
 
-	memcpy(&debugHandle->messageBuffer_[debugHandle->currentBufferLocation_], msg, stringLength);
-	debugHandle->currentBufferLocation_ += stringLength;
+		uint8_t * msgPtr = (uint8_t *)msg;
+		while (stringLength > 0) { // split the message up in seperate packages
+			uint16_t sendLength = stringLength;
+			if (sendLength > MAX_DEBUG_TEXT_LENGTH) sendLength = MAX_DEBUG_TEXT_LENGTH;
+			((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)msgPtr, sendLength);
+			msgPtr += sendLength;
+			stringLength -= sendLength;
+		}
+	} else { // package can fit in one package
+		if (stringLength > (MAX_DEBUG_TEXT_LENGTH-debugHandle->currentBufferLocation_)) {// stringLength = (MAX_DEBUG_TEXT_LENGTH-debugHandle->currentBufferLocation_); // "cut away" any parts above the maximum string length
+			// Send package now and clear buffer
+			((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)debugHandle->messageBuffer_, debugHandle->currentBufferLocation_);
+			debugHandle->currentBufferLocation_ = 0;
+		}
+
+		memcpy(&debugHandle->messageBuffer_[debugHandle->currentBufferLocation_], msg, stringLength);
+		debugHandle->currentBufferLocation_ += stringLength;
+	}
 	xSemaphoreGive( debugHandle->mutex_ ); // give hardware resource back
 }
 

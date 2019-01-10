@@ -189,6 +189,9 @@ __attribute__((optimize("O0")))
 		/* Wait until time has been reached to make control loop periodic */
 		vTaskDelayUntil(&xLastWakeTime, loopWaitTicks);
 
+	    uint32_t prevTimer = microsTimer.Get();
+		uint32_t timerPrev = HAL_tic();
+
 		/* Get measurements (sample) */
 		imu.Get(imuMeas);
 		EncoderTicks[0] = motor1.GetEncoderRaw();
@@ -218,8 +221,6 @@ __attribute__((optimize("O0")))
 			qEKF.GetQuaternionDerivative(task->dq);
 			qEKF.GetQuaternionCovariance(Cov_q);
 		}
-
-
 
 		/* Quaternion derivative LPF filtering */
 	    /*dq[0] = dq0_filt.Filter(dq[0]);
@@ -280,18 +281,10 @@ __attribute__((optimize("O0")))
 	    /* Reference generation - get references */
 	    task->ReferenceGeneration(velocityController); // this function updates q_ref and omega_ref
 
-	    uint32_t prevTimer = microsTimer.Get();
-		uint32_t timerPrev = HAL_tic();
-
 		/* Compute control output based on references */
 	    lqr.Step(task->q, task->dq, task->q_ref, task->omega_ref, Torque);
 	    float S[3];
 	    sm.Step(task->q, task->dq, task->xy, task->dxy, task->q_ref, task->omega_ref, Torque, S);
-
-		dt_meas = microsTimer.GetDeltaTime(prevTimer);
-		dt_meas2 = HAL_toc(timerPrev);
-
-		Debug::printf("dt: %9.7f \n", dt_meas);
 
 	    /* Check if any of the torque outputs is NaN - if so, turn off the outputs */
 	    if (isnan(Torque[0]) || isnan(Torque[1]) || isnan(Torque[2])) {
@@ -330,6 +323,11 @@ __attribute__((optimize("O0")))
 		motor1.SetTorque(Torque[0]);
 		motor2.SetTorque(Torque[1]);
 		motor3.SetTorque(Torque[2]);
+
+		dt_meas = microsTimer.GetDeltaTime(prevTimer);
+		dt_meas2 = HAL_toc(timerPrev);
+
+		//Debug::printf("Attitude controller compute time: %9.7f s\n", dt_meas);
 	}
 	/* End of control loop */
 

@@ -46,6 +46,10 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* MCU Configuration--------------------------------------------------------*/
+  /* Enable the CPU Cache */
+  CPU_CACHE_Enable();
+  /* Configure the MPU attributes as Write Through for Flash Bank B sectors 6 and 7  (used for EEPROM emulation)*/
+  MPU_Config();
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();

@@ -43,7 +43,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "cmsis_os.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -83,7 +83,8 @@ void SPI6_IRQHandler(void);
 void OTG_FS_IRQHandler(void);
 void TIM16_IRQHandler(void);
 /* USER CODE BEGIN EFP */
-
+void vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName );
+void vApplicationMallocFailedHook( void );
 /* USER CODE END EFP */
 
 #ifdef __cplusplus

@@ -38,6 +38,7 @@
 								<option id="gnu.c.compiler.option.debugging.level.203353286" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1411768352" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Inc"/>
+									<listOptionValue builtIn="false" value="../Libraries/Periphirals/EEPROM"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/Math"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Debug"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/USBCDC"/>
@@ -128,6 +129,7 @@
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/InputCapture"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/ADC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SPI"/>
+									<listOptionValue builtIn="false" value="../Libraries/Periphirals/EEPROM"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/UART"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Timer"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SMBus"/>
