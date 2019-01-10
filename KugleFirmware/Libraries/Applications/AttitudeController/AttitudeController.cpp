@@ -20,6 +20,7 @@
 #include "AttitudeController.h"
 #include "cmsis_os.h"
 
+#include "Debug.h"
 #include "LQR.h"
 #include "QuaternionVelocityControl.h"
 #include "SlidingMode.h"
@@ -172,6 +173,16 @@ void AttitudeController::Thread(void * pvParameters)
 	motor2.Enable();
 	motor3.Enable();
 
+	float volatile dt_meas, dt_meas2;
+
+/*#pragma GCC push_options
+#pragma GCC optimize("O0")
+// Code here
+#pragma GCC pop_options*/
+/* For functions the following post attribute to the function declaration (in C/C++ file) can be made to disable optimization
+__attribute__((optimize("O0")))
+*/
+
 	/* Main control loop */
 	xLastWakeTime = xTaskGetTickCount();
 	while (!task->_shouldStop) {
@@ -207,6 +218,8 @@ void AttitudeController::Thread(void * pvParameters)
 			qEKF.GetQuaternionDerivative(task->dq);
 			qEKF.GetQuaternionCovariance(Cov_q);
 		}
+
+
 
 		/* Quaternion derivative LPF filtering */
 	    /*dq[0] = dq0_filt.Filter(dq[0]);
@@ -267,10 +280,18 @@ void AttitudeController::Thread(void * pvParameters)
 	    /* Reference generation - get references */
 	    task->ReferenceGeneration(velocityController); // this function updates q_ref and omega_ref
 
+	    uint32_t prevTimer = microsTimer.Get();
+		uint32_t timerPrev = HAL_tic();
+
 		/* Compute control output based on references */
 	    lqr.Step(task->q, task->dq, task->q_ref, task->omega_ref, Torque);
 	    float S[3];
 	    sm.Step(task->q, task->dq, task->xy, task->dxy, task->q_ref, task->omega_ref, Torque, S);
+
+		dt_meas = microsTimer.GetDeltaTime(prevTimer);
+		dt_meas2 = HAL_toc(timerPrev);
+
+		Debug::printf("dt: %9.7f \n", dt_meas);
 
 	    /* Check if any of the torque outputs is NaN - if so, turn off the outputs */
 	    if (isnan(Torque[0]) || isnan(Torque[1]) || isnan(Torque[2])) {
@@ -381,7 +402,7 @@ void StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEKF, Madgwick& madgwi
 void AttitudeController::ReferenceGeneration(QuaternionVelocityControl& velocityController)
 {
 	float dt;
-	dt = microsTimer.GetDeltaMicros(prevTimerValue);
+	dt = microsTimer.GetDeltaTime(prevTimerValue);
 	prevTimerValue = microsTimer.Get();
 
     if (params.behavioural.JoystickVelocityControl) {

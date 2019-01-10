@@ -35,7 +35,7 @@
 //                float P_out[100]
 // Return Type  : void
 //
-void _QEKF(const float X[10], const float P_prev[100], const float Gyroscope[3],
+__attribute__((optimize("O3"))) void _QEKF(const float X[10], const float P_prev[100], const float Gyroscope[3],
           const float Accelerometer[3], float SamplePeriod, boolean_T
           BiasEstimationEnabled, boolean_T NormalizeAccelerometer, const float
           cov_gyro[9], const float cov_acc[9], float sigma2_bias, float g, float

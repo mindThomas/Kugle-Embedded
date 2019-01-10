@@ -37,7 +37,7 @@
 //                float D[6]
 // Return Type  : void
 //
-void friction(float Bvb, float Bvk, float Bvm, double beta, float dq1, float dq2,
+__attribute__((optimize("O3"))) void friction(float Bvb, float Bvk, float Bvm, double beta, float dq1, float dq2,
               float dq3, float dq4, float dx, float dy, float q1, float q2,
               float q3, float q4, float rk, float rw, float D[6])
 {

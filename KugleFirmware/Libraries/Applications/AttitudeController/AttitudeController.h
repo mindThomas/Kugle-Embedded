@@ -32,7 +32,7 @@
 class AttitudeController
 {
 	private:
-		const int THREAD_STACK_SIZE = 1024; // notice that this much stack is apparently necessary to avoid issues
+		const int THREAD_STACK_SIZE = 1500; // notice that this much stack is apparently necessary to avoid issues
 		const uint32_t THREAD_PRIORITY = ATTITUDE_CONTROLLER_PRIORITY;
 
 	public:
@@ -79,7 +79,7 @@ class AttitudeController
 		float omega_ref[3];
 		float headingReference;
 		int ReferenceGenerationStep;
-		uint16_t prevTimerValue;
+		uint32_t prevTimerValue;
 
 };
 	

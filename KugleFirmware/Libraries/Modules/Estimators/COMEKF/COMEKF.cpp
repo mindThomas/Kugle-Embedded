@@ -55,7 +55,7 @@ void COMEKF::Step(const float dxyEst[2], const float Cov_dxy[2*2], const float q
 	float dt;
 
 	if (!_microsTimer) return; // timer not defined
-	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
+	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
 	Step(dxyEst, Cov_dxy, qEst, Cov_qEst, qDotEst, dt);

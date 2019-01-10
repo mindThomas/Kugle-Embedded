@@ -41,7 +41,7 @@ class QuaternionVelocityControl
 	private:
 		Parameters& _params;
 		Timer * _microsTimer;
-		uint16_t _prevTimerValue;
+		uint32_t _prevTimerValue;
 
 		FirstOrderLPF _dx_ref_filt;
 		FirstOrderLPF _dy_ref_filt;

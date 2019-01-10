@@ -23,7 +23,7 @@
 //                float xy_velocity[2]
 // Return Type  : void
 //
-void _ForwardKinematics(const float dpsi[3], const float q[4], const float
+__attribute__((optimize("O3"))) void _ForwardKinematics(const float dpsi[3], const float q[4], const float
   dq[4], float rk, float rw, float xy_velocity[2])
 {
   float t3;

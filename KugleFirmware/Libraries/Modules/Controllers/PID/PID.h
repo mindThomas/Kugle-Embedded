@@ -37,12 +37,12 @@ class PID
 		float Step(const float state, const float ref, const float dt);
 
 	private:
-		Timer * _microsTimer;
-		uint16_t _prevTimerValue;
-
 		float Kp_;
 		float Ki_;
 		float Kd_;
+
+		Timer * _microsTimer;
+		uint32_t _prevTimerValue;
 
 		float prev_error_;
 		float integral_;

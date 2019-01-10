@@ -51,7 +51,7 @@
 //                float S[3]
 // Return Type  : void
 //
-void SlidingModeControl(const float X[12], const float q_ref[4], float Jk, float
+__attribute__((optimize("O3"))) void SlidingModeControl(const float X[12], const float q_ref[4], float Jk, float
   Mk, float rk, float Mb, float Jbx, float Jby, float Jbz, float Jw, float rw,
   float Bvk, float Bvm, float Bvb, float, float g, float COM_X, float COM_Y,
   float COM_Z, const float K_vec[3], float eta, float epsilon, boolean_T

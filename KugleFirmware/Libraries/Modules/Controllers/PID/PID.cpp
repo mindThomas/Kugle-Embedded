@@ -49,7 +49,7 @@ float PID::Step(const float state, const float ref)
 	float dt;
 
 	if (!_microsTimer) return 0; // timer not defined
-	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
+	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
 	return Step(state, ref, dt);

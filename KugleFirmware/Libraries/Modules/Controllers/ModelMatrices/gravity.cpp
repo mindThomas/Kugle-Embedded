@@ -31,7 +31,7 @@
 //                float G[6]
 // Return Type  : void
 //
-void gravity(float COM_X, float COM_Y, float COM_Z, float Mb, double beta, float
+__attribute__((optimize("O3"))) void gravity(float COM_X, float COM_Y, float COM_Z, float Mb, double beta, float
              g, float q1, float q2, float q3, float q4, float G[6])
 {
   float t4;

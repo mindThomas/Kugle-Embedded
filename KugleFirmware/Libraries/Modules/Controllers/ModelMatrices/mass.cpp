@@ -37,7 +37,7 @@
 //                float M[36]
 // Return Type  : void
 //
-void mass(float COM_X, float COM_Y, float COM_Z, float Jbx, float Jby, float Jbz,
+__attribute__((optimize("O3"))) void mass(float COM_X, float COM_Y, float COM_Z, float Jbx, float Jby, float Jbz,
           float Jk, float Jw, float Mb, float Mk, float q1, float q2, float q3,
           float q4, float rk, float rw, float M[36])
 {

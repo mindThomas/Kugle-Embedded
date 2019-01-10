@@ -79,7 +79,7 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
 	float dt;
 
 	if (!_microsTimer) return; // timer not defined
-	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
+	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
 	Step(accelerometer, gyroscope, EstimateBias, dt);

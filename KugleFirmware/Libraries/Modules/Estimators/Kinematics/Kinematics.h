@@ -49,7 +49,7 @@ class Kinematics
 	private:
 		Parameters& _params;
 		Timer * _microsTimer;
-		uint16_t _prevTimerValue;
+		uint32_t _prevTimerValue;
 
 		float _dpsi[3];
 		int32_t _prevEncoderTicks[3];

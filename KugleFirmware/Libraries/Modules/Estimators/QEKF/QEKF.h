@@ -47,7 +47,7 @@ class QEKF
 	private:
 		Parameters& _params;
 		Timer * _microsTimer;
-		uint16_t _prevTimerValue;
+		uint32_t _prevTimerValue;
 
 		/* State estimate */
 		float X[10];    // state estimates = { q[0], q[1], q[2], q[3], dq[0], dq[1], dq[2], dq[3], gyro_bias[0], gyro_bias[1] }

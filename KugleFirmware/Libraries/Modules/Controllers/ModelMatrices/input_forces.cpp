@@ -27,7 +27,7 @@
 //                float Q[18]
 // Return Type  : void
 //
-void input_forces(float q1, float q2, float q3, float q4, float rk, float rw,
+__attribute__((optimize("O3"))) void input_forces(float q1, float q2, float q3, float q4, float rk, float rw,
                   float Q[18])
 {
   float t3;

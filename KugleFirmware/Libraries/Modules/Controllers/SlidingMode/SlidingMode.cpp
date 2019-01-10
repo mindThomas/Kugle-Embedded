@@ -194,7 +194,7 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
     arm_mat_mult_f32(&devecGammaQ_T_, &gq_, &Input_);
     arm_scale_f32(Input, 2.f, Input, 3*3);
     inv3x3(Input, InputInv);
-    #if 1 //DEBUG
+    #if 0 //DEBUG
     //toc();
 
     Debug::print("devecGammaQ_T_ = \n");
