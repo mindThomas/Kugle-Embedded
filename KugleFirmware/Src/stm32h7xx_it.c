@@ -250,8 +250,14 @@ void DebugMon_Handler(void)
 
 void vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName )
 {
-    //printf("stack overflow in task id %lu, name: %s n", (uint32t)xTask, pcTaskName);
+    //Debug::printf("stack overflow in task id %lu, name: %s n", (uint32t)xTask, pcTaskName);
 	// pxCurrentTCB contains a pointer to the currently running task
+    for( ;; );
+}
+
+void vApplicationMallocFailedHook( void )
+{
+	for( ;; );
 }
 
 /******************************************************************************/

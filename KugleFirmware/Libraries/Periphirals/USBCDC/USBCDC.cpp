@@ -104,6 +104,36 @@ USBCDC::~USBCDC()
 	if (_processingTaskHandle)
 		vTaskDelete(_processingTaskHandle); // stop task
 
+	if (_resourceSemaphore) {
+		vQueueUnregisterQueue(_resourceSemaphore);
+		vSemaphoreDelete(_resourceSemaphore);
+	}
+
+	if (_RXdataAvailable) {
+		vQueueUnregisterQueue(_RXdataAvailable);
+		vSemaphoreDelete(_RXdataAvailable);
+	}
+
+	if (_TXfinishedSemaphore) {
+		vQueueUnregisterQueue(_TXfinishedSemaphore);
+		vSemaphoreDelete(_TXfinishedSemaphore);
+	}
+
+	if (_TXfinishedSemaphore) {
+		vQueueUnregisterQueue(_TXfinishedSemaphore);
+		vSemaphoreDelete(_TXfinishedSemaphore);
+	}
+
+	if (_TXqueue) {
+		vQueueUnregisterQueue(_TXqueue);
+		vQueueDelete(_TXqueue);
+	}
+
+	if (_RXqueue) {
+		vQueueUnregisterQueue(_RXqueue);
+		vQueueDelete(_RXqueue);
+	}
+
 	USBD_Stop(&USBCDC::hUsbDeviceFS);
 	usbHandle = NULL;
 }

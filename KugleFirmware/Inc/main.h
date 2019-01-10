@@ -70,6 +70,8 @@ extern "C" {
 
 /* Exported functions prototypes ---------------------------------------------*/
 void TestBench_Init(void);
+void CPU_CACHE_Enable(void);
+void MPU_Config(void);
 
 /* Private defines -----------------------------------------------------------*/
 

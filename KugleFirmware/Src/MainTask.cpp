@@ -4,6 +4,7 @@
 
 /* Include Periphiral drivers */
 #include "ADC.h"
+#include "EEPROM.h"
 #include "Encoder.h"
 #include "I2C.h"
 #include "InputCapture.h"
@@ -64,8 +65,11 @@ void MainTask(void * pvParameters)
 	 * Basically anything related to starting the system should happen in this thread and NOT in the main() function !!!
 	 */
 
+	/* Initialize EEPROM */
+	EEPROM * eeprom = new EEPROM;
+
 	/* Initialize global parameters and MATLAB coder globals */
-	Parameters& params = Parameters::Get();
+	Parameters& params = Parameters::Get(eeprom);
 	MATLABCoder_initialize();
 
 	/* Initialize power management */
@@ -104,6 +108,21 @@ void MainTask(void * pvParameters)
 	/******* APPLICATION LAYERS *******/
 	AttitudeController * attitudeController = new AttitudeController(params, *imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
 	if (!attitudeController) ERROR("Could not initialize attitude controller");
+
+	/*char * pcWriteBuffer = (char *)pvPortMalloc(1024);
+	while (1)
+	{
+		vTaskGetRunTimeStats(pcWriteBuffer);
+		char * endPtr = &pcWriteBuffer[strlen(pcWriteBuffer)];
+		*endPtr++ = '\n'; *endPtr++ = '\n'; *endPtr++ = 0;
+		Debug::print(pcWriteBuffer);
+		osDelay(100);
+	}*/
+
+	while (1)
+	{
+		osDelay(1000);
+	}
 
 	while (1)
 	{

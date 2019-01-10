@@ -29,13 +29,15 @@ class ThreadSafeParameter
 		ThreadSafeParameter()
 		{
 			_semaphore = xSemaphoreCreateBinary();
-			xSemaphoreGive( _semaphore ); // give the semaphore the first time, to ensure that it can be accessed
+			if (_semaphore)
+				xSemaphoreGive( _semaphore ); // give the semaphore the first time, to ensure that it can be accessed
 			_value = 0;
 		};
 		ThreadSafeParameter(T init)
 		{
 			_semaphore = xSemaphoreCreateBinary();
-			xSemaphoreGive( _semaphore ); // give the semaphore the first time, to ensure that it can be accessed
+			if (_semaphore)
+				xSemaphoreGive( _semaphore ); // give the semaphore the first time, to ensure that it can be accessed
 			_value = init;
 		};
 		//ThreadSafeParameter(ThreadSafeParameter& init) {_value = init;}; // copy constructor
@@ -157,12 +159,14 @@ class ThreadSafeParameter
 
 		void Lock()
 		{
-			xSemaphoreTake( _semaphore, ( TickType_t ) portMAX_DELAY );
+			if (_semaphore)
+				xSemaphoreTake( _semaphore, ( TickType_t ) portMAX_DELAY );
 		};
 
 		void Unlock()
 		{
-			xSemaphoreGive( _semaphore );
+			if (_semaphore)
+				xSemaphoreGive( _semaphore );
 		};
 };
 	

@@ -60,6 +60,9 @@ void HealthMonitor::Thread(void * pvParameters)
 	HealthMonitor * task = (HealthMonitor *)pvParameters;
 	task->_isRunning = true;
 
+	/* Implement this as a high priority 'watchdog task' (referred to as a 'check' task in all the official demos) that monitors how the cycle counters of each task to ensure they are cycling as expected */
+	/* This task could possibly also poll for the real time stats - https://www.freertos.org/a00021.html#vTaskGetRunTimeStats */
+
 	while (!task->_shouldStop) {
 		osDelay(1);
 	}
