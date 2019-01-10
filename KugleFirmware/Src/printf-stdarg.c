@@ -26,8 +26,13 @@
 #include "FreeRTOS.h"
 #include "Debug.h"
 
+#define SPRINTF_LONG_LONG 0
+
 #define PAD_RIGHT 1
 #define PAD_ZERO 2
+
+#pragma GCC push_options
+#pragma GCC optimize("O3")
 
 /*
  * Return 1 for readable, 2 for writeable, 3 for both.
@@ -409,6 +414,95 @@ static BaseType_t printi( struct SStringBuf *apBuf, int i )
 }
 /*-----------------------------------------------------------*/
 
+static BaseType_t printl( struct SStringBuf *apBuf, long i )
+{
+	char print_buf[ PRINT_BUF_LEN ];
+	register char *s;
+	register int neg = 0;
+	register long t = 0;
+	register unsigned long u = i;
+	register unsigned base = apBuf->flags.base;
+
+	apBuf->flags.isNumber = pdTRUE;	/* Parameter for prints */
+
+	if( i == 0 )
+	{
+		print_buf[ 0 ] = '0';
+		print_buf[ 1 ] = '\0';
+		return prints( apBuf, print_buf );
+	}
+
+	if( ( apBuf->flags.isSigned == pdTRUE ) && ( base == 10 ) && ( i < 0 ) )
+	{
+		neg = 1;
+		u = -i;
+	}
+
+	s = print_buf + sizeof print_buf - 1;
+
+	*s = '\0';
+	switch( base )
+	{
+	case 16:
+		while( u != 0 )
+		{
+			t = u & 0xF;
+			if( t >= 10 )
+			{
+				t += apBuf->flags.letBase - '0' - 10;
+			}
+			*( --s ) = t + '0';
+			u >>= 4;
+		}
+		break;
+
+	case 8:
+	case 10:
+		/* GCC compiles very efficient */
+		while( u )
+		{
+			t = u % base;
+			*( --s ) = t + '0';
+			u /= base;
+		}
+		break;
+/*
+	// The generic case, not yet in use
+	default:
+		while( u )
+		{
+			t = u % base;
+			if( t >= 10)
+			{
+				t += apBuf->flags.letBase - '0' - 10;
+			}
+			*( --s ) = t + '0';
+			u /= base;
+		}
+		break;
+*/
+	}
+
+	if( neg != 0 )
+	{
+		if( apBuf->flags.width && (apBuf->flags.pad & PAD_ZERO ) )
+		{
+			if( strbuf_printchar( apBuf, '-' ) == 0 )
+			{
+				return pdFALSE;
+			}
+			--apBuf->flags.width;
+		}
+		else
+		{
+			*( --s ) = '-';
+		}
+	}
+
+	return prints( apBuf, s );
+}
+
+
 static BaseType_t printIp(struct SStringBuf *apBuf, unsigned i )
 {
 	char print_buf[16];
@@ -639,9 +733,17 @@ static void tiny_print( struct SStringBuf *apBuf, const char *format, va_list ar
 				}
 			} else
 #endif	/* SPRINTF_LONG_LONG */
-			if( printi( apBuf, va_arg( args, int ) ) == 0 )
+			if( apBuf->flags.long32 != pdFALSE )
 			{
-				break;
+				if( printl( apBuf, va_arg( args, long ) ) == 0 )
+				{
+					break;
+				}
+			} else {
+				if( printi( apBuf, va_arg( args, int ) ) == 0 )
+				{
+					break;
+				}
 			}
 			continue;
 		}
@@ -650,16 +752,20 @@ static void tiny_print( struct SStringBuf *apBuf, const char *format, va_list ar
 		{
 			double value;
 			value = va_arg( args, double );
-			int integer, integerAbs, decimal, decimalAbs;
+			long integer, integerAbs, decimal, decimalAbs;
 			integer = value;
 			integerAbs = abs(value);
-			decimal = (int)((value - (double)integer) * 1000000);
-			decimalAbs = abs(decimal);
-			_Bool neg = (decimal != decimalAbs);
 
 			int totalLength = apBuf->flags.width;
 			int decimalLength = apBuf->flags.printLimit;
 			if (decimalLength < 0) decimalLength = 2;
+
+			long decimalPower = 1;
+			for (int i = 0; i < decimalLength; i++) decimalPower *= 10;
+
+			decimal = (long)((value - (double)integer) * decimalPower);
+			decimalAbs = abs(decimal);
+			_Bool neg = (decimal != decimalAbs);
 
 			apBuf->flags.isSigned = 0;
 
@@ -674,7 +780,7 @@ static void tiny_print( struct SStringBuf *apBuf, const char *format, va_list ar
 				}
 				--apBuf->flags.width;
 			}
-			if( printi( apBuf, integerAbs ) == 0 )
+			if( printl( apBuf, integerAbs ) == 0 )
 			{
 				break;
 			}
@@ -685,7 +791,7 @@ static void tiny_print( struct SStringBuf *apBuf, const char *format, va_list ar
 			apBuf->flags.width = decimalLength;
 			apBuf->flags.printLimit = apBuf->flags.width;
 			apBuf->flags.pad = PAD_ZERO;
-			if( printi( apBuf, decimalAbs ) == 0 )
+			if( printl( apBuf, decimalAbs ) == 0 )
 			{
 				break;
 			}
@@ -831,3 +937,4 @@ size_t gb, mb, kb, sb;
 	return apBuf;
 }
 
+#pragma GCC pop_options

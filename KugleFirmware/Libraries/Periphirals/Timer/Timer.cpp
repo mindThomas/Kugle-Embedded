@@ -82,6 +82,8 @@ Timer::~Timer()
 		ERROR("Could not stop encoder");
 	}
 
+	__HAL_TIM_DISABLE_IT(&_hRes->handle, TIM_IT_UPDATE);
+
 	timer_t tmpTimer = _hRes->timer;
 	delete(_hRes);
 
@@ -189,6 +191,9 @@ void Timer::ConfigureTimerPeripheral()
 		ERROR("Could not start timer");
 		return;
 	}
+
+	// Enable interrupt
+	__HAL_TIM_ENABLE_IT(&_hRes->handle, TIM_IT_UPDATE);
 }
 
 void Timer::SetMaxValue(uint16_t maxValue)
@@ -198,10 +203,10 @@ void Timer::SetMaxValue(uint16_t maxValue)
 	__HAL_TIM_SET_AUTORELOAD(&_hRes->handle, maxValue);
 }
 
-uint16_t Timer::Get()
+uint32_t Timer::Get()
 {
 	if (!_hRes) return 0;
-	return (uint32_t)__HAL_TIM_GET_COUNTER(&_hRes->handle);
+	return (uint32_t)__HAL_TIM_GET_COUNTER(&_hRes->handle) + _hRes->counterOffset;
 }
 
 void Timer::Reset()
@@ -209,6 +214,7 @@ void Timer::Reset()
 	if (_hRes->callbackSemaphore)
 		xQueueReset(_hRes->callbackSemaphore);
 	__HAL_TIM_SET_COUNTER(&_hRes->handle, 0);
+	_hRes->counterOffset = 0;
 }
 
 void Timer::Wait(uint32_t MicrosToWait)
@@ -230,17 +236,26 @@ void Timer::Wait(uint32_t MicrosToWait)
 	Reset();
 	SetMaxValue(CountsToWait);
 
-	__HAL_TIM_ENABLE_IT(&_hRes->handle, TIM_IT_UPDATE);
-
 	xSemaphoreTake( _waitSemaphore, ( TickType_t ) portMAX_DELAY );
 }
 
-float Timer::GetDeltaMicros(uint16_t prevTimerValue)
+/**
+ * @brief 	Return delta time in seconds between now and a previous timer value
+ * @param	prevTimerValue  	Previous timer value
+ * @return	float				Delta time in seconds
+ */
+float Timer::GetDeltaTime(uint32_t prevTimerValue)
 {
 	if (!_hRes) return -1;
 
-	uint16_t timerNow = Get();
-	uint16_t timerDelta = ((int32_t)timerNow - (int32_t)prevTimerValue) % (_hRes->maxValue + 1);
+	/*uint16_t timerNow = Get();
+	uint16_t timerDelta = ((int32_t)timerNow - (int32_t)prevTimerValue) % (_hRes->maxValue + 1);*/
+	uint32_t timerDelta;
+	uint32_t timerNow = Get();
+	if (timerNow > prevTimerValue)
+		timerDelta = timerNow - prevTimerValue;
+	else
+		timerDelta = ((uint32_t)0xFFFFFFFF - prevTimerValue) + timerNow;
 
 	float microsTime = (float)timerDelta / (float)_hRes->frequency;
 	return microsTime;
@@ -255,8 +270,6 @@ void Timer::RegisterInterruptSoft(uint32_t frequency, void (*TimerCallbackSoft)(
 
 	_TimerCallbackSoft = TimerCallbackSoft;
 	xTaskCreate(Timer::CallbackThread, (char *)"Timer callback", 128, (void*) this, 3, &_hRes->callbackTaskHandle);
-
-	__HAL_TIM_ENABLE_IT(&_hRes->handle, TIM_IT_UPDATE);
 }
 
 void Timer::RegisterInterrupt(uint32_t frequency, void (*TimerCallback)()) // note that the frequency should be a multiple of the configured timer count frequency
@@ -267,8 +280,6 @@ void Timer::RegisterInterrupt(uint32_t frequency, void (*TimerCallback)()) // no
 	SetMaxValue(interruptValue);
 
 	_hRes->TimerCallback = TimerCallback;
-
-	__HAL_TIM_ENABLE_IT(&_hRes->handle, TIM_IT_UPDATE);
 }
 
 void Timer::RegisterInterrupt(uint32_t frequency, SemaphoreHandle_t semaphore)
@@ -280,8 +291,6 @@ void Timer::RegisterInterrupt(uint32_t frequency, SemaphoreHandle_t semaphore)
 	SetMaxValue(interruptValue);
 
 	_hRes->callbackSemaphore = semaphore;
-
-	__HAL_TIM_ENABLE_IT(&_hRes->handle, TIM_IT_UPDATE);
 }
 
 void Timer::CallbackThread(void * pvParameters)
@@ -304,6 +313,8 @@ void Timer::InterruptHandler(Timer::hardware_resource_t * timer)
 		if(__HAL_TIM_GET_IT_SOURCE(&timer->handle, TIM_IT_UPDATE) !=RESET)
 		{
 			__HAL_TIM_CLEAR_IT(&timer->handle, TIM_IT_UPDATE);
+
+			timer->counterOffset += (timer->maxValue + 1);
 
 			if (timer->callbackSemaphore) {
 				portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;

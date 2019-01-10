@@ -72,7 +72,7 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
 	float dt;
 
 	if (!_microsTimer) return; // timer not defined
-	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
+	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
 	Step(encoderTicks, qEst, Cov_qEst, qDotEst, COMest, dt);

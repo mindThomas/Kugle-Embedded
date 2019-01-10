@@ -48,7 +48,7 @@
 //                float P_out[4]
 // Return Type  : void
 //
-void COMEstimator(const float X[2], const float P_prev[4], const float
+__attribute__((optimize("O3"))) void COMEstimator(const float X[2], const float P_prev[4], const float
   qQEKF[4], const float Cov_qQEKF[16], const float qdotQEKF[4], const float
   Velocity[2], const float VelocityDiff[2], const float Cov_Velocity_meas[4],
   float SamplePeriod, float Jk, float Mk, float rk, float Mb, float Jbx, float

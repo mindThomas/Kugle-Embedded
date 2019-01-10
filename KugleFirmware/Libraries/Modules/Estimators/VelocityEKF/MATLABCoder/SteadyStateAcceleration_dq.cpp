@@ -34,7 +34,7 @@
 //                float dAcceleration_dq[8]
 // Return Type  : void
 //
-void SteadyStateAcceleration_dq(float COM_X, float COM_Y, float COM_Z, float Jk,
+__attribute__((optimize("O3"))) void SteadyStateAcceleration_dq(float COM_X, float COM_Y, float COM_Z, float Jk,
   float Mb, float Mk, float g, float q1, float q2, float q3, float q4, float rk,
   float dAcceleration_dq[8])
 {

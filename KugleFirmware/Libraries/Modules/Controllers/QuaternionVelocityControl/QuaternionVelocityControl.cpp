@@ -60,7 +60,7 @@ void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const 
 	float dt;
 
 	if (!_microsTimer) return; // timer not defined
-	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
+	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
 	Step(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, dt, q_ref_out);

@@ -97,7 +97,7 @@ void Kinematics::EstimateMotorVelocity(const float motorAngle[3])
 	float dt;
 
 	if (!_microsTimer) return; // timer not defined
-	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
+	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
 	EstimateMotorVelocity(motorAngle, dt);
@@ -121,7 +121,7 @@ void Kinematics::EstimateMotorVelocity(const int32_t encoderTicks[3])
 	float dt;
 
 	if (!_microsTimer) return; // timer not defined
-	dt = _microsTimer->GetDeltaMicros(_prevTimerValue);
+	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
 	EstimateMotorVelocity(encoderTicks, dt);

@@ -42,7 +42,7 @@
 //                float C[36]
 // Return Type  : void
 //
-void coriolis(float COM_X, float COM_Y, float COM_Z, float Jbx, float Jby, float
+__attribute__((optimize("O3"))) void coriolis(float COM_X, float COM_Y, float COM_Z, float Jbx, float Jby, float
               Jbz, float Jw, float Mb, double beta, float dq1, float dq2, float
               dq3, float dq4, float dx, float dy, float q1, float q2, float q3,
               float q4, float rk, float rw, float C[36])

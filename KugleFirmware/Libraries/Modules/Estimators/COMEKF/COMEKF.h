@@ -40,7 +40,7 @@ class COMEKF
 	private:
 		Parameters& _params;
 		Timer * _microsTimer;
-		uint16_t _prevTimerValue;
+		uint32_t _prevTimerValue;
 
 		int32_t _prevVelocity[2];
 

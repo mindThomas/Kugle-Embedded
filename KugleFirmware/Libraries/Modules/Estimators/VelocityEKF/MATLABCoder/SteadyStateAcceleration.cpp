@@ -38,7 +38,7 @@
 //                float acceleration[2]
 // Return Type  : void
 //
-void SteadyStateAcceleration(float COM_X, float COM_Y, float COM_Z, float Jk,
+__attribute__((optimize("O3"))) void SteadyStateAcceleration(float COM_X, float COM_Y, float COM_Z, float Jk,
   float Jw, float Mb, float Mk, float dx, float dy, float g, float q1, float q2,
   float q3, float q4, float rk, float rw, float acceleration[2])
 {

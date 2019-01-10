@@ -12,6 +12,8 @@ uint32_t HAL_GetTickTimerValue(void);
 uint32_t HAL_GetHighResTick(void);
 void HAL_DelayHighRes(uint32_t Delay);
 
+uint32_t HAL_tic();
+float HAL_toc(uint32_t timerPrev);
 
 #ifdef __cplusplus
 }

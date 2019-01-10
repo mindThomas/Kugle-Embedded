@@ -47,16 +47,17 @@ class Timer
 		void RegisterInterrupt(uint32_t frequency, SemaphoreHandle_t semaphore);
 		void SetMaxValue(uint16_t maxValue);
 
-		uint16_t Get();
+		uint32_t Get();
 		void Reset();
 		void Wait(uint32_t MicrosToWait);
-		float GetDeltaMicros(uint16_t prevTimerValue);
+		float GetDeltaTime(uint32_t prevTimerValue);
 
 	public:
 		typedef struct hardware_resource_t {
 			timer_t timer;
 			uint32_t frequency;
 			uint16_t maxValue;
+			uint32_t counterOffset;
 			TIM_HandleTypeDef handle;
 			TaskHandle_t callbackTaskHandle;
 			void (*TimerCallback)();

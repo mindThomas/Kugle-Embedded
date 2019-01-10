@@ -61,6 +61,7 @@ TIM_HandleTypeDef        htim16;
 /* Private functions ---------------------------------------------------------*/
 
 static __IO uint32_t uwTickHighRes;
+static uint32_t frequency;
 
 /**
   * @brief  This function configures the TIM16 as a time base source. 
@@ -93,8 +94,10 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   /* Compute TIM16 clock */
   uwTimclock = 2*HAL_RCC_GetPCLK2Freq();
    
+  frequency = 10000; // 10 kHz
+
   /* Compute the prescaler value to have TIM16 counter clock equal to 10 kHz */
-  uwPrescalerValue = (uint32_t) ((uwTimclock / 10000) - 1);
+  uwPrescalerValue = (uint32_t) ((uwTimclock / frequency) - 1);
   
   /* Initialize TIM16 */
   htim16.Instance = TIM16;
@@ -105,7 +108,8 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   + ClockDivision = 0
   + Counter direction = Up
   */
-  htim16.Init.Period = (10000 / 1000) - 1;
+  // Modified by Thomas: Configure timer to overflow every second, thus firing an interrupt @ 1 Hz rate
+  htim16.Init.Period = (10000 / 1) - 1;
   htim16.Init.Prescaler = uwPrescalerValue;
   htim16.Init.ClockDivision = 0;
   htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -182,12 +186,30 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   */
 void HAL_IncTick(void)
 {
-	uwTickHighRes += 10; // timer update rate configured 1 kHz but with timer count frequency running at 10 kHz
+	uwTickHighRes += 10000; // timer update rate configured 1 Hz but with timer count frequency running at 10 kHz
 }
 
 uint32_t HAL_GetHighResTick(void)
 {
 	return (uwTickHighRes + HAL_GetTickTimerValue());
+}
+
+uint32_t HAL_tic()
+{
+	return HAL_GetHighResTick();
+}
+
+float HAL_toc(uint32_t timerPrev)
+{
+	uint32_t timerDelta;
+	uint32_t timerNow = HAL_GetHighResTick();
+	if (timerNow > timerPrev)
+		timerDelta = timerNow - timerPrev;
+	else
+		timerDelta = ((uint32_t)0xFFFFFFFF - timerPrev) + timerNow;
+
+	float microsTime = (float)timerDelta / frequency;
+	return microsTime;
 }
 
 void HAL_Delay(uint32_t Delay)

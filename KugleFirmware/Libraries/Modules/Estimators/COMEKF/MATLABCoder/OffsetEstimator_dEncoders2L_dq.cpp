@@ -38,7 +38,7 @@
 //                float Hencoder[12]
 // Return Type  : void
 //
-void OffsetEstimator_dEncoders2L_dq(float dq1, float dq2, float dq3, float dq4,
+__attribute__((optimize("O3"))) void OffsetEstimator_dEncoders2L_dq(float dq1, float dq2, float dq3, float dq4,
   float dt, float dx_2L, float dy_2L, float l, float n_gear, float n_ticksRev,
   float q1, float q2, float q3, float q4, float rk, float rw, float Hencoder[12])
 {
