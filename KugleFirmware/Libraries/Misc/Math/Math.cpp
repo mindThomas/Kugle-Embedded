@@ -23,6 +23,11 @@
 
 float Math_Round(float num, unsigned int dec)
 {
-	float power = powf(10, dec);
+	//float power = powf(10, dec);
+	long long power = 1;
+	for (int i = 0; i < dec; i++) {
+		power *= 10;
+	}
+
 	return roundf(num * power) / power;
 }

@@ -18,8 +18,11 @@
  */
  
 #include "IMU.h"
- 
-// Class for sensor abstraction and sampling
+#include "Debug.h"
+#include "Math.h"
+#include <arm_math.h>
+
+// Class for sensor abstraction, sampling and calibration
 // Should eg. configure MPU-9250 interrupt
 
 #if 0
@@ -38,3 +41,230 @@ void MPU9250_Sampling(void const * argument)
 	}
 }
 #endif
+
+void IMU::CorrectMeasurement(Measurement_t& measurement)
+{
+	if (calibration_.calibrated) {
+		adjustImuMeasurement(measurement.Gyroscope[0],
+							 measurement.Gyroscope[1],
+							 measurement.Gyroscope[2],
+							 measurement.Accelerometer[0],
+							 measurement.Accelerometer[1],
+							 measurement.Accelerometer[2],
+							 calibration_.imu_calibration_matrix, calibration_.gyro_bias);
+	}
+}
+
+void IMU::AttachEEPROM(EEPROM * eeprom)
+{
+	if (!eeprom) return;
+	eeprom_ = eeprom;
+	eeprom_->EnableSection(eeprom_->sections.imu_calibration, sizeof(calibration_)); // enable IMU calibration section in EEPROM
+	LoadCalibrationFromEEPROM();
+}
+
+void IMU::LoadCalibrationFromEEPROM(void)
+{
+	if (!eeprom_) return;
+	eeprom_->ReadData(eeprom_->sections.imu_calibration, (uint8_t *)&calibration_, sizeof(calibration_));
+	ValidateCalibration();
+}
+
+void IMU::ValidateCalibration(void)
+{
+	const unsigned int ValidationPrecision = 2; // decimal places checked
+
+	if (!calibration_.calibrated) return; // the calibration flag is not even set, so nothing to validate
+
+	calibration_.calibrated = false; // set the flag to false until we suceed with all checks
+
+	// We perform a crude validation by ensuring that the calibration matrix is orthogonal : R*R' = I and R'*R = I
+	float * R = calibration_.imu_calibration_matrix; arm_matrix_instance_f32 R_; arm_mat_init_f32(&R_, 3, 3, R);
+	float R_T[3*3]; arm_matrix_instance_f32 R_T_; arm_mat_init_f32(&R_T_, 3, 3, R_T);
+	arm_mat_trans_f32(&R_, &R_T_); // transpose the matrix
+
+	float I1[3*3]; arm_matrix_instance_f32 I1_; arm_mat_init_f32(&I1_, 3, 3, I1);
+	float I2[3*3]; arm_matrix_instance_f32 I2_; arm_mat_init_f32(&I2_, 3, 3, I2);
+	arm_mat_mult_f32(&R_, &R_T_, &I1_); // R*R'
+	arm_mat_mult_f32(&R_T_, &R_, &I2_); // R'*R
+
+	// Verify that the diagonal elements are 1 (or very close to 1) and that any off-diagonal elements are close to 0
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			if (i == j) { // diagonal element, should be close to 1
+				if (Math_Round(I1[3*i+j], ValidationPrecision) != 1.0 ||
+				    Math_Round(I2[3*i+j], ValidationPrecision) != 1.0)
+					return;
+			} else { // off-diagonal element
+				if (Math_Round(I1[3*i+j], ValidationPrecision) != 0.0 ||
+				    Math_Round(I2[3*i+j], ValidationPrecision) != 0.0)
+					return;
+			}
+		}
+	}
+
+	// Matrix has been validated as being a proper rotation matrix (at least it is orthogonal)
+	calibration_.calibrated = true;
+}
+
+void IMU::Calibrate(bool storeInEEPROM)
+{
+	Measurement_t meas;
+    Debug::print("Calibrating IMU\n");
+    osDelay(1000);
+
+    float avg_acc[3] = {0.0f, 0.0f, 0.0f};
+    int num_samples = 10;
+    Debug::print("Getting "); Debug::printf("%d", num_samples); Debug::print(" accelerometer samples:\n");
+    for (int i = 0; i < num_samples; ++i) {
+    	Get(meas);
+    	arm_add_f32(meas.Accelerometer, avg_acc, avg_acc, 3);
+    	Debug::printf("%f", meas.Accelerometer[0]); Debug::print("\t");
+    	Debug::printf("%f", meas.Accelerometer[1]); Debug::print("\t");
+    	Debug::printf("%f\n", meas.Accelerometer[2]);
+    	osDelay(100);
+    }
+    arm_scale_f32(avg_acc, 1.f/num_samples, avg_acc, 3);
+
+    float avg_gyro[3] = {0.0f, 0.0f, 0.0f};
+    num_samples = 3000;
+    Debug::print("Getting "); Debug::printf("%d", num_samples); Debug::print(" gyro samples:\n");
+    for (int i = 0; i < num_samples; ++i) {
+    	Get(meas);
+    	arm_add_f32(meas.Gyroscope, avg_gyro, avg_gyro, 3);
+    	Debug::printf("%f", meas.Gyroscope[0]); Debug::print("\t");
+    	Debug::printf("%f", meas.Gyroscope[1]); Debug::print("\t");
+    	Debug::printf("%f\n", meas.Gyroscope[2]);
+    	osDelay(1);
+    }
+    arm_scale_f32(avg_gyro, 1.f/num_samples, calibration_.gyro_bias, 3);
+
+    calibrateImu(reference_acc_vector_, avg_acc, calibration_.imu_calibration_matrix);
+
+    if (storeInEEPROM && eeprom_) { // if EEPROM is configured, store new calibration in EEPROM
+    	eeprom_->WriteData(eeprom_->sections.imu_calibration, (uint8_t *)&calibration_, sizeof(calibration_));
+    }
+
+    Debug::print("Resulting calibration matrix:\n");
+    Debug::printf("%f", calibration_.imu_calibration_matrix[0]); Debug::print("\t");
+    Debug::printf("%f", calibration_.imu_calibration_matrix[1]); Debug::print("\t");
+    Debug::printf("%f\n", calibration_.imu_calibration_matrix[2]);
+    Debug::printf("%f", calibration_.imu_calibration_matrix[3]); Debug::print("\t");
+    Debug::printf("%f", calibration_.imu_calibration_matrix[4]); Debug::print("\t");
+    Debug::printf("%f\n", calibration_.imu_calibration_matrix[5]);
+    Debug::printf("%f", calibration_.imu_calibration_matrix[6]); Debug::print("\t");
+    Debug::printf("%f", calibration_.imu_calibration_matrix[7]); Debug::print("\t");
+    Debug::printf("%f\n", calibration_.imu_calibration_matrix[8]);
+
+    calibration_.calibrated = true; // we have now calibrated, but we need to verify that the calibration is valid
+    ValidateCalibration();
+    if (!calibration_.calibrated) {
+    	Debug::print("Calibration failed: Could not validate calibration\n\n");
+    	osDelay(5000);
+    	return;
+    }
+
+    Debug::print("Testing:\n");
+    Get(meas);
+    Debug::print("Unadjusted:\n");
+    Debug::print("Acc:\t"); Debug::printf("%f", meas.Accelerometer[0]); Debug::print("\t");
+    Debug::printf("%f", meas.Accelerometer[1]); Debug::print("\t"); Debug::printf("%f", meas.Accelerometer[2]); Debug::print("\n");
+    Debug::print("Gyro:\t"); Debug::printf("%f", meas.Gyroscope[0]); Debug::print("\t");
+    Debug::printf("%f", meas.Gyroscope[1]); Debug::print("\t"); Debug::printf("%f\n", meas.Gyroscope[2]);
+    adjustImuMeasurement(meas.Gyroscope[0], meas.Gyroscope[1], meas.Gyroscope[2], meas.Accelerometer[0], meas.Accelerometer[1], meas.Accelerometer[2], calibration_.imu_calibration_matrix, calibration_.gyro_bias);
+    Debug::print("Adjusted:\n");
+    Debug::print("Acc:\t"); Debug::printf("%f", meas.Accelerometer[0]); Debug::print("\t");
+    Debug::printf("%f", meas.Accelerometer[1]); Debug::print("\t"); Debug::printf("%f", meas.Accelerometer[2]); Debug::print("\n");
+    Debug::print("Gyro:\t"); Debug::printf("%f", meas.Gyroscope[0]); Debug::print("\t");
+    Debug::printf("%f", meas.Gyroscope[1]); Debug::print("\t"); Debug::printf("%f\n", meas.Gyroscope[2]);
+    Debug::print("\n");
+    osDelay(5000);
+}
+
+float IMU::vector_length(const float v[3])
+{
+  return sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+
+void IMU::calibrateImu(const float desired_acc_vector[3],
+                  const float actual_acc_vector[3],
+                  float calibration_matrix[9])
+{
+  // Scale vectors to unity
+  // arm_scale_f32 does not take a const vector, but it does not modify the
+  // source vector (hence the const_cast)
+  Debug::print("desired_acc_vector:\t"); Debug::printf("%f", desired_acc_vector[0]); Debug::print("\t");
+  Debug::printf("%f", desired_acc_vector[1]); Debug::print("\t"); Debug::printf("%f", desired_acc_vector[2]); Debug::print("\n");
+  float len_des = vector_length(desired_acc_vector);
+  Debug::print("len_des:\t"); Debug::printf("%f\n", len_des);
+  float d[3];
+  arm_scale_f32(const_cast<float*>(desired_acc_vector), 1.f/len_des, d, 3);
+  Debug::print("d:\t"); Debug::printf("%f", d[0]); Debug::print("\t");
+  Debug::printf("%f", d[1]); Debug::print("\t"); Debug::printf("%f", d[2]); Debug::print("\n");
+
+  Debug::print("actual_acc_vector:\t"); Debug::printf("%f", actual_acc_vector[0]); Debug::print("\t");
+  Debug::printf("%f", actual_acc_vector[1]); Debug::print("\t"); Debug::printf("%f", actual_acc_vector[2]); Debug::print("\n");
+  float len_act = vector_length(actual_acc_vector);
+  Debug::print("len_act:\t"); Debug::printf("%f\n", len_act);
+  float a[3];
+  arm_scale_f32(const_cast<float*>(actual_acc_vector), 1.f/len_act, a, 3);
+  Debug::print("a:\t"); Debug::printf("%f", a[0]); Debug::print("\t");
+  Debug::printf("%f", a[1]); Debug::print("\t"); Debug::printf("%f", a[2]); Debug::print("\n");
+  // Find rotation matrix R between vectors, s.t. Ra=d
+  // See: https://math.stackexchange.com/a/476311
+
+  // Cross product: v = a x d
+  float v[3] = {a[1]*d[2]-a[2]*d[1],
+                a[2]*d[0]-a[0]*d[2],
+                a[0]*d[1]-a[1]*d[0]};
+  Debug::print("v:\t"); Debug::printf("%f", v[0]); Debug::print("\t");
+  Debug::printf("%f", v[1]); Debug::print("\t"); Debug::printf("%f", v[2]); Debug::print("\n");
+  // Sine between vectors: s = ||v||
+  float s = vector_length(v);
+  Debug::print("s:\t"); Debug::printf("%f\n", s);
+  // Cosine between vectors: c = a . b
+  float c;
+  arm_dot_prod_f32(a, d, 3, &c);
+  Debug::print("c:\t"); Debug::printf("%f\n", c);
+  // R = I + [v]_x + [v]_x^2 (1-c)/(s^2), where [v]_x is the skew-symmetric
+  // cross product matrix of v
+  // It is not applicable if a and b point into exactly opposite directions,
+  // which is unlikely so we do not handle it.
+  float I_data[9] = {1.f, 0.f, 0.f,
+                     0.f, 1.f, 0.f,
+                     0.f, 0.f, 1.f,};
+  arm_matrix_instance_f32 R;
+  arm_mat_init_f32(&R, 3, 3, I_data);
+  float v_x_data[9] = { 0.f, -v[2],  v[1],
+                       v[2],   0.f, -v[0],
+                      -v[1],  v[0],   0.f};
+  arm_matrix_instance_f32 temp;
+  arm_mat_init_f32(&temp, 3, 3, v_x_data);
+  arm_mat_add_f32(&R, &temp, &R);
+  arm_mat_mult_f32(&temp, &temp, &temp);
+  arm_mat_scale_f32(&temp, (1.f - c) / (s * s), &temp);
+  arm_mat_add_f32(&R, &temp, &R);
+
+  // Return the matrix
+  memcpy(calibration_matrix, R.pData, 9*sizeof(*R.pData));
+}
+
+void IMU::adjustImuMeasurement(float& gx, float& gy, float& gz,
+                          float& ax, float& ay, float& az,
+                          const float calibration_matrix[9], const float gyro_bias[3])
+{
+  arm_matrix_instance_f32 R;
+  arm_mat_init_f32(&R, 3, 3, const_cast<float*>(calibration_matrix));
+
+  arm_matrix_instance_f32 g;
+  float g_data[3] = {gx-gyro_bias[0], gy-gyro_bias[1], gz-gyro_bias[2]};
+  arm_mat_init_f32(&g, 3, 1, g_data);
+  arm_mat_mult_f32(&R, &g, &g);
+  gx = g_data[0]; gy = g_data[1]; gz = g_data[2];
+
+  arm_matrix_instance_f32 a;
+  float a_data[3] = {ax, ay, az};
+  arm_mat_init_f32(&a, 3, 1, a_data);
+  arm_mat_mult_f32(&R, &a, &a);
+  ax = a_data[0]; ay = a_data[1]; az = a_data[2];
+}

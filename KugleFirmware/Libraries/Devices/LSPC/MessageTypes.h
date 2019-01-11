@@ -9,7 +9,8 @@ namespace lspc
 		typedef enum MessageTypesIn: uint8_t
 		{
 			Test = 0x01,
-			Control = 0x10
+			Control = 0x10,
+			CalibrateIMU = 0xE0
 		} MessageTypesIn_t;
 	}
 

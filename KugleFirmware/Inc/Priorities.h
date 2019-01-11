@@ -22,7 +22,7 @@
 
 /* Define hardware interrupt priorities   (HAL_NVIC_SetPriority)
  * Lower value means higher priority
- * Interrupt priority has to be between 0 - 15
+ * Interrupt priority has to be between 0 and 15
  * Remember to respect the "configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY" in FreeRTOSConfig.h, hence no hardware interrupt calling FreeRTOS functions must have a priority value lower than configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY
  */
 #define HIGH_RES_TIMER_TICK_PRIORITY	0		// This timer is also used to generate ticks for any ST HAL library (eg. HAL_Delay)
@@ -40,17 +40,18 @@
 
 
 /* Define task priorities in FreeRTOS format
- * Low values denote low priority tasks. The idle task has priority 0 (tskIDLE_PRIORITY)
- * Task priority has to be between 0 - configMAX_PRIORITIES
+ * Higher values means higher priority
+ * Hence low values denote low priority tasks. The idle task has priority 0 (tskIDLE_PRIORITY)
+ * Task priority has to be between 0 and (configMAX_PRIORITIES-1)
  */
 #define MAIN_TASK_PRIORITY				0
 #define POWER_MANAGEMENT_PRIORITY		1
 #define TEST_BENCH_PRIORITY				2
-#define DEBUG_MESSAGE_PRIORITY			5
+#define DEBUG_MESSAGE_PRIORITY			3
 #define ATTITUDE_CONTROLLER_PRIORITY	6
-#define USBCDC_TRANSMITTER_PRIORITY		10
-#define LSPC_TRANSMITTER_PRIORITY		11
-#define LSPC_RECEIVER_PRIORITY			12
+#define LSPC_RECEIVER_PRIORITY			11
+#define USBCDC_TRANSMITTER_PRIORITY		12
+#define LSPC_TRANSMITTER_PRIORITY		13  // important that this has the highest priority
 
 
 

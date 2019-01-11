@@ -34,6 +34,7 @@ PathFollowingController::~PathFollowingController()
 int PathFollowingController::Start()
 {
 	if (_isRunning) return 0; // task already running
+	_shouldStop = false;
 	return xTaskCreate( PathFollowingController::Thread, (char *)"Path Following Controller", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
 }
 
@@ -42,8 +43,14 @@ int PathFollowingController::Stop(uint32_t timeout)
 	if (!_isRunning) return 0; // task not running
 
 	_shouldStop = true;
-	osDelay(timeout);
+
+	uint32_t timeout_millis = timeout;
+	while (_isRunning && timeout_millis > 0) {
+		osDelay(1);
+		timeout_millis--;
+	}
 	if (_isRunning) return -1; // timeout trying to stop task
+
 	return 1;
 }
 

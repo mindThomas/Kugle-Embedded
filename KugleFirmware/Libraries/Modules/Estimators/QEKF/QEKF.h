@@ -35,7 +35,7 @@ class QEKF
 		void Step(const float accelerometer[3], const float gyroscope[3]);
 		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias);
 		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float dt);
-		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float cov_acc[9], const float cov_gyro[9], const float sigma2_bias, const float g, const float dt);
+		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float sigma2_bias, const float g, const float dt);
 
 		void GetQuaternion(float q[4]);
 		void GetQuaternionDerivative(float dq[4]);

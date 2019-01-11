@@ -209,6 +209,11 @@ uint32_t Timer::Get()
 	return (uint32_t)__HAL_TIM_GET_COUNTER(&_hRes->handle) + _hRes->counterOffset;
 }
 
+float Timer::GetTime()
+{
+	return (float)Get() / (float)_hRes->frequency;
+}
+
 void Timer::Reset()
 {
 	if (_hRes->callbackSemaphore)

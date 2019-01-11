@@ -48,6 +48,7 @@ class Timer
 		void SetMaxValue(uint16_t maxValue);
 
 		uint32_t Get();
+		float GetTime();
 		void Reset();
 		void Wait(uint32_t MicrosToWait);
 		float GetDeltaTime(uint32_t prevTimerValue);

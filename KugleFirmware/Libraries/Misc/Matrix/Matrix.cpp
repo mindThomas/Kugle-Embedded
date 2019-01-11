@@ -32,6 +32,11 @@ Matrix::~Matrix()
 	
 }
 
+/* Matrices are stored in memory in Row-major format
+ * This means that elements next to each other in memory corresponds to elements next to each other of the same row
+ * Assuming MATLAB syntax: mat(i,j)   where i denotes a row index and j and column index of a matrix of size m x n   (m rows, n columns)
+ * Then the corresponding memory entry is given as: mat[n*i + j]
+ */
 
 void Matrix_Extract(const float * in, const int in_rows, const int in_cols, const int in_row, const int in_col, const int out_rows, const int out_cols, float * out)
 {

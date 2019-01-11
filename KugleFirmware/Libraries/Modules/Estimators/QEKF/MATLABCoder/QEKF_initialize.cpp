@@ -21,7 +21,7 @@
 //
 void QEKF_initialize(const float P_diagonal_init[10], float X[10], float P[10*10])
 { 
-  for (int i = 0; i < 9; i++) {
+  for (int i = 0; i < 10; i++) {
     X[i] = 0.f;
   }
   for (int i = 0; i < 100; i++) {

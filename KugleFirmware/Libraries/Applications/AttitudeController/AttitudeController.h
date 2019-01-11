@@ -36,7 +36,7 @@ class AttitudeController
 		const uint32_t THREAD_PRIORITY = ATTITUDE_CONTROLLER_PRIORITY;
 
 	public:
-		AttitudeController(Parameters& params_, IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_);
+		AttitudeController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_);
 		~AttitudeController();
 
 		int Start();
@@ -46,11 +46,14 @@ class AttitudeController
 		void SetReference(const float q_ref_[4], const float omega_ref_[3]);
 		void SetReference(const float omega_ref_[3]);
 
+		void CalibrateIMU(void);
+
 	private:
-		void ReferenceGeneration(QuaternionVelocityControl& velocityController);
+		void ReferenceGeneration(Parameters& params, QuaternionVelocityControl& velocityController);
 
 	private:
 		static void Thread(void * pvParameters);
+		static void CalibrateIMUCallback(void * param, const std::vector<uint8_t>& payload);
 
 	private:
 		TaskHandle_t _TaskHandle;
@@ -58,7 +61,6 @@ class AttitudeController
 		bool _shouldStop;
 
 	private:
-		Parameters& params;
 		IMU& imu;
 		ESCON& motor1;
 		ESCON& motor2;
