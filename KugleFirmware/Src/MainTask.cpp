@@ -69,12 +69,12 @@ void MainTask(void * pvParameters)
 	EEPROM * eeprom = new EEPROM;
 
 	/* Initialize global parameters and MATLAB coder globals */
-	Parameters& params = Parameters::Get(eeprom);
+	Parameters& params = *(new Parameters(eeprom));
 	MATLABCoder_initialize();
 
 	/* Initialize power management */
 	PowerManagement * pm = new PowerManagement(POWER_MANAGEMENT_PRIORITY);
-	pm->Enable(false, true); // enable 19V and 5V power
+	pm->Enable(true, true); // enable 19V and 5V power
 
 	/* Initialize communication */
 	USBCDC * usb = new USBCDC(USBCDC_TRANSMITTER_PRIORITY);
@@ -84,6 +84,7 @@ void MainTask(void * pvParameters)
 	/* Initialize and configure IMU */
 	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
 	MPU9250 * imu = new MPU9250(spi);
+	imu->AttachEEPROM(eeprom);
 	imu->Configure(MPU9250::ACCEL_RANGE_2G, MPU9250::GYRO_RANGE_250DPS);
 	if (params.estimator.EnableSensorLPFfilters) {
 		//imu->setFilt(MPU9250::DLPF_BANDWIDTH_92HZ, MPU9250::DLPF_BANDWIDTH_92HZ); // sensor bandwidths should be lower than half the sample rate to avoid aliasing problems
@@ -105,8 +106,11 @@ void MainTask(void * pvParameters)
 	ESCON * motor2 = new ESCON(2);
 	ESCON * motor3 = new ESCON(3);
 
+	/* Test info */
+	Debug::print("Booting...\n");
+
 	/******* APPLICATION LAYERS *******/
-	AttitudeController * attitudeController = new AttitudeController(params, *imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
+	AttitudeController * attitudeController = new AttitudeController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
 	if (!attitudeController) ERROR("Could not initialize attitude controller");
 
 	/*char * pcWriteBuffer = (char *)pvPortMalloc(1024);

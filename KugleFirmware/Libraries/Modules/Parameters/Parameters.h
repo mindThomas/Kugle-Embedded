@@ -25,10 +25,13 @@
 #include "ESCON.h"
 #include "EEPROM.h"
 
+#define PARAMETERS_LENGTH 	((uint32_t)&eeprom_ - (uint32_t)&ForceDefaultParameters)
+
 class Parameters
 {
 	public:	
-		uint16_t ParametersSize;
+		bool ForceDefaultParameters = true; // always load the default parameters listed below, no matter what is stored in EEPROM
+		uint16_t ParametersSize = 0;
 
 		struct {
 			/* Debugging parameters */
@@ -99,6 +102,9 @@ class Parameters
 			
 			#define EnableSensorLPFfilters_ 	false
 			bool EnableSensorLPFfilters = EnableSensorLPFfilters_;
+			bool EnableSoftwareLPFfilters = false;
+			float SoftwareLPFcoeffs_a[3] = {1.000000000000000, -1.870860377550659, 0.878777573775756};	// 20 Hz LPF
+			float SoftwareLPFcoeffs_b[3] = {0.011353393934590, -0.014789591644084, 0.011353393934590};	// Created using:  [num, den] = cheby2(2,40,20/(Fs/2))
 			bool CreateQdotFromQDifference = false;
 			bool UseMadgwick = false;
 			bool EstimateBias = true;
@@ -184,25 +190,29 @@ class Parameters
 		
 		struct {
 			float tmp = 10;
+			float tmp2 = 100;
 		} test;
 
 
 
 	public:
-		Parameters();
+		Parameters(EEPROM * eeprom = 0);
 		~Parameters();
 
-		void StoreParameters(void); // stores to EEPROM
+		void Refresh(void);
+		void LockForChange(void);
+		void UnlockAfterChange(void);
 
 	private:
 		void LoadParametersFromEEPROM(EEPROM * eeprom = 0);
-
-	public:
-		static Parameters& Get();
-		static Parameters& Get(EEPROM * eeprom);
+		void AttachEEPROM(EEPROM * eeprom);
+		void StoreParameters(void); // stores to EEPROM
 
 	private:
 		EEPROM * eeprom_;
+		SemaphoreHandle_t readSemaphore_;
+		SemaphoreHandle_t writeSemaphore_;
+		uint32_t changeCounter_;
 };
 	
 #endif

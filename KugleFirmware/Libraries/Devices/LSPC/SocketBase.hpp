@@ -24,7 +24,12 @@ class SocketBase
   LookingFor fsr_state = LookingFor::header;
 
   // Map of callback functions to handle the incoming messages.
-  std::map<uint8_t, void (*)(const std::vector<uint8_t>&)> type_handlers;
+  typedef struct callback_t {
+	  void (*handler)(void * param, const std::vector<uint8_t>&);
+	  void * param;
+
+  } callback_t;
+  std::map<uint8_t, callback_t> type_handlers;
 
 public:
   // Made public such that it can be initialized (reserve memory) during construction
@@ -65,7 +70,7 @@ protected:
           auto handler_it = type_handlers.find(inPacket.packetType());
           if (handler_it != type_handlers.end())
           {
-            handler_it->second(inPacket.payload());
+            handler_it->second.handler(handler_it->second.param, inPacket.payload());
           }
           else
           {
@@ -112,16 +117,41 @@ public:
   // containing the serialized payload and len the lenght of the payload.
   //
   // @return True if the registration succeeded.
-  bool registerCallback(uint8_t type, void (*handler)(const std::vector<uint8_t>&))
+  bool registerCallback(uint8_t type, void (*handler)(void * param, const std::vector<uint8_t>&), void * parameter = 0)
   {
     if (type == 0x00)
     {
       return false;
     }
 
-    type_handlers[type] = handler;
+    if (type_handlers.find(type) != type_handlers.end()) {
+    	return false; // callback already registered - this ensures that we can not overwrite an existing registered callback
+    }
+
+    callback_t callback;
+    callback.handler = handler;
+    callback.param = parameter;
+
+    type_handlers[type] = callback;
 
     return true;
+  }
+
+  bool unregisterCallback(uint8_t type)
+  {
+	    if (type == 0x00)
+	    {
+	      return false;
+	    }
+
+	    auto handler_it = type_handlers.find(type);
+	    if (handler_it == type_handlers.end()) {
+	    	return false; // callback not registered already registered - this ensures that we can not overwrite an existing registered callback
+	    }
+
+	    type_handlers.erase(handler_it); // remove/unregister the callback
+
+	    return true;
   }
 };
 

@@ -20,14 +20,62 @@
 #ifndef MISC_IIR_H
 #define MISC_IIR_H
 
+#include "Debug.h"
+
 template <int ORDER>
 class IIR
 {
 		public:
-			IIR();
-			IIR(const float coeff_a[], const float coeff_b[]);
-			void Initialize(const float coeff_a[], const float coeff_b[]);
-			float Filter(float input);
+
+		IIR(const float coeff_a[], const float coeff_b[])
+		{
+			for (int i = 0; i < ORDER+1; i++) {
+				a[i] = coeff_a[i];
+				b[i] = coeff_b[i];
+			}
+			for (int i = 0; i < ORDER; i++) {
+				u_old[i] = 0;
+				y_old[i] = 0;
+			}
+		}
+
+		void Initialize(const float coeff_a[], const float coeff_b[])
+		{
+			for (int i = 0; i < ORDER+1; i++) {
+				a[i] = coeff_a[i];
+				b[i] = coeff_b[i];
+			}
+			for (int i = 0; i < ORDER; i++) {
+				u_old[i] = 0;
+				y_old[i] = 0;
+			}
+		}
+
+		float Filter(float input)
+		{
+			// a[0]*y[k] + a[1]*y[k-1] + ... = b[0]*u[k] + b[1]*u[k-1] + ...
+			float output;
+			float ay = 0;
+			float bu = 0;
+
+			bu = b[0] * input;
+			for (int i = ORDER; i > 0; i--) {
+				bu += b[i] * u_old[i-1];
+				ay += a[i] * y_old[i-1];
+
+				if (i > 1) {
+					u_old[i-1] = u_old[i-2];
+					y_old[i-1] = y_old[i-2];
+				}
+			}
+
+			output = 1/a[0] * (bu - ay);
+
+			u_old[0] = input;
+			y_old[0] = output;
+
+			return output;
+		}
 
 		private:
 			float a[ORDER+1];

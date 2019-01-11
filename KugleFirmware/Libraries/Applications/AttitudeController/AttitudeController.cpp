@@ -24,6 +24,7 @@
 #include "LQR.h"
 #include "QuaternionVelocityControl.h"
 #include "SlidingMode.h"
+#include "IIR.hpp"
 #include "QEKF.h"
 #include "MadgwickAHRS.h"
 #include "COMEKF.h"
@@ -33,7 +34,7 @@
 
 void StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEKF, Madgwick& madgwick, TickType_t loopWaitTicks, float stabilizationTime);
 
-AttitudeController::AttitudeController(Parameters& params_, IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_) : _TaskHandle(0), _isRunning(false), _shouldStop(false), params(params_), imu(imu_), motor1(motor1_), motor2(motor2_), motor3(motor3_), com(com_), microsTimer(microsTimer_)
+AttitudeController::AttitudeController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_) : _TaskHandle(0), _isRunning(false), _shouldStop(false), imu(imu_), motor1(motor1_), motor2(motor2_), motor3(motor3_), com(com_), microsTimer(microsTimer_)
 {
 	Start();
 }
@@ -47,6 +48,7 @@ AttitudeController::~AttitudeController()
 int AttitudeController::Start()
 {
 	if (_isRunning) return 0; // task already running
+	_shouldStop = false;
 	return xTaskCreate( AttitudeController::Thread, (char *)"Attitude Controller", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
 }
 
@@ -55,8 +57,14 @@ int AttitudeController::Stop(uint32_t timeout)
 	if (!_isRunning) return 0; // task not running
 
 	_shouldStop = true;
-	osDelay(timeout);
+
+	uint32_t timeout_millis = timeout;
+	while (_isRunning && timeout_millis > 0) {
+		osDelay(1);
+		timeout_millis--;
+	}
 	if (_isRunning) return -1; // timeout trying to stop task
+
 	return 1;
 }
 
@@ -70,31 +78,42 @@ int AttitudeController::Restart(uint32_t timeout)
 
 void AttitudeController::Thread(void * pvParameters)
 {
-	AttitudeController * task = (AttitudeController *)pvParameters;
+	AttitudeController * attitudeController = (AttitudeController *)pvParameters;
 	TickType_t xLastWakeTime;
-	task->_isRunning = true;
+	attitudeController->_isRunning = true;
 
 	/* Load initialized objects */
-	Parameters& params = task->params;
-	IMU& imu = task->imu;
-	ESCON& motor1 = task->motor1;
-	ESCON& motor2 = task->motor2;
-	ESCON& motor3 = task->motor3;
-	LSPC& com = task->com;
-	Timer& microsTimer = task->microsTimer;
+	IMU& imu = attitudeController->imu;
+	ESCON& motor1 = attitudeController->motor1;
+	ESCON& motor2 = attitudeController->motor2;
+	ESCON& motor3 = attitudeController->motor3;
+	LSPC& com = attitudeController->com;
+	Timer& microsTimer = attitudeController->microsTimer;
+
+	/* Create and load parameters */
+	Parameters& params = *(new Parameters);
 
 	/* Controller loop time / sample rate */
 	TickType_t loopWaitTicks = configTICK_RATE_HZ / params.controller.SampleRate;
 
 	/* Create and initialize controller and estimator objects */
-	LQR& lqr = *(new LQR(task->params));
-	SlidingMode& sm = *(new SlidingMode(task->params));
-	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(task->params, &task->microsTimer, 1.0f / task->params.controller.SampleRate));
-	QEKF& qEKF = *(new QEKF(task->params, &task->microsTimer));
-	Madgwick& madgwick = *(new Madgwick(task->params.controller.SampleRate, task->params.estimator.MadgwickBeta));
-	VelocityEKF& velocityEKF = *(new VelocityEKF(task->params, &task->microsTimer));
-	COMEKF& comEKF = *(new COMEKF(task->params, &task->microsTimer));
-	Kinematics& kinematics = *(new Kinematics(task->params));
+	LQR& lqr = *(new LQR(params));
+	SlidingMode& sm = *(new SlidingMode(params));
+	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(params, &attitudeController->microsTimer, 1.0f / params.controller.SampleRate));
+	QEKF& qEKF = *(new QEKF(params, &attitudeController->microsTimer));
+	Madgwick& madgwick = *(new Madgwick(params.controller.SampleRate, params.estimator.MadgwickBeta));
+	VelocityEKF& velocityEKF = *(new VelocityEKF(params, &attitudeController->microsTimer));
+	COMEKF& comEKF = *(new COMEKF(params, &attitudeController->microsTimer));
+	Kinematics& kinematics = *(new Kinematics(params));
+	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> accel_x_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
+	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> accel_y_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
+	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> accel_z_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
+	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> gyro_x_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
+	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> gyro_y_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
+	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> gyro_z_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
+
+	/* Register message type callbacks */
+	com.registerCallback(lspc::MessageTypesIn::CalibrateIMU, CalibrateIMUCallback, (void *)attitudeController);
 
 	/* Measurement variables */
 	IMU::Measurement_t imuMeas;
@@ -144,34 +163,34 @@ void AttitudeController::Thread(void * pvParameters)
 	StabilizeFilters(params, imu, qEKF, madgwick, loopWaitTicks, 1.0f); // stabilize estimators for 1 second
 
 	/* Reset COM estimate */
-	task->COM[0] = 0;
-	task->COM[1] = 0;
-	task->COM[2] = params.model.l; // initialize COM directly above center of ball at height L
+	attitudeController->COM[0] = 0;
+	attitudeController->COM[1] = 0;
+	attitudeController->COM[2] = params.model.l; // initialize COM directly above center of ball at height L
 
 	/* Reset position estimate */
-	task->xy[0] = 0;
-	task->xy[1] = 0;
+	attitudeController->xy[0] = 0;
+	attitudeController->xy[1] = 0;
 
 	/* Reset reference variables */
-	task->q_ref[0] = 1; // attitude reference = just upright
-	task->q_ref[1] = 0;
-	task->q_ref[2] = 0;
-	task->q_ref[3] = 0;
-	task->omega_ref[0] = 0; // zero angular velocity reference
-	task->omega_ref[1] = 0;
-	task->omega_ref[2] = 0;
-	task->PropagateQuaternionReference = false;
-	task->headingReference = 0; // consider to replace this with current heading (based on estimate of stabilized QEKF filter)
-	task->ReferenceGenerationStep = 0; // only used if test reference generation is enabled
-	task->prevTimerValue = microsTimer.Get();
+	attitudeController->q_ref[0] = 1; // attitude reference = just upright
+	attitudeController->q_ref[1] = 0;
+	attitudeController->q_ref[2] = 0;
+	attitudeController->q_ref[3] = 0;
+	attitudeController->omega_ref[0] = 0; // zero angular velocity reference
+	attitudeController->omega_ref[1] = 0;
+	attitudeController->omega_ref[2] = 0;
+	attitudeController->PropagateQuaternionReference = false;
+	attitudeController->headingReference = 0; // consider to replace this with current heading (based on estimate of stabilized QEKF filter)
+	attitudeController->ReferenceGenerationStep = 0; // only used if test reference generation is enabled
+	attitudeController->prevTimerValue = microsTimer.Get();
 
 	/* Enable motor outputs with 0 torque */
 	motor1.SetTorque(0);
 	motor2.SetTorque(0);
 	motor3.SetTorque(0);
-	motor1.Enable();
+	/*motor1.Enable();
 	motor2.Enable();
-	motor3.Enable();
+	motor3.Enable();*/
 
 	float volatile dt_meas, dt_meas2;
 
@@ -185,15 +204,28 @@ __attribute__((optimize("O0")))
 
 	/* Main control loop */
 	xLastWakeTime = xTaskGetTickCount();
-	while (!task->_shouldStop) {
+	while (!attitudeController->_shouldStop) {
 		/* Wait until time has been reached to make control loop periodic */
 		vTaskDelayUntil(&xLastWakeTime, loopWaitTicks);
+		params.Refresh(); // load current parameters from global parameter object
 
 	    uint32_t prevTimer = microsTimer.Get();
 		uint32_t timerPrev = HAL_tic();
 
 		/* Get measurements (sample) */
 		imu.Get(imuMeas);
+	    // Adjust the measurements according to the calibration
+		imu.CorrectMeasurement(imuMeas);
+
+		if (params.estimator.EnableSoftwareLPFfilters) {
+			imuMeas.Accelerometer[0] = accel_x_filt.Filter(imuMeas.Accelerometer[0]);
+			imuMeas.Accelerometer[1] = accel_y_filt.Filter(imuMeas.Accelerometer[1]);
+			imuMeas.Accelerometer[2] = accel_z_filt.Filter(imuMeas.Accelerometer[2]);
+			imuMeas.Gyroscope[0] = gyro_x_filt.Filter(imuMeas.Gyroscope[0]);
+			imuMeas.Gyroscope[1] = gyro_y_filt.Filter(imuMeas.Gyroscope[1]);
+			imuMeas.Gyroscope[2] = gyro_z_filt.Filter(imuMeas.Gyroscope[2]);
+		}
+
 		EncoderTicks[0] = motor1.GetEncoderRaw();
 		EncoderTicks[1] = motor2.GetEncoderRaw();
 		EncoderTicks[2] = motor3.GetEncoderRaw();
@@ -204,8 +236,8 @@ __attribute__((optimize("O0")))
 		/* Attitude estimation */
 		if (params.estimator.UseMadgwick) {
 			madgwick.updateIMU(imuMeas.Gyroscope[0], imuMeas.Gyroscope[1], imuMeas.Gyroscope[2], imuMeas.Accelerometer[0], imuMeas.Accelerometer[1], imuMeas.Accelerometer[2]);
-			madgwick.getQuaternion(task->q);
-			madgwick.getQuaternionDerivative(task->dq);
+			madgwick.getQuaternion(attitudeController->q);
+			madgwick.getQuaternionDerivative(attitudeController->dq);
 			// Hack for Madgwick quaternion estimate covariance
 	        for (int m = 0; m < 4; m++) {
 	          for (int n = 0; n < 4; n++) {
@@ -217,10 +249,16 @@ __attribute__((optimize("O0")))
 	        }
 		} else { // use QEKF
 			qEKF.Step(imuMeas.Accelerometer, imuMeas.Gyroscope, params.estimator.EstimateBias);
-			qEKF.GetQuaternion(task->q);
-			qEKF.GetQuaternionDerivative(task->dq);
+			qEKF.GetQuaternion(attitudeController->q);
+			qEKF.GetQuaternionDerivative(attitudeController->dq);
 			qEKF.GetQuaternionCovariance(Cov_q);
 		}
+
+		/*Debug::printf("qEKF = [%.3f, %.3f, %.3f, %.3f]\n", attitudeController->q[0], attitudeController->q[1], attitudeController->q[2], attitudeController->q[3]);
+		float YPR[3];
+		Quaternion_quat2eul_zyx(attitudeController->q, YPR);
+		Debug::printf("Roll: %.2f, Pitch: %.2f, Yaw: %.2f\n", rad2deg(YPR[2]), rad2deg(YPR[1]), rad2deg(YPR[0]));*/
+		Debug::printf("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", microsTimer.GetTime(), imuMeas.Accelerometer[0], imuMeas.Accelerometer[1], imuMeas.Accelerometer[2], imuMeas.Gyroscope[0], imuMeas.Gyroscope[1], imuMeas.Gyroscope[2]);
 
 		/* Quaternion derivative LPF filtering */
 	    /*dq[0] = dq0_filt.Filter(dq[0]);
@@ -231,11 +269,11 @@ __attribute__((optimize("O0")))
 		/* Independent heading requires dq to be decoupled around the yaw/heading axis */
 	    if (params.behavioural.IndependentHeading && !params.behavioural.YawVelocityBraking && !params.controller.DisableQdot) {
 	      float dq_tmp[4];
-	      dq_tmp[0] = task->dq[0];
-	      dq_tmp[1] = task->dq[1];
-	      dq_tmp[2] = task->dq[2];
-	      dq_tmp[3] = task->dq[3];
-	      HeadingIndependentQdot(dq_tmp, task->q, task->dq);
+	      dq_tmp[0] = attitudeController->dq[0];
+	      dq_tmp[1] = attitudeController->dq[1];
+	      dq_tmp[2] = attitudeController->dq[2];
+	      dq_tmp[3] = attitudeController->dq[3];
+	      HeadingIndependentQdot(dq_tmp, attitudeController->q, attitudeController->dq);
 	    }
 
 	    /* Velocity estimation using kinematics */
@@ -244,47 +282,47 @@ __attribute__((optimize("O0")))
 	    	kinematics.EstimateMotorVelocity(EncoderAngle);
 			if (params.estimator.Use2Lvelocity) {
 				float dxy_ball[2];
-				kinematics.ForwardKinematics(task->q, task->dq, dxy_ball);
-				kinematics.ConvertBallTo2Lvelocity(dxy_ball, task->q, task->dq, task->dxy);            // put 2L velocity into dxy
+				kinematics.ForwardKinematics(attitudeController->q, attitudeController->dq, dxy_ball);
+				kinematics.ConvertBallTo2Lvelocity(dxy_ball, attitudeController->q, attitudeController->dq, attitudeController->dxy);            // put 2L velocity into dxy
 			} else {
-				kinematics.ForwardKinematics(task->q, task->dq, task->dxy);       // put ball velocity into dxy
+				kinematics.ForwardKinematics(attitudeController->q, attitudeController->dq, attitudeController->dxy);       // put ball velocity into dxy
 			}
 	    }
 
 	    /* Velocity estimation using velocity EKF */
 	    if (params.estimator.UseVelocityEstimator) {
-	    	velocityEKF.Step(EncoderTicks, task->q, Cov_q, task->dq, task->COM); // velocity estimator estimates 2L velocity
-	    	velocityEKF.GetVelocity(task->dxy);
+	    	velocityEKF.Step(EncoderTicks, attitudeController->q, Cov_q, attitudeController->dq, attitudeController->COM); // velocity estimator estimates 2L velocity
+	    	velocityEKF.GetVelocity(attitudeController->dxy);
 	    	velocityEKF.GetVelocityCovariance(Cov_dxy);
 
 	    	// OBS. dxy was in the original design supposed to be ball velocity, but the velocity estimator estimates the 2L velocity which gives indirect "stabilization"
 	    	// In the Sliding Mode controller this velocity is (only) used to calculated "feedforward" torque to counteract friction
 	        if (!params.estimator.Use2Lvelocity) { // however if the 2L velocity is not desired, it is here converted back to ball velocity
-	        	kinematics.Convert2LtoBallVelocity(task->dxy, task->q, task->dq, task->dxy);
+	        	kinematics.Convert2LtoBallVelocity(attitudeController->dxy, attitudeController->q, attitudeController->dq, attitudeController->dxy);
 	        }
 	    }
 
 	    /* Center of Mass estimation */
 	    if (params.estimator.EstimateCOM && params.estimator.UseVelocityEstimator) { // can only estimate COM if velocity is also estimated (due to need of velocity estimate covariance)
-	    	comEKF.Step(task->dxy, Cov_dxy, task->q, Cov_q, task->dq);
-	    	comEKF.GetCOM(task->COM);
+	    	comEKF.Step(attitudeController->dxy, Cov_dxy, attitudeController->q, Cov_q, attitudeController->dq);
+	    	comEKF.GetCOM(attitudeController->COM);
 	    }
 
 	    /* Disable dq to avoid noisy control outputs resulting from noisy dq estimates */
 	    if (params.controller.DisableQdot) { // q_dot removed because it is VERY noisy - this causes oscillations on yaw, if yaw reference is included
-	    	task->dq[0] = 0.0f;
-	    	task->dq[1] = 0.0f;
-	    	task->dq[2] = 0.0f;
-	    	task->dq[3] = 0.0f;
+	    	attitudeController->dq[0] = 0.0f;
+	    	attitudeController->dq[1] = 0.0f;
+	    	attitudeController->dq[2] = 0.0f;
+	    	attitudeController->dq[3] = 0.0f;
 	    }
 
 	    /* Reference generation - get references */
-	    task->ReferenceGeneration(velocityController); // this function updates q_ref and omega_ref
+	    attitudeController->ReferenceGeneration(params, velocityController); // this function updates q_ref and omega_ref
 
 		/* Compute control output based on references */
-	    lqr.Step(task->q, task->dq, task->q_ref, task->omega_ref, Torque);
+	    lqr.Step(attitudeController->q, attitudeController->dq, attitudeController->q_ref, attitudeController->omega_ref, Torque);
 	    float S[3];
-	    sm.Step(task->q, task->dq, task->xy, task->dxy, task->q_ref, task->omega_ref, Torque, S);
+	    sm.Step(attitudeController->q, attitudeController->dq, attitudeController->xy, attitudeController->dxy, attitudeController->q_ref, attitudeController->omega_ref, Torque, S);
 
 	    /* Check if any of the torque outputs is NaN - if so, turn off the outputs */
 	    if (isnan(Torque[0]) || isnan(Torque[1]) || isnan(Torque[2])) {
@@ -320,9 +358,9 @@ __attribute__((optimize("O0")))
 	    }
 
 		/* Set control output */
-		motor1.SetTorque(Torque[0]);
+		/*motor1.SetTorque(Torque[0]);
 		motor2.SetTorque(Torque[1]);
-		motor3.SetTorque(Torque[2]);
+		motor3.SetTorque(Torque[2]);*/
 
 		dt_meas = microsTimer.GetDeltaTime(prevTimer);
 		dt_meas2 = HAL_toc(timerPrev);
@@ -336,8 +374,13 @@ __attribute__((optimize("O0")))
 	motor2.Disable();
 	motor3.Disable();
 
+	/* Unregister message callbacks */
+	com.unregisterCallback(lspc::MessageTypesIn::CalibrateIMU);
+
 	/* Clear controller and estimator objects */
+	delete(&params);
 	delete(&lqr);
+	delete(&sm);
 	delete(&velocityController);
 	delete(&qEKF);
 	delete(&madgwick);
@@ -346,8 +389,8 @@ __attribute__((optimize("O0")))
 	delete(&kinematics);
 
 	/* Stop and delete task */
-	task->_isRunning = false;
-	task->_TaskHandle = 0;
+	attitudeController->_isRunning = false;
+	attitudeController->_TaskHandle = 0;
 	vTaskDelete(NULL); // delete/stop this current task
 }
 
@@ -397,7 +440,7 @@ void StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEKF, Madgwick& madgwi
 }
 
 /* Reference generation based on selected test */
-void AttitudeController::ReferenceGeneration(QuaternionVelocityControl& velocityController)
+void AttitudeController::ReferenceGeneration(Parameters& params, QuaternionVelocityControl& velocityController)
 {
 	float dt;
 	dt = microsTimer.GetDeltaTime(prevTimerValue);
@@ -458,4 +501,19 @@ void AttitudeController::ReferenceGeneration(QuaternionVelocityControl& velocity
     }
 
     PropagateQuaternionReference = false;
+}
+
+void AttitudeController::CalibrateIMUCallback(void * param, const std::vector<uint8_t>& payload)
+{
+	AttitudeController * attitudeController = (AttitudeController *)param;
+	if (!attitudeController) return;
+
+	uint8_t * buffer = const_cast<uint8_t *>(payload.data());
+	uint32_t length = payload.size();
+
+	attitudeController->Stop();
+
+	attitudeController->imu.Calibrate(true);
+
+	attitudeController->Start();
 }

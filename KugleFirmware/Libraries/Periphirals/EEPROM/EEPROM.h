@@ -22,6 +22,7 @@
 
 #include "stm32h7xx_hal.h"
 #include "cmsis_os.h" // for semaphore support
+#include <string.h> // for memcpy
 
 /* EEPROM Flash locations */
 #define FLASH_BASE_ADDR      (uint32_t)(FLASH_BASE)
@@ -112,12 +113,12 @@ class EEPROM
 	public:
 		typedef enum errorCode_t : uint16_t
 		{
-			FLASH_COMPLETE = 0x0000, /* HAL_OK */
-		    ERROR    = 0x01,
-		    BUSY     = 0x02,
-	        TIMEOUT  = 0x03,
-			PAGE_FULL = 0x0080, 	 /* Page full define */
-			NO_VALID_PAGE = 0x00AB   /* No valid page define */
+			EEPROM_FLASH_COMPLETE = 0x0000, /* HAL_OK */
+			EEPROM_ERROR    = 0x01,
+			EEPROM_BUSY     = 0x02,
+			EEPROM_TIMEOUT  = 0x03,
+			EEPROM_PAGE_FULL = 0x0080, 	 /* Page full define */
+			EEPROM_NO_VALID_PAGE = 0x00AB   /* No valid page define */
 		} errorCode_t;
 
 	public:

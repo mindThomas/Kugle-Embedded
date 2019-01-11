@@ -34,6 +34,7 @@ Communication::~Communication()
 int Communication::Start()
 {
 	if (_isRunning) return 0; // task already running
+	_shouldStop = false;
 	return xTaskCreate( Communication::Thread, (char *)"Communication", THREAD_STACK_SIZE, (void*) this, THREAD_PRIORITY, &_TaskHandle);
 }
 
@@ -42,8 +43,14 @@ int Communication::Stop(uint32_t timeout)
 	if (!_isRunning) return 0; // task not running
 
 	_shouldStop = true;
-	osDelay(timeout);
+
+	uint32_t timeout_millis = timeout;
+	while (_isRunning && timeout_millis > 0) {
+		osDelay(1);
+		timeout_millis--;
+	}
 	if (_isRunning) return -1; // timeout trying to stop task
+
 	return 1;
 }
 

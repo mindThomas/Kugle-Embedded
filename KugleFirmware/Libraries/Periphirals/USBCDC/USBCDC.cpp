@@ -261,6 +261,7 @@ void USBCDC::TransmitterThread(void * pvParameters)
 
 		// Wait for the USB connection to be ready
 		// Send initial zero package - wait for communication channel to be opened
+		memset(package.data, 0, USB_PACKAGE_MAX_SIZE);
 		while (CDC_Transmit_FS(package.data, USB_PACKAGE_MAX_SIZE) != USBD_OK) {
 			xQueueReset(usb->_TXqueue);
 			osDelay(1);
@@ -274,9 +275,12 @@ void USBCDC::TransmitterThread(void * pvParameters)
 		memset(package.data, 0, USB_PACKAGE_MAX_SIZE);
 		while (CDC_IsConnected()) {
 			if ( xQueueReceive( usb->_TXqueue, &package, ( TickType_t ) 100 ) == pdPASS ) { // check USB connection every 100 ms
+				xSemaphoreTake( usb->_resourceSemaphore, ( TickType_t ) portMAX_DELAY); // take hardware resource
 				if (CDC_Transmit_FS_ThreadBlocking(package.data, package.length) != USBD_OK) {
+					xSemaphoreGive( usb->_resourceSemaphore ); // give hardware resource back
 					break; // disconnected or other problem
 				}
+				xSemaphoreGive( usb->_resourceSemaphore ); // give hardware resource back
 			}
 		}
 	}

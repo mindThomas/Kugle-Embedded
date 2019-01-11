@@ -18,6 +18,9 @@
 	  sprintf("IP = %pip\n", pxIPv6_Address);
 */
 
+#if 0 // DISABLED FOR NOW, SINCE THIS IMPLEMENTATION IS NOT PERFECT/WELL SUITED FOR FLOATS
+// If printf operations takes too long, maybe we should consider a tiny version supporting floats, eg. https://github.com/ARMmbed/minimal-printf or https://github.com/mpaland/printf
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -748,6 +751,7 @@ static void tiny_print( struct SStringBuf *apBuf, const char *format, va_list ar
 			continue;
 		}
 
+		/* OBS. This is not necessarily a full/complete/proper floating point implementation of sprintf */
 		if( ch == 'f' )
 		{
 			double value;
@@ -758,27 +762,28 @@ static void tiny_print( struct SStringBuf *apBuf, const char *format, va_list ar
 
 			int totalLength = apBuf->flags.width;
 			int decimalLength = apBuf->flags.printLimit;
-			if (decimalLength < 0) decimalLength = 2;
+			if (decimalLength < 0) decimalLength = 5;
+			if (totalLength <= 0) totalLength = decimalLength + 2;
 
 			long decimalPower = 1;
 			for (int i = 0; i < decimalLength; i++) decimalPower *= 10;
 
 			decimal = (long)((value - (double)integer) * decimalPower);
 			decimalAbs = abs(decimal);
-			_Bool neg = (decimal != decimalAbs);
+			_Bool neg = ((integer != integerAbs) || (decimal != decimalAbs));
 
 			apBuf->flags.isSigned = 0;
 
-			apBuf->flags.width = totalLength - decimalLength - 1;
-			apBuf->flags.printLimit = apBuf->flags.width;
-			if (apBuf->flags.width < 0) break;
+			apBuf->flags.width = -1; // totalLength - decimalLength - 1;
+			apBuf->flags.printLimit = totalLength; // apBuf->flags.width;
+			//if (apBuf->flags.width < 0) break;
 
 			if (neg) {
 				if( strbuf_printchar( apBuf, '-' ) == 0 )
 				{
 					break;
 				}
-				--apBuf->flags.width;
+				//--apBuf->flags.width;
 			}
 			if( printl( apBuf, integerAbs ) == 0 )
 			{
@@ -788,7 +793,8 @@ static void tiny_print( struct SStringBuf *apBuf, const char *format, va_list ar
 			{
 				break;
 			}
-			apBuf->flags.width = decimalLength;
+			if (apBuf->flags.width > decimalLength)
+				apBuf->flags.width = decimalLength;
 			apBuf->flags.printLimit = apBuf->flags.width;
 			apBuf->flags.pad = PAD_ZERO;
 			if( printl( apBuf, decimalAbs ) == 0 )
@@ -938,3 +944,5 @@ size_t gb, mb, kb, sb;
 }
 
 #pragma GCC pop_options
+
+#endif

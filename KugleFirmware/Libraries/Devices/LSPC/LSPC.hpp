@@ -13,7 +13,7 @@
 #define LSPC_MAX_ASYNCHRONOUS_PACKAGE_SIZE			100  // bytes
 #define LSPC_MAXIMUM_PACKAGE_LENGTH					250
 #define LSPC_ASYNCHRONOUS_QUEUE_LENGTH				30   // maximum 30 asynchronous packages in queue
-#define LSPC_RX_PROCESSING_THREAD_STACK_SIZE		512
+#define LSPC_RX_PROCESSING_THREAD_STACK_SIZE		1024
 #define LSPC_TX_TRANSMITTER_THREAD_STACK_SIZE		512
 
 namespace lspc
@@ -87,6 +87,7 @@ public:
   {
 	  LSPC_Async_Package_t package;
 	  if (payloadLength > LSPC_MAXIMUM_PACKAGE_LENGTH) return; // payload size is too big
+	  if (uxQueueSpacesAvailable(_TXqueue) == 0) return; // no space in queue
 
 	  package.type = type;
 	  package.payloadPtr = new std::vector<uint8_t>(payloadLength);
@@ -123,24 +124,30 @@ private:
 	  Socket<COM> * lspc = (Socket<COM> *)pvParameters;
 	  LSPC_Async_Package_t package;
 
-	  // LSPC outgoing (transmission) data loop
- 	  while (1)
+	  while (1)
 	  {
- 			if ( xQueueReceive( lspc->_TXqueue, &package, ( TickType_t ) portMAX_DELAY ) == pdPASS ) {
- 			    // Send it if possible
- 				Packet * outPacket = new Packet(package.type, *package.payloadPtr);
- 				if (!outPacket) continue;
+		  if (lspc->Connected()) {
+			  // LSPC outgoing (transmission) data loop
+			  while (lspc->Connected())
+			  {
+					if ( xQueueReceive( lspc->_TXqueue, &package, ( TickType_t ) portMAX_DELAY ) == pdPASS ) {
+						// Send it if possible
+						Packet * outPacket = new Packet(package.type, *package.payloadPtr);
+						if (!outPacket) continue;
 
- 			    if (outPacket->encodedDataSize() ==
- 			    		lspc->com->WriteBlocking(outPacket->encodedDataPtr(), outPacket->encodedDataSize())) {
- 			    	delete(package.payloadPtr); // clear memory used for payload data
-				}
-				else { // if not, re-add it to the queue
-					//xQueueSend(lspc->_TXqueue, (void *)&package, (TickType_t) 1); // re-add it to the queue is probably not a good idea
-					delete(package.payloadPtr); // clear memory used for payload data
-				}
- 			    delete(outPacket);
- 			}
+						if (outPacket->encodedDataSize() ==
+								lspc->com->WriteBlocking(outPacket->encodedDataPtr(), outPacket->encodedDataSize())) {
+							delete(package.payloadPtr); // clear memory used for payload data
+						}
+						else { // if not, re-add it to the queue
+							//xQueueSend(lspc->_TXqueue, (void *)&package, (TickType_t) 1); // re-add it to the queue is probably not a good idea
+							delete(package.payloadPtr); // clear memory used for payload data
+						}
+						delete(outPacket);
+					}
+			  }
+		  }
+		  osDelay(100);
 	  }
   }
 

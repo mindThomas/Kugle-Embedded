@@ -47,7 +47,7 @@ int main(void)
 {
   /* MCU Configuration--------------------------------------------------------*/
   /* Enable the CPU Cache */
-  CPU_CACHE_Enable();
+   CPU_CACHE_Enable();
   /* Configure the MPU attributes as Write Through for Flash Bank B sectors 6 and 7  (used for EEPROM emulation)*/
   MPU_Config();
 

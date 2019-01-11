@@ -35,12 +35,12 @@
 #define DEBUG(msg)	Debug::Message("DEBUG: ", __PRETTY_FUNCTION__, msg)
 #define ERROR(msg)	Debug::Error("ERROR: ", __PRETTY_FUNCTION__, msg)
 
-#define MAX_DEBUG_TEXT_LENGTH	250 // LSPC_MAXIMUM_PACKAGE_LENGTH
+#define MAX_DEBUG_TEXT_LENGTH	210 // LSPC_MAXIMUM_PACKAGE_LENGTH
 
 class Debug
 {
 	private:
-		const int THREAD_STACK_SIZE = 128; // notice that this much stack is apparently necessary to avoid issues
+		const int THREAD_STACK_SIZE = 256; // notice that this much stack is apparently necessary to avoid issues
 		const uint32_t THREAD_PRIORITY = DEBUG_MESSAGE_PRIORITY;
 
 	public:
