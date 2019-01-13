@@ -41,7 +41,7 @@
 #include "Joystick.h"
 
 /* Include Application-layer libraries */
-#include "AttitudeController.h"
+#include "BalanceController.h"
 #include "Communication.h"
 #include "HealthMonitor.h"
 #include "PathFollowingController.h"
@@ -110,26 +110,22 @@ void MainTask(void * pvParameters)
 	Debug::print("Booting...\n");
 
 	/******* APPLICATION LAYERS *******/
-	AttitudeController * attitudeController = new AttitudeController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
-	if (!attitudeController) ERROR("Could not initialize attitude controller");
+	BalanceController * balanceController = new BalanceController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
+	if (!balanceController) ERROR("Could not initialize balance controller");
 
-	/*char * pcWriteBuffer = (char *)pvPortMalloc(1024);
+	/* Send CPU load every second */
+	char * pcWriteBuffer = (char *)pvPortMalloc(1024);
 	while (1)
 	{
 		vTaskGetRunTimeStats(pcWriteBuffer);
 		char * endPtr = &pcWriteBuffer[strlen(pcWriteBuffer)];
 		*endPtr++ = '\n'; *endPtr++ = '\n'; *endPtr++ = 0;
-		Debug::print(pcWriteBuffer);
-		osDelay(100);
-	}*/
-
-	while (1)
-	{
+		lspcUSB->TransmitAsync(lspc::MessageTypesToPC::CPUload, (uint8_t *)pcWriteBuffer, strlen(pcWriteBuffer));
 		osDelay(1000);
 	}
 
-	while (1)
+	/*while (1)
 	{
 		vTaskSuspend(NULL); // suspend this task
-	}
+	}*/
 }

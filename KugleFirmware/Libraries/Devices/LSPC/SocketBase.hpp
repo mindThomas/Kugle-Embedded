@@ -27,7 +27,6 @@ class SocketBase
   typedef struct callback_t {
 	  void (*handler)(void * param, const std::vector<uint8_t>&);
 	  void * param;
-
   } callback_t;
   std::map<uint8_t, callback_t> type_handlers;
 

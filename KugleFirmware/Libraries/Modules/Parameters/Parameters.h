@@ -16,7 +16,7 @@
  * e-mail   :  thomasj@tkjelectronics.dk
  * ------------------------------------------
  */
- 
+
 #ifndef MODULES_PARAMETERS_H
 #define MODULES_PARAMETERS_H
 
@@ -24,22 +24,39 @@
 #include "ThreadSafeParameter.hpp"
 #include "ESCON.h"
 #include "EEPROM.h"
+#include "LSPC.hpp"
 
-#define PARAMETERS_LENGTH 	((uint32_t)&eeprom_ - (uint32_t)&ForceDefaultParameters)
+#define PARAMETERS_LENGTH 	((uint32_t)&paramsGlobal->eeprom_ - (uint32_t)&paramsGlobal->ForceDefaultParameters)
 
 class Parameters
 {
+	public:
+		typedef enum {
+			LQR_CONTROLLER,
+			SLIDING_MODE_CONTROLLER
+		} controllerType_t;
+
+		typedef enum {
+			OFF,
+			QUATERNION_CONTROL,
+			ANGULAR_VELOCITY_CONTROL,
+			VELOCITY_CONTROL,
+			PATH_FOLLOWING
+		} controllerMode_t;
+
+
 	public:	
 		bool ForceDefaultParameters = true; // always load the default parameters listed below, no matter what is stored in EEPROM
 		uint16_t ParametersSize = 0;
 
-		struct {
+		struct debug_t {
 			/* Debugging parameters */
 			bool EnableLogOutput = false;
+			bool EnableRawSensorOutput = true;
 			/* Debugging parameters end */
 		} debug;
 
-		struct {
+		struct behavioural_t {
 			/* Behavioural parameters */
 			bool IndependentHeading = false;
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
@@ -49,12 +66,12 @@ class Parameters
 			/* Behavioural parameters end */
 		} behavioural;
 		
-		struct {
-			/* Controller Tuning parameters */
+		struct controller_t {
+			/* Balance Controller Tuning parameters */
 			float SampleRate = 200;
 			
-			bool ContinousSwitching = true;
-			bool DisableQdot = false;
+			controllerType_t Type = LQR_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
+			controllerMode_t Mode = VELOCITY_CONTROL;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
 
 			bool EnableTorqueLPF = true;
 			float TorqueLPFtau = 0.02; // 0.005 (sliding mode)
@@ -63,6 +80,9 @@ class Parameters
 			bool TorqueRampUp = true;
 			float TorqueRampUpTime = 1.0; // seconds to ramp up Torque after initialization
 
+			bool DisableQdot = false;
+
+			/* Sliding Mode parameters */
 			/*float K[3] = {20, 20, 20}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
 			float eta = 1; // switching gain
 			float epsilon = 0.1;  // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S*/
@@ -76,9 +96,12 @@ class Parameters
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
 			float K[3] = {50, 50, 30}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
+			bool ContinousSwitching = true;
 			float eta = 2.5; // switching gain
 			float epsilon = 2.5;  // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
+
+			/* LQR parameters */
 			/*
 			float LQR_K[3*6] = {24.4461099686484,	 0.0000000000000,	 -5.77350269189626,	 2.86355138703516,   0.00000000000000,  -0.579208874021106,
 															  -12.2230549843242,	 21.1709522565575, -5.77350269189626,	-1.43177569351758,	 2.48115307232164,	-0.579208874021105,
@@ -89,6 +112,8 @@ class Parameters
 			-11.01087700435,	-19.0713984074259,	-0.182574185835055,	-1.35887264065582,	-2.35481794807652,	-0.101363312648735};
 			float LQR_MaxYawError = 3.0; // yaw error clamp [degrees]
 
+
+			/* Velocity controller parameters */
 			float VelocityController_MaxTilt	= 5.0; // max tilt that velocity controller can set [degrees]
 			float VelocityController_MaxIntegralCorrection = 8.0; // max tilt integral effect can compensate with [degrees]
 			float VelocityController_VelocityClamp = 0.15; // velocity clamp for the proportional gain - note that at this velocity MaxTilt will be set [meters pr. second]
@@ -96,7 +121,7 @@ class Parameters
 			/* Controller Tuning parameters end */
 		} controller;
 
-		struct {
+		struct estimator_t {
 			/* Estimator Tuning parameters */
 			float SampleRate = 200;
 			
@@ -120,27 +145,27 @@ class Parameters
 											  //      since it is weighting the LPF filtered accelerometer more
 
 			// Use these tuning parameters to trust the accelerometer or gyroscope more than the other - eg. to reduce trust in the accelerometer due to induced vibrational noise
-			#define GYRO_TUNING_FACTOR					1
-			#define ACC_TUNING_FACTOR					1
+			float GyroCov_Tuning_Factor = 1.0;
+			float AccelCov_Tuning_Factor = 1.0;
 
 			#if EnableSensorLPFfilters_
 				// 250 Hz LPF
-				float cov_gyro_mpu[9] = {0.5041E-05*GYRO_TUNING_FACTOR,    0.0094E-05*GYRO_TUNING_FACTOR,    0.0165E-05*GYRO_TUNING_FACTOR,
-															0.0094E-05*GYRO_TUNING_FACTOR,    0.5200E-05*GYRO_TUNING_FACTOR,    0.0071E-05*GYRO_TUNING_FACTOR,
-															0.0165E-05*GYRO_TUNING_FACTOR,    0.0071E-05*GYRO_TUNING_FACTOR,    0.6499E-05*GYRO_TUNING_FACTOR};
+				float cov_gyro_mpu[9] = {0.5041E-05f*GyroCov_Tuning_Factor,    0.0094E-05f*GyroCov_Tuning_Factor,    0.0165E-05f*GyroCov_Tuning_Factor,
+															0.0094E-05f*GyroCov_Tuning_Factor,    0.5200E-05f*GyroCov_Tuning_Factor,    0.0071E-05f*GyroCov_Tuning_Factor,
+															0.0165E-05f*GyroCov_Tuning_Factor,    0.0071E-05f*GyroCov_Tuning_Factor,    0.6499E-05f*GyroCov_Tuning_Factor};
 				// 92 Hz LPF
-				float cov_acc_mpu[9] = {0.2155E-03*ACC_TUNING_FACTOR,    0.0056E-03*ACC_TUNING_FACTOR,    0.0033E-03*ACC_TUNING_FACTOR,
-																		 0.0056E-03*ACC_TUNING_FACTOR,    0.2247E-03*ACC_TUNING_FACTOR,    0.0018E-03*ACC_TUNING_FACTOR,
-																		 0.0033E-03*ACC_TUNING_FACTOR,    0.0018E-03*ACC_TUNING_FACTOR,    0.5446E-03*ACC_TUNING_FACTOR};
+				float cov_acc_mpu[9] = {0.2155E-03f*AccelCov_Tuning_Factor,    0.0056E-03f*AccelCov_Tuning_Factor,    0.0033E-03f*AccelCov_Tuning_Factor,
+																		 0.0056E-03f*AccelCov_Tuning_Factor,    0.2247E-03f*AccelCov_Tuning_Factor,    0.0018E-03f*AccelCov_Tuning_Factor,
+																		 0.0033E-03f*AccelCov_Tuning_Factor,    0.0018E-03f*AccelCov_Tuning_Factor,    0.5446E-03f*AccelCov_Tuning_Factor};
 			#else
 				// LPF off
-				float cov_gyro_mpu[9] = {0.2529E-03*GYRO_TUNING_FACTOR,   -0.0064E-03*GYRO_TUNING_FACTOR,    0.1981E-03*GYRO_TUNING_FACTOR,
-																			 -0.0064E-03*GYRO_TUNING_FACTOR,    0.9379E-03*GYRO_TUNING_FACTOR,   -0.0038E-03*GYRO_TUNING_FACTOR,
-																			  0.1981E-03*GYRO_TUNING_FACTOR,   -0.0038E-03*GYRO_TUNING_FACTOR,    1.6828E-03*GYRO_TUNING_FACTOR};
+				float cov_gyro_mpu[9] = {0.2529E-03f*GyroCov_Tuning_Factor,   -0.0064E-03f*GyroCov_Tuning_Factor,    0.1981E-03f*GyroCov_Tuning_Factor,
+																			 -0.0064E-03f*GyroCov_Tuning_Factor,    0.9379E-03f*GyroCov_Tuning_Factor,   -0.0038E-03f*GyroCov_Tuning_Factor,
+																			  0.1981E-03f*GyroCov_Tuning_Factor,   -0.0038E-03f*GyroCov_Tuning_Factor,    1.6828E-03f*GyroCov_Tuning_Factor};
 			  // LPF off
-				float cov_acc_mpu[9] = {0.4273E-03*ACC_TUNING_FACTOR,    0.0072E-03*ACC_TUNING_FACTOR,    0.0096E-03*ACC_TUNING_FACTOR,
-														 0.0072E-03*ACC_TUNING_FACTOR,    0.4333E-03*ACC_TUNING_FACTOR,    0.0041E-03*ACC_TUNING_FACTOR,
-															 0.0096E-03*ACC_TUNING_FACTOR,    0.0041E-03*ACC_TUNING_FACTOR,    1.0326E-03*ACC_TUNING_FACTOR};
+				float cov_acc_mpu[9] = {0.4273E-03f*AccelCov_Tuning_Factor,    0.0072E-03f*AccelCov_Tuning_Factor,    0.0096E-03f*AccelCov_Tuning_Factor,
+														 0.0072E-03f*AccelCov_Tuning_Factor,    0.4333E-03f*AccelCov_Tuning_Factor,    0.0041E-03f*AccelCov_Tuning_Factor,
+															 0.0096E-03f*AccelCov_Tuning_Factor,    0.0041E-03f*AccelCov_Tuning_Factor,    1.0326E-03f*AccelCov_Tuning_Factor};
 			#endif
 
 			float sigma2_bias = 1E-11;
@@ -152,7 +177,7 @@ class Parameters
 			/* Estimator Tuning parameters end */
 		} estimator;
 		
-		struct {
+		struct model_t {
 			/* Model parameters (defined in SI units) */	
 			float l = 0.35f;
 
@@ -188,15 +213,14 @@ class Parameters
 			/* Model parameters end */	
 		} model;
 		
-		struct {
+		struct test_t {
 			float tmp = 10;
 			float tmp2 = 100;
 		} test;
 
 
-
 	public:
-		Parameters(EEPROM * eeprom = 0);
+		Parameters(EEPROM * eeprom = 0, LSPC * com = 0);
 		~Parameters();
 
 		void Refresh(void);
@@ -208,11 +232,142 @@ class Parameters
 		void AttachEEPROM(EEPROM * eeprom);
 		void StoreParameters(void); // stores to EEPROM
 
+		static void GetParameter_Callback(void * param, const std::vector<uint8_t>& payload);
+		static void SetParameter_Callback(void * param, const std::vector<uint8_t>& payload);
+		static void StoreParameters_Callback(void * param, const std::vector<uint8_t>& payload);
+		static void DumpParameters_Callback(void * param, const std::vector<uint8_t>& payload);
+
 	private:
 		EEPROM * eeprom_;
+		LSPC * com_;
 		SemaphoreHandle_t readSemaphore_;
 		SemaphoreHandle_t writeSemaphore_;
 		uint32_t changeCounter_;
+
+
+	private:
+		class ParameterLookup {
+			public:
+			typedef enum ValueType: uint8_t
+			{
+				_unknown = 0x00,
+				_bool = 0x01,
+				_float,
+				_uint8,
+				_uint16,
+				_uint32
+			} ValueType_t;
+			typedef enum Type: uint8_t
+			{
+				debug = 0x01,
+				behavioural,
+				controller,
+				estimator,
+				model,
+				test
+			} type_t;
+
+			typedef enum debug: uint8_t
+			{
+				EnableLogOutput = 0x01,
+				EnableRawSensorOutput
+			} debug_t;
+
+			typedef enum behavioural: uint8_t
+			{
+				IndependentHeading = 0x01,
+				YawVelocityBraking,
+				StepTestEnabled,
+				VelocityControllerEnabled,
+				JoystickVelocityControl
+			} behavioural_t;
+
+			typedef enum controller: uint8_t
+			{
+				ControllerSampleRate = 0x01,
+				Type,
+				Mode,
+				EnableTorqueLPF,
+				TorqueLPFtau,
+				EnableTorqueSaturation,
+				TorqueMax,
+				TorqueRampUp,
+				TorqueRampUpTime,
+				DisableQdot,
+				K,
+				ContinousSwitching,
+				eta,
+				epsilon,
+				LQR_K,
+				LQR_MaxYawError,
+				VelocityController_MaxTilt,
+				VelocityController_MaxIntegralCorrection,
+				VelocityController_VelocityClamp,
+				VelocityController_IntegralGain
+			} controller_t;
+
+			typedef enum estimator: uint8_t
+			{
+				EstimatorSampleRate = 0x01,
+				EnableSensorLPFfilters,
+				EnableSoftwareLPFfilters,
+				SoftwareLPFcoeffs_a,
+				SoftwareLPFcoeffs_b,
+				CreateQdotFromQDifference,
+				UseMadgwick,
+				EstimateBias,
+				Use2Lvelocity,
+				UseVelocityEstimator,
+				UseCOMestimateInVelocityEstimator,
+				EstimateCOM,
+				EstimateCOMminVelocity,
+				MaxCOMDeviation,
+				MadgwickBeta,
+				GyroCov_Tuning_Factor,
+				AccelCov_Tuning_Factor,
+				cov_gyro_mpu,
+				cov_acc_mpu,
+				sigma2_bias,
+				QEKF_P_init_diagonal,
+				VelocityEstimator_P_init_diagonal,
+				COMEstimator_P_init_diagonal
+			} estimator_t;
+
+			typedef enum model: uint8_t
+			{
+				l = 0x01,
+				COM_X,
+				COM_Y,
+				COM_Z,
+				g,
+				rk,
+				Mk,
+				Jk,
+				rw,
+				Mw,
+				i_gear,
+				Jow,
+				Jm,
+				Jw,
+				Mb,
+				Jbx,
+				Jby,
+				Jbz,
+				Bvk,
+				Bvm,
+				Bvb,
+				EncoderTicksPrRev,
+				TicksPrRev
+			} model_t;
+
+			typedef enum test: uint8_t
+			{
+				tmp = 0x01,
+				tmp2
+			} test_t;
+		};
+
+		void LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, ParameterLookup::ValueType_t& valueType, uint16_t& arraySize);
 };
 	
 #endif
