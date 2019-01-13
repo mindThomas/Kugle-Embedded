@@ -154,6 +154,19 @@ void Quaternion_GammaT(const float p[4], const float q[4], float result[4])
     result[3] = -p[3]*q[0] - p[2]*q[1] + p[1]*q[2] + p[0]*q[3];
 }
 
+/* result = V * q o p* = V*Gamma(p)^T*q */
+void Quaternion_devecGammaT(const float p[4], const float q[4], float result[3])
+{
+    /*Gamma^T = @(p)[p(0) p(1) p(2) p(3);   % for q o p = Gamma(p) * q
+                    -p(1) p(0) -p(3) p(2);
+                    -p(2) p(3) p(0) -p(1);
+                    -p(3) -p(2) p(1) p(0)];
+    */
+    result[0] = -p[1]*q[0] + p[0]*q[1] - p[3]*q[2] + p[2]*q[3];
+    result[1] = -p[2]*q[0] + p[3]*q[1] + p[0]*q[2] - p[1]*q[3];
+    result[2] = -p[3]*q[0] - p[2]*q[1] + p[1]*q[2] + p[0]*q[3];
+}
+
 /* mat = Gamma(p)^T */
 void Quaternion_mat_GammaT(const float p[4], float mat[4*4])
 {
@@ -286,6 +299,30 @@ void Quaternion_AngleClamp(const float q[4], const float angleMax, float q_clamp
 	q_clamped[1] = (q[1] / sinAngle) * sinf(clampedAngle / 2);
 	q_clamped[2] = (q[2] / sinAngle) * sinf(clampedAngle / 2);
 	q_clamped[3] = (q[3] / sinAngle) * sinf(clampedAngle / 2);
+}
+
+void Quaternion_GetAngularVelocity_Inertial(const float q[4], const float dq[4], float omega_out[3])
+{
+	// dq = 1/2 * q o q_omega_body
+	// q_omega_body = 2*inv(q) o dq
+	// We therefore have:
+	// omega_body = devec * 2 * Phi(q)' * dq
+	Quaternion_devecPhiT(q, dq, omega_out);
+	omega_out[0] *= 2;
+	omega_out[1] *= 2;
+	omega_out[2] *= 2;
+}
+
+void Quaternion_GetAngularVelocity_Body(const float q[4], const float dq[4], float omega_out[3])
+{
+	// dq = 1/2 * q_omega_inertial o q
+	// q_omega_inertial = 2*dq o inv(q)
+	// We therefore have:
+	// omega_body = devec * 2 * Gamma(q)' * dq
+	Quaternion_devecGammaT(q, dq, omega_out);
+	omega_out[0] *= 2;
+	omega_out[1] *= 2;
+	omega_out[2] *= 2;
 }
 
 void Quaternion_Integration_Body(const float q[4], const float omega_body[3], const float dt, float q_out[4])

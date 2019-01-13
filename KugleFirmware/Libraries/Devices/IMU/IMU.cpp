@@ -160,7 +160,6 @@ void IMU::Calibrate(bool storeInEEPROM)
     ValidateCalibration();
     if (!calibration_.calibrated) {
     	Debug::print("Calibration failed: Could not validate calibration\n\n");
-    	osDelay(5000);
     	return;
     }
 
@@ -178,7 +177,6 @@ void IMU::Calibrate(bool storeInEEPROM)
     Debug::print("Gyro:\t"); Debug::printf("%f", meas.Gyroscope[0]); Debug::print("\t");
     Debug::printf("%f", meas.Gyroscope[1]); Debug::print("\t"); Debug::printf("%f\n", meas.Gyroscope[2]);
     Debug::print("\n");
-    osDelay(5000);
 }
 
 float IMU::vector_length(const float v[3])

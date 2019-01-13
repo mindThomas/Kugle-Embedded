@@ -68,7 +68,7 @@ void Debug::PackageGeneratorThread(void * pvParameters)
 		osDelay(1);
 		xSemaphoreTake( debug->mutex_, ( TickType_t ) portMAX_DELAY ); // take debug mutex
 		if (debug->currentBufferLocation_ > 0) {
-			((LSPC*)debug->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)debug->messageBuffer_, debug->currentBufferLocation_);
+			((LSPC*)debug->com_)->TransmitAsync(lspc::MessageTypesToPC::Debug, (const uint8_t *)debug->messageBuffer_, debug->currentBufferLocation_);
 			debug->currentBufferLocation_ = 0;
 		}
 		xSemaphoreGive( debug->mutex_ ); // give hardware resource back
@@ -86,21 +86,21 @@ void Debug::Message(const char * msg)
 	uint16_t stringLength = strlen(msg);
 	if (stringLength > MAX_DEBUG_TEXT_LENGTH) { // message is too long to fit in one package
 		// Send current buffered package now and clear buffer
-		((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)debugHandle->messageBuffer_, debugHandle->currentBufferLocation_);
+		((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesToPC::Debug, (const uint8_t *)debugHandle->messageBuffer_, debugHandle->currentBufferLocation_);
 		debugHandle->currentBufferLocation_ = 0;
 
 		uint8_t * msgPtr = (uint8_t *)msg;
 		while (stringLength > 0) { // split the message up in seperate packages
 			uint16_t sendLength = stringLength;
 			if (sendLength > MAX_DEBUG_TEXT_LENGTH) sendLength = MAX_DEBUG_TEXT_LENGTH;
-			((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)msgPtr, sendLength);
+			((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesToPC::Debug, (const uint8_t *)msgPtr, sendLength);
 			msgPtr += sendLength;
 			stringLength -= sendLength;
 		}
 	} else { // package can fit in one package
 		if (stringLength > (MAX_DEBUG_TEXT_LENGTH-debugHandle->currentBufferLocation_)) {// stringLength = (MAX_DEBUG_TEXT_LENGTH-debugHandle->currentBufferLocation_); // "cut away" any parts above the maximum string length
 			// Send package now and clear buffer
-			((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesOut::Debug, (const uint8_t *)debugHandle->messageBuffer_, debugHandle->currentBufferLocation_);
+			((LSPC*)debugHandle->com_)->TransmitAsync(lspc::MessageTypesToPC::Debug, (const uint8_t *)debugHandle->messageBuffer_, debugHandle->currentBufferLocation_);
 			debugHandle->currentBufferLocation_ = 0;
 		}
 
