@@ -1,3 +1,0 @@
-[submodule "KugleFirmware/Libraries/Devices/LSPC/LSPC"]
-	path = KugleFirmware/Libraries/Devices/LSPC/LSPC
-	url = https://github.com/kdhansen/LSPC/
