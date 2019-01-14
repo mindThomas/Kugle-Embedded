@@ -47,9 +47,9 @@ BalanceController::BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, 
 	xSemaphoreGive( VelocityReference.semaphore ); // give the semaphore the first time
 
 	/* Register message type callbacks */
-	com.registerCallback(lspc::MessageTypesFromPC::CalibrateIMU, CalibrateIMUCallback, (void *)this);
-	com.registerCallback(lspc::MessageTypesFromPC::VelocityReference_Heading, VelocityReference_Heading_Callback, (void *)this);
-	com.registerCallback(lspc::MessageTypesFromPC::VelocityReference_Inertial, VelocityReference_Inertial_Callback, (void *)this);
+	com.registerCallback(lspc::MessageTypesFromPC::CalibrateIMU, &CalibrateIMUCallback, (void *)this);
+	com.registerCallback(lspc::MessageTypesFromPC::VelocityReference_Heading, &VelocityReference_Heading_Callback, (void *)this);
+	com.registerCallback(lspc::MessageTypesFromPC::VelocityReference_Inertial, &VelocityReference_Inertial_Callback, (void *)this);
 
 	Start();
 }
@@ -267,7 +267,7 @@ __attribute__((optimize("O0")))
 		EncoderAngle[2] = motor3.GetAngle();
 
 		if (params.debug.EnableRawSensorOutput) {
-			balanceController->SendRawSensors(imuMeas, EncoderAngle);
+			balanceController->SendRawSensors(params, imuMeas, EncoderAngle);
 		}
 
 		/* Attitude estimation */
@@ -417,15 +417,17 @@ __attribute__((optimize("O0")))
 		dt_meas = microsTimer.GetDeltaTime(prevTimer);
 		dt_meas2 = HAL_toc(timerPrev);
 
+		float TorqueDelivered[3];
+		TorqueDelivered[0] = motor1.GetAppliedTorque();
+		TorqueDelivered[1] = motor2.GetAppliedTorque();
+		TorqueDelivered[2] = motor3.GetAppliedTorque();
+
+		balanceController->SendControllerInfo(params.controller.Type, params.controller.Mode, Torque, dt_meas, TorqueDelivered);
 		//Debug::printf("Balance controller compute time: %9.7f s\n", dt_meas);
-		balanceController->SendControllerInfo(params.controller.Type, params.controller.Mode, Torque, dt_meas);
+		//Debug::printf("Applied torque: %4.2f\t%4.2f\t%4.2f\n", TorqueApplied[0], TorqueApplied[1], TorqueApplied[2]);
 
-		float TorqueApplied[3];
-		TorqueApplied[0] = motor1.GetAppliedTorque();
-		TorqueApplied[1] = motor2.GetAppliedTorque();
-		TorqueApplied[2] = motor3.GetAppliedTorque();
-
-		Debug::printf("Applied torque: %4.2f\t%4.2f\t%4.2f\n", TorqueApplied[0], TorqueApplied[1], TorqueApplied[2]);
+		float imuLog[] = {microsTimer.GetTime(), imuMeas.Accelerometer[0], imuMeas.Accelerometer[1], imuMeas.Accelerometer[2], imuMeas.Gyroscope[0], imuMeas.Gyroscope[1], imuMeas.Gyroscope[2]};
+		com.TransmitAsync(lspc::MessageTypesToPC::MathDump, (uint8_t *)&imuLog, sizeof(imuLog));
 	}
 	/* End of control loop */
 
@@ -592,7 +594,7 @@ void BalanceController::SendEstimates(void)
 	com.TransmitAsync(lspc::MessageTypesToPC::StateEstimates, (uint8_t *)&msg, sizeof(msg));
 }
 
-void BalanceController::SendRawSensors(const IMU::Measurement_t& imuMeas, const float EncoderAngle[3])
+void BalanceController::SendRawSensors(Parameters& params, const IMU::Measurement_t& imuMeas, const float EncoderAngle[3])
 {
 	lspc::MessageTypesToPC::RawSensor_IMU_MPU9250_t imu_msg;
 	lspc::MessageTypesToPC::RawSensor_Encoders_t encoders_msg;
@@ -601,12 +603,15 @@ void BalanceController::SendRawSensors(const IMU::Measurement_t& imuMeas, const 
 	imu_msg.accelerometer.x = imuMeas.Accelerometer[0];
 	imu_msg.accelerometer.y = imuMeas.Accelerometer[1];
 	imu_msg.accelerometer.z = imuMeas.Accelerometer[2];
+	memcpy(imu_msg.accelerometer.cov, params.estimator.cov_acc_mpu, sizeof(params.estimator.cov_acc_mpu));
 	imu_msg.gyroscope.x = imuMeas.Gyroscope[0];
 	imu_msg.gyroscope.y = imuMeas.Gyroscope[1];
 	imu_msg.gyroscope.z = imuMeas.Gyroscope[2];
-	imu_msg.magnetometer.x = imuMeas.Magnetometer[0];
-	imu_msg.magnetometer.y = imuMeas.Magnetometer[1];
-	imu_msg.magnetometer.z = imuMeas.Magnetometer[2];
+	memcpy(imu_msg.gyroscope.cov, params.estimator.cov_gyro_mpu, sizeof(params.estimator.cov_gyro_mpu));
+	/* ToDo: Fix when Magnetometer measurements are working */
+	imu_msg.magnetometer.x = 0;//imuMeas.Magnetometer[0];
+	imu_msg.magnetometer.y = 0;//imuMeas.Magnetometer[1];
+	imu_msg.magnetometer.z = 0;//imuMeas.Magnetometer[2];
 
 	encoders_msg.time = microsTimer.GetTime();
 	encoders_msg.angle1 = EncoderAngle[0];
@@ -617,7 +622,7 @@ void BalanceController::SendRawSensors(const IMU::Measurement_t& imuMeas, const 
 	com.TransmitAsync(lspc::MessageTypesToPC::RawSensor_Encoders, (uint8_t *)&encoders_msg, sizeof(encoders_msg));
 }
 
-void BalanceController::SendControllerInfo(const Parameters::controllerType_t Type, const Parameters::controllerMode_t Mode, const float Torque[3], const float ComputeTime)
+void BalanceController::SendControllerInfo(const Parameters::controllerType_t Type, const Parameters::controllerMode_t Mode, const float Torque[3], const float ComputeTime, const float TorqueDelivered[3])
 {
 	lspc::MessageTypesToPC::ControllerInfo_t msg;
 
@@ -625,9 +630,12 @@ void BalanceController::SendControllerInfo(const Parameters::controllerType_t Ty
 	msg.type = (uint8_t)Type;
 	msg.mode = (uint8_t)Mode;
 	msg.torque1 = Torque[0];
-	msg.torque2 = Torque[0];
-	msg.torque3 = Torque[0];
+	msg.torque2 = Torque[1];
+	msg.torque3 = Torque[2];
 	msg.compute_time = ComputeTime;
+	msg.delivered_torque1 = TorqueDelivered[0];
+	msg.delivered_torque1 = TorqueDelivered[1];
+	msg.delivered_torque1 = TorqueDelivered[2];
 
 	com.TransmitAsync(lspc::MessageTypesToPC::ControllerInfo, (uint8_t *)&msg, sizeof(msg));
 }
