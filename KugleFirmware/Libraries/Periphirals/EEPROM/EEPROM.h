@@ -66,7 +66,7 @@
 
 /* EEPROM emulation start address in Flash */
 
-  #define EEPROM_START_ADDRESS  ADDR_FLASH_SECTOR_6_BANK2 /* sector6 of bank 2 */
+  #define EEPROM_START_ADDRESS  ADDR_FLASH_SECTOR_5_BANK2 /* sector6 of bank 2 */
 
 
 /* Pages 0 and 1 base and end addresses */
@@ -164,7 +164,7 @@ class EEPROM
 
 		bool WasFormattedAtBoot_;
 
-		const uint32_t STATE_VALIDATION_FLAG = 0x12345678;
+		const uint32_t STATE_VALIDATION_FLAG = 0x55555555;
 
 	private:
 			typedef struct internal_state_t {

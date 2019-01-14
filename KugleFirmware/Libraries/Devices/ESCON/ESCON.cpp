@@ -183,7 +183,7 @@ float ESCON::GetCurrent()
 float ESCON::GetAppliedTorque()
 {
 	float Current = GetCurrent();
-	if (Current < 0) return -1.0f; // error
+	//if (Current < 0) return -1.0f; // error
 
 	// The applied motor current can be converted to torque using the torque constant (Nm/A)
 	return EC60_TORQUE_CONSTANT * Current;

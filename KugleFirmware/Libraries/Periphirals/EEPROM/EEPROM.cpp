@@ -37,9 +37,6 @@ EEPROM::EEPROM()
 		return;
 	}
 
-	/* Unlock the Flash Program Erase controller */
-    HAL_FLASH_Unlock();
-
     //uint16_t * sectionsEnum = (uint16_t *)&sections.internal;
     //EnableSection(sections.internal, sectionsEnum[1]-sectionsEnum[0]); // initialize EEPROM library section for reset state detection - sectionsEnum[1] gives the address of the next element after the internal
     EnableSection(sections.internal, sizeof(internal_state_t)); // initialize EEPROM library section for reset state detection
@@ -1102,6 +1099,8 @@ EEPROM::errorCode_t EEPROM::PageTransfer(uint16_t VirtAddress, uint16_t Data)
     return (errorCode_t)FlashStatus;
   }
   SCB_CleanInvalidateDCache_by_Addr((uint32_t*)OldPageAddress,PAGE_SIZE);
+
+  HAL_FLASH_Lock();
 
   /* Set new Page status to VALID_PAGE status */
   FlashStatus = HAL_FLASH_Program(FLASH_TYPEPROGRAM_FLASHWORD, NewPageAddress, (uint64_t)((uint32_t)valid));

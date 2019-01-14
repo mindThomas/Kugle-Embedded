@@ -214,17 +214,17 @@ void Parameters::GetParameter_Callback(void * param, const std::vector<uint8_t>&
 
 	/* Change/set the given parameter */
 	void * paramPtr;
-	ParameterLookup::ValueType_t valueType;
+	lspc::ParameterLookup::ValueType_t valueType;
 	uint16_t arraySize;
 	paramsGlobal->LookupParameter(msg.type, msg.param, &paramPtr, valueType, arraySize);
-	if (valueType != ParameterLookup::_unknown) {
+	if (valueType != lspc::ParameterLookup::_unknown) {
 		// Read parameter and send response
 		uint8_t copyLength;
-		if (valueType == ParameterLookup::_bool) copyLength = 1;
-		else if (valueType == ParameterLookup::_float) copyLength = 4;
-		else if (valueType == ParameterLookup::_uint8) copyLength = 1;
-		else if (valueType == ParameterLookup::_uint16) copyLength = 2;
-		else if (valueType == ParameterLookup::_uint32) copyLength = 4;
+		if (valueType == lspc::ParameterLookup::_bool) copyLength = 1;
+		else if (valueType == lspc::ParameterLookup::_float) copyLength = 4;
+		else if (valueType == lspc::ParameterLookup::_uint8) copyLength = 1;
+		else if (valueType == lspc::ParameterLookup::_uint16) copyLength = 2;
+		else if (valueType == lspc::ParameterLookup::_uint32) copyLength = 4;
 		paramsGlobal->com_->TransmitAsync(lspc::MessageTypesToPC::GetParameter, (uint8_t *)paramPtr, copyLength);
 	}
 
@@ -271,62 +271,62 @@ void Parameters::DumpParameters_Callback(void * param, const std::vector<uint8_t
 	xSemaphoreGive( paramsGlobal->readSemaphore_ ); // give back the read protection semaphore
 }
 
-void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, ParameterLookup::ValueType_t& valueType, uint16_t& arraySize)
+void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, lspc::ParameterLookup::ValueType_t& valueType, uint16_t& arraySize)
 {
-	valueType = ParameterLookup::_unknown;
+	valueType = lspc::ParameterLookup::_unknown;
 	*paramPtr = (void *)0;
 	arraySize = 1; // arrays not supported yet
 
-	if (type == ParameterLookup::Type::debug) {
+	if (type == lspc::ParameterLookup::Type::debug) {
 		switch (param) {
-			case ParameterLookup::debug::EnableLogOutput: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableLogOutput; return;
-			case ParameterLookup::debug::EnableRawSensorOutput: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableRawSensorOutput; return;
+			case lspc::ParameterLookup::debug::EnableLogOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableLogOutput; return;
+			case lspc::ParameterLookup::debug::EnableRawSensorOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableRawSensorOutput; return;
 			default: return;
 		}
 	}
-	else if (type == ParameterLookup::Type::test) {
+	else if (type == lspc::ParameterLookup::Type::test) {
 		switch (param) {
-			case ParameterLookup::test::tmp: valueType = ParameterLookup::_float; *paramPtr = (void *)&this->test.tmp; return;
-			case ParameterLookup::test::tmp2: valueType = ParameterLookup::_float; *paramPtr = (void *)&this->test.tmp2; return;
+			case lspc::ParameterLookup::test::tmp: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->test.tmp; return;
+			case lspc::ParameterLookup::test::tmp2: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->test.tmp2; return;
 			default: return;
 		}
 	}
-	else if (type == ParameterLookup::Type::behavioural) {
+	else if (type == lspc::ParameterLookup::Type::behavioural) {
 		switch (param) {
-			case ParameterLookup::behavioural::IndependentHeading: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.IndependentHeading; return;
-			case ParameterLookup::behavioural::YawVelocityBraking: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.YawVelocityBraking; return;
-			case ParameterLookup::behavioural::StepTestEnabled: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.StepTestEnabled; return;
-			case ParameterLookup::behavioural::VelocityControllerEnabled: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.VelocityControllerEnabled; return;
-			case ParameterLookup::behavioural::JoystickVelocityControl: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.JoystickVelocityControl; return;
+			case lspc::ParameterLookup::behavioural::IndependentHeading: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.IndependentHeading; return;
+			case lspc::ParameterLookup::behavioural::YawVelocityBraking: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.YawVelocityBraking; return;
+			case lspc::ParameterLookup::behavioural::StepTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.StepTestEnabled; return;
+			case lspc::ParameterLookup::behavioural::VelocityControllerEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.VelocityControllerEnabled; return;
+			case lspc::ParameterLookup::behavioural::JoystickVelocityControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.JoystickVelocityControl; return;
 			default: return;
 		}
 	}
-	else if (type == ParameterLookup::Type::controller) {
+	else if (type == lspc::ParameterLookup::Type::controller) {
 		switch (param) {
-			case ParameterLookup::controller::ControllerSampleRate: valueType = ParameterLookup::_float; *paramPtr = (void *)&this->controller.SampleRate; return;
-			case ParameterLookup::controller::Mode: valueType = ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Mode; return;
-			case ParameterLookup::controller::Type: valueType = ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Type; return;
-			case ParameterLookup::controller::EnableTorqueLPF: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
+			case lspc::ParameterLookup::controller::ControllerSampleRate: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.SampleRate; return;
+			case lspc::ParameterLookup::controller::Mode: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Mode; return;
+			case lspc::ParameterLookup::controller::Type: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Type; return;
+			case lspc::ParameterLookup::controller::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
 			default: return;
 		}
 	}
-	else if (type == ParameterLookup::Type::estimator) {
+	else if (type == lspc::ParameterLookup::Type::estimator) {
 		switch (param) {
-			case ParameterLookup::estimator::EstimatorSampleRate: valueType = ParameterLookup::_float; *paramPtr = (void *)&this->estimator.SampleRate; return;
-			case ParameterLookup::estimator::EnableSensorLPFfilters: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSensorLPFfilters; return;
-			case ParameterLookup::estimator::EnableSoftwareLPFfilters: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSoftwareLPFfilters; return;
-			case ParameterLookup::estimator::CreateQdotFromQDifference: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.CreateQdotFromQDifference; return;
-			case ParameterLookup::estimator::UseMadgwick: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseMadgwick; return;
-			case ParameterLookup::estimator::UseVelocityEstimator: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseVelocityEstimator; return;
-			case ParameterLookup::estimator::EstimateCOM: valueType = ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
+			case lspc::ParameterLookup::estimator::EstimatorSampleRate: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.SampleRate; return;
+			case lspc::ParameterLookup::estimator::EnableSensorLPFfilters: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSensorLPFfilters; return;
+			case lspc::ParameterLookup::estimator::EnableSoftwareLPFfilters: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSoftwareLPFfilters; return;
+			case lspc::ParameterLookup::estimator::CreateQdotFromQDifference: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.CreateQdotFromQDifference; return;
+			case lspc::ParameterLookup::estimator::UseMadgwick: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseMadgwick; return;
+			case lspc::ParameterLookup::estimator::UseVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseVelocityEstimator; return;
+			case lspc::ParameterLookup::estimator::EstimateCOM: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
 			default: return;
 		}
 	}
-	else if (type == ParameterLookup::Type::model) {
+	else if (type == lspc::ParameterLookup::Type::model) {
 		switch (param) {
-			case ParameterLookup::model::l: valueType = ParameterLookup::_float; *paramPtr = (void *)&this->model.l; return;
-			case ParameterLookup::model::Mk: valueType = ParameterLookup::_float; *paramPtr = (void *)&this->model.Mk; return;
-			case ParameterLookup::model::Mb: valueType = ParameterLookup::_float; *paramPtr = (void *)&this->model.Mb; return;
+			case lspc::ParameterLookup::model::l: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.l; return;
+			case lspc::ParameterLookup::model::Mk: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mk; return;
+			case lspc::ParameterLookup::model::Mb: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mb; return;
 			default: return;
 		}
 	}

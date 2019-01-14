@@ -163,6 +163,7 @@ namespace lspc
             RawSensor_Battery = 0x33,
             CalibrateIMUAck = 0xE0,
 			CPUload = 0xE1,
+			MathDump = 0xFA,
 			Debug = 0xFF
 		} MessageTypesToPC_t;
 
@@ -346,6 +347,126 @@ namespace lspc
             bool acknowledged;
         } CalibrateIMUAck_t;
     }
+
+	namespace ParameterLookup {
+		typedef enum ValueType: uint8_t
+		{
+			_unknown = 0x00,
+			_bool = 0x01,
+			_float,
+			_uint8,
+			_uint16,
+			_uint32
+		} ValueType_t;
+		typedef enum Type: uint8_t
+		{
+			debug = 0x01,
+			behavioural,
+			controller,
+			estimator,
+			model,
+			test
+		} type_t;
+
+		typedef enum debug: uint8_t
+		{
+			EnableLogOutput = 0x01,
+			EnableRawSensorOutput
+		} debug_t;
+
+		typedef enum behavioural: uint8_t
+		{
+			IndependentHeading = 0x01,
+			YawVelocityBraking,
+			StepTestEnabled,
+			VelocityControllerEnabled,
+			JoystickVelocityControl
+		} behavioural_t;
+
+		typedef enum controller: uint8_t
+		{
+			ControllerSampleRate = 0x01,
+			Type,
+			Mode,
+			EnableTorqueLPF,
+			TorqueLPFtau,
+			EnableTorqueSaturation,
+			TorqueMax,
+			TorqueRampUp,
+			TorqueRampUpTime,
+			DisableQdot,
+			K,
+			ContinousSwitching,
+			eta,
+			epsilon,
+			LQR_K,
+			LQR_MaxYawError,
+			VelocityController_MaxTilt,
+			VelocityController_MaxIntegralCorrection,
+			VelocityController_VelocityClamp,
+			VelocityController_IntegralGain
+		} controller_t;
+
+		typedef enum estimator: uint8_t
+		{
+			EstimatorSampleRate = 0x01,
+			EnableSensorLPFfilters,
+			EnableSoftwareLPFfilters,
+			SoftwareLPFcoeffs_a,
+			SoftwareLPFcoeffs_b,
+			CreateQdotFromQDifference,
+			UseMadgwick,
+			EstimateBias,
+			Use2Lvelocity,
+			UseVelocityEstimator,
+			UseCOMestimateInVelocityEstimator,
+			EstimateCOM,
+			EstimateCOMminVelocity,
+			MaxCOMDeviation,
+			MadgwickBeta,
+			GyroCov_Tuning_Factor,
+			AccelCov_Tuning_Factor,
+			cov_gyro_mpu,
+			cov_acc_mpu,
+			sigma2_bias,
+			QEKF_P_init_diagonal,
+			VelocityEstimator_P_init_diagonal,
+			COMEstimator_P_init_diagonal
+		} estimator_t;
+
+		typedef enum model: uint8_t
+		{
+			l = 0x01,
+			COM_X,
+			COM_Y,
+			COM_Z,
+			g,
+			rk,
+			Mk,
+			Jk,
+			rw,
+			Mw,
+			i_gear,
+			Jow,
+			Jm,
+			Jw,
+			Mb,
+			Jbx,
+			Jby,
+			Jbz,
+			Bvk,
+			Bvm,
+			Bvb,
+			EncoderTicksPrRev,
+			TicksPrRev
+		} model_t;
+
+		typedef enum test: uint8_t
+		{
+			tmp = 0x01,
+			tmp2
+		} test_t;
+	}
 
 } // namespace lspc
 
