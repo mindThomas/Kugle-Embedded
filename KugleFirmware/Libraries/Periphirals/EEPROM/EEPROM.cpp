@@ -37,6 +37,8 @@ EEPROM::EEPROM()
 		return;
 	}
 
+	HAL_FLASH_Unlock();
+
     //uint16_t * sectionsEnum = (uint16_t *)&sections.internal;
     //EnableSection(sections.internal, sectionsEnum[1]-sectionsEnum[0]); // initialize EEPROM library section for reset state detection - sectionsEnum[1] gives the address of the next element after the internal
     EnableSection(sections.internal, sizeof(internal_state_t)); // initialize EEPROM library section for reset state detection
@@ -280,7 +282,7 @@ EEPROM::errorCode_t EEPROM::WriteData(uint16_t address, uint8_t * data, uint16_t
 	uint16_t idx = 0;
 	while (idx < dataLength) {
 		uint16_t value = (uint16_t)data[idx] | (((uint16_t)data[idx+1]) << 8); // little endian
-		if (WriteVariable(virtAddress, value) != EEPROM_FLASH_COMPLETE) break;
+		if ((status = WriteVariable(virtAddress, value)) != EEPROM_FLASH_COMPLETE) break;
 		virtAddress++;
 		idx += 2;
 	}

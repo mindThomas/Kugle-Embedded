@@ -6,6 +6,126 @@
 namespace lspc
 {
 
+	namespace ParameterLookup {
+		typedef enum: uint8_t
+		{
+			_unknown = 0x00,
+			_bool = 0x01,
+			_float,
+			_uint8,
+			_uint16,
+			_uint32
+		} ValueType_t;
+		typedef enum: uint8_t
+		{
+			debug = 0x01,
+			behavioural,
+			controller,
+			estimator,
+			model,
+			test
+		} type_t;
+
+		typedef enum: uint8_t
+		{
+			EnableLogOutput = 0x01,
+			EnableRawSensorOutput
+		} debug_t;
+
+		typedef enum: uint8_t
+		{
+			IndependentHeading = 0x01,
+			YawVelocityBraking,
+			StepTestEnabled,
+			VelocityControllerEnabled,
+			JoystickVelocityControl
+		} behavioural_t;
+
+		typedef enum: uint8_t
+		{
+			ControllerSampleRate = 0x01,
+			ControllerType,
+			ControllerMode,
+			EnableTorqueLPF,
+			TorqueLPFtau,
+			EnableTorqueSaturation,
+			TorqueMax,
+			TorqueRampUp,
+			TorqueRampUpTime,
+			DisableQdot,
+			K,
+			ContinousSwitching,
+			eta,
+			epsilon,
+			LQR_K,
+			LQR_MaxYawError,
+			VelocityController_MaxTilt,
+			VelocityController_MaxIntegralCorrection,
+			VelocityController_VelocityClamp,
+			VelocityController_IntegralGain
+		} controller_t;
+
+		typedef enum: uint8_t
+		{
+			EstimatorSampleRate = 0x01,
+			EnableSensorLPFfilters,
+			EnableSoftwareLPFfilters,
+			SoftwareLPFcoeffs_a,
+			SoftwareLPFcoeffs_b,
+			CreateQdotFromQDifference,
+			UseMadgwick,
+			EstimateBias,
+			Use2Lvelocity,
+			UseVelocityEstimator,
+			UseCOMestimateInVelocityEstimator,
+			EstimateCOM,
+			EstimateCOMminVelocity,
+			MaxCOMDeviation,
+			MadgwickBeta,
+			GyroCov_Tuning_Factor,
+			AccelCov_Tuning_Factor,
+			cov_gyro_mpu,
+			cov_acc_mpu,
+			sigma2_bias,
+			QEKF_P_init_diagonal,
+			VelocityEstimator_P_init_diagonal,
+			COMEstimator_P_init_diagonal
+		} estimator_t;
+
+		typedef enum: uint8_t
+		{
+			l = 0x01,
+			COM_X,
+			COM_Y,
+			COM_Z,
+			g,
+			rk,
+			Mk,
+			Jk,
+			rw,
+			Mw,
+			i_gear,
+			Jow,
+			Jm,
+			Jw,
+			Mb,
+			Jbx,
+			Jby,
+			Jbz,
+			Bvk,
+			Bvm,
+			Bvb,
+			EncoderTicksPrRev,
+			TicksPrRev
+		} model_t;
+
+		typedef enum: uint8_t
+		{
+			tmp = 0x01,
+			tmp2
+		} test_t;
+	}
+
 	namespace MessageTypesFromPC
 	{
 		typedef enum MessageTypesFromPC: uint8_t
@@ -33,41 +153,43 @@ namespace lspc
             Debug = 0xFF
 		} MessageTypesFromPC_t;
 
-        typedef struct GetParameter
+        typedef struct
         {
-            uint8_t type;
+        	ParameterLookup::type_t type;
             uint8_t param;
         } GetParameter_t;
 
-        typedef struct SetParameter
+        typedef struct
         {
-            uint8_t type;
+        	ParameterLookup::type_t type;
             uint8_t param;
-            uint8_t value;
+            ParameterLookup::ValueType_t valueType;
+            uint8_t arraySize;
+            //void * valuePtr;  // after arraySize the parameter values are inserted in little-endian format with value[0] first (if array)
         } SetParameter_t;
 
-        typedef struct EstimatorSettings
+        typedef struct
         {
             uint16_t estimate_msg_prescaler;
         } EstimatorSettings_t;
 
-        typedef struct ControllerSettings
+        typedef struct
         {
             uint8_t mode;
         } ControllerSettings_t;
 
-        typedef struct YawCorrection
+        typedef struct
         {
             float yaw;
         } YawCorrection_t;
 
-        typedef struct PositionCorrection
+        typedef struct
         {
             float x;
             float y;
         } PositionCorrection_t;
 
-        typedef struct AttitudeReference
+        typedef struct
         {
             struct q_t
             {
@@ -78,7 +200,7 @@ namespace lspc
             } q;
         } AttitudeReference_t;
 
-        typedef struct AngularVelocityReference_Body
+        typedef struct
         {
             struct omega_t
             {
@@ -88,7 +210,7 @@ namespace lspc
             } omega;
         } AngularVelocityReference_Body_t;
 
-        typedef struct AngularVelocityReference_Inertial
+        typedef struct
         {
             struct omega_t
             {
@@ -98,7 +220,7 @@ namespace lspc
             } omega;
         } AngularVelocityReference_Inertial_t;
 
-        typedef struct VelocityReference_Inertial
+        typedef struct
 		{
 			struct vel_t
 			{
@@ -108,7 +230,7 @@ namespace lspc
 			} vel;
 		} VelocityReference_Inertial_t;
 
-        typedef struct VelocityReference_Heading
+        typedef struct
         {
             struct vel_t
             {
@@ -118,24 +240,24 @@ namespace lspc
             } vel;
         } VelocityReference_Heading_t;
 
-        typedef struct MPCpathReference
+        typedef struct
         {
             float desired_velocity;
             float desired_heading;
             float path_coeffs[7];
         } MPCpathReference_t;
 
-        typedef struct CalibrateIMU
+        typedef struct
         {
             uint32_t magic_key;
         } CalibrateIMU_t;
 
-        typedef struct EnterBootloader
+        typedef struct
         {
             uint32_t magic_key;
         } EnterBootloader_t;
 
-        typedef struct Reboot
+        typedef struct
         {
             uint32_t magic_key;
         } Reboot_t;
@@ -163,30 +285,45 @@ namespace lspc
             RawSensor_Battery = 0x33,
             CalibrateIMUAck = 0xE0,
 			CPUload = 0xE1,
-			MathDump = 0xFA,
+			MathDump = 0xFA, // publish array of floats (parsed by PC and dumped into tabulated .txt file in "~/kugle_dump/")
 			Debug = 0xFF
 		} MessageTypesToPC_t;
 
-        typedef struct SetParameterAck
+        typedef struct
+        {
+        	ParameterLookup::type_t type;
+            uint8_t param;
+            ParameterLookup::ValueType_t valueType;
+            uint8_t arraySize;
+            //void * valuePtr;  // after arraySize the parameter values are inserted in little-endian format with value[0] first (if array)
+        } GetParameter_t;
+
+        typedef struct
         {
             uint8_t type;
             uint8_t param;
             bool acknowledged;
         } SetParameterAck_t;
 
-        typedef struct StoreParametersAck
+        typedef struct
         {
             bool acknowledged;
         } StoreParametersAck_t;
 
-        typedef struct SystemInfo
+        typedef struct
+        {
+            uint16_t parameters_size_bytes;
+            uint8_t packages_to_follow;
+        } DumpParameters_t;
+
+        typedef struct
         {
             float time;
             float battery_pct;
             float current_consumption;
         } SystemInfo_t;
 
-        typedef struct StateEstimates
+        typedef struct
         {
             float time;
             struct q_t
@@ -221,7 +358,7 @@ namespace lspc
             } COM;
         } StateEstimates_t;
 
-        typedef struct ControllerInfo
+        typedef struct
         {
             float time;
             uint8_t type;
@@ -230,24 +367,27 @@ namespace lspc
             float torque2;
             float torque3;
             float compute_time;
+            float delivered_torque1;
+            float delivered_torque2;
+            float delivered_torque3;
         } ControllerInfo_t;
 
-        typedef struct AttitudeControllerInfo
+        typedef struct
         {
             float time;
         } AttitudeControllerInfo_t;
 
-        typedef struct VelocityControllerInfo
+        typedef struct
         {
             float time;
         } VelocityControllerInfo_t;
 
-        typedef struct MPCinfo
+        typedef struct
         {
             float time;
         } MPCinfo_t;
 
-        typedef struct PredictedMPCtrajectory
+        typedef struct
         {
             float time;
             uint8_t horizon_index;
@@ -277,7 +417,7 @@ namespace lspc
             } vel;
         } PredictedMPCtrajectory_t;
 
-        typedef struct RawSensor_IMU_MPU9250
+        typedef struct
         {
             float time;
             struct accelerometer_t
@@ -285,22 +425,25 @@ namespace lspc
                 float x;
                 float y;
                 float z;
+                float cov[9]; // stored in row-major format
             } accelerometer;
             struct gyroscope_t
             {
                 float x;
                 float y;
                 float z;
+                float cov[9]; // stored in row-major format
             } gyroscope;
             struct magnetometer_t
             {
                 float x;
                 float y;
                 float z;
+                float cov[9]; // stored in row-major format
             } magnetometer;
         } RawSensor_IMU_MPU9250_t;
 
-        typedef struct RawSensor_IMU_MTI200
+        typedef struct
         {
             float time;
             struct accelerometer_t
@@ -323,7 +466,7 @@ namespace lspc
             } magnetometer;
         } RawSensor_IMU_MTI200_t;
 
-        typedef struct RawSensor_Encoders
+        typedef struct
         {
             float time;
             float angle1;
@@ -331,7 +474,7 @@ namespace lspc
             float angle3;
         } RawSensor_Encoders_t;
 
-        typedef struct RawSensor_Battery
+        typedef struct
         {
             float time;
             float vbat1;
@@ -342,131 +485,11 @@ namespace lspc
             float pct2;
         } RawSensor_Battery_t;
 
-        typedef struct CalibrateIMUAck
+        typedef struct
         {
             bool acknowledged;
         } CalibrateIMUAck_t;
     }
-
-	namespace ParameterLookup {
-		typedef enum ValueType: uint8_t
-		{
-			_unknown = 0x00,
-			_bool = 0x01,
-			_float,
-			_uint8,
-			_uint16,
-			_uint32
-		} ValueType_t;
-		typedef enum Type: uint8_t
-		{
-			debug = 0x01,
-			behavioural,
-			controller,
-			estimator,
-			model,
-			test
-		} type_t;
-
-		typedef enum debug: uint8_t
-		{
-			EnableLogOutput = 0x01,
-			EnableRawSensorOutput
-		} debug_t;
-
-		typedef enum behavioural: uint8_t
-		{
-			IndependentHeading = 0x01,
-			YawVelocityBraking,
-			StepTestEnabled,
-			VelocityControllerEnabled,
-			JoystickVelocityControl
-		} behavioural_t;
-
-		typedef enum controller: uint8_t
-		{
-			ControllerSampleRate = 0x01,
-			Type,
-			Mode,
-			EnableTorqueLPF,
-			TorqueLPFtau,
-			EnableTorqueSaturation,
-			TorqueMax,
-			TorqueRampUp,
-			TorqueRampUpTime,
-			DisableQdot,
-			K,
-			ContinousSwitching,
-			eta,
-			epsilon,
-			LQR_K,
-			LQR_MaxYawError,
-			VelocityController_MaxTilt,
-			VelocityController_MaxIntegralCorrection,
-			VelocityController_VelocityClamp,
-			VelocityController_IntegralGain
-		} controller_t;
-
-		typedef enum estimator: uint8_t
-		{
-			EstimatorSampleRate = 0x01,
-			EnableSensorLPFfilters,
-			EnableSoftwareLPFfilters,
-			SoftwareLPFcoeffs_a,
-			SoftwareLPFcoeffs_b,
-			CreateQdotFromQDifference,
-			UseMadgwick,
-			EstimateBias,
-			Use2Lvelocity,
-			UseVelocityEstimator,
-			UseCOMestimateInVelocityEstimator,
-			EstimateCOM,
-			EstimateCOMminVelocity,
-			MaxCOMDeviation,
-			MadgwickBeta,
-			GyroCov_Tuning_Factor,
-			AccelCov_Tuning_Factor,
-			cov_gyro_mpu,
-			cov_acc_mpu,
-			sigma2_bias,
-			QEKF_P_init_diagonal,
-			VelocityEstimator_P_init_diagonal,
-			COMEstimator_P_init_diagonal
-		} estimator_t;
-
-		typedef enum model: uint8_t
-		{
-			l = 0x01,
-			COM_X,
-			COM_Y,
-			COM_Z,
-			g,
-			rk,
-			Mk,
-			Jk,
-			rw,
-			Mw,
-			i_gear,
-			Jow,
-			Jm,
-			Jw,
-			Mb,
-			Jbx,
-			Jby,
-			Jbz,
-			Bvk,
-			Bvm,
-			Bvb,
-			EncoderTicksPrRev,
-			TicksPrRev
-		} model_t;
-
-		typedef enum test: uint8_t
-		{
-			tmp = 0x01,
-			tmp2
-		} test_t;
-	}
 
 } // namespace lspc
 

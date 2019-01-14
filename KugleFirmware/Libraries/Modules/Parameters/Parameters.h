@@ -46,7 +46,7 @@ class Parameters
 
 
 	public:	
-		bool ForceDefaultParameters = true; // always load the default parameters listed below, no matter what is stored in EEPROM
+		bool ForceDefaultParameters = false; // always load the default parameters listed below, no matter what is stored in EEPROM
 		uint16_t ParametersSize = 0;
 
 		struct debug_t {
@@ -231,7 +231,7 @@ class Parameters
 		void LoadParametersFromEEPROM(EEPROM * eeprom = 0);
 		void AttachEEPROM(EEPROM * eeprom);
 		void StoreParameters(void); // stores to EEPROM
-		void LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, lspc::ParameterLookup::ValueType_t& valueType, uint16_t& arraySize);
+		void LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, lspc::ParameterLookup::ValueType_t& valueType, uint8_t& arraySize);
 
 		static void GetParameter_Callback(void * param, const std::vector<uint8_t>& payload);
 		static void SetParameter_Callback(void * param, const std::vector<uint8_t>& payload);

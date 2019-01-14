@@ -52,13 +52,13 @@ Parameters::Parameters(EEPROM * eeprom, LSPC * com) : eeprom_(0), com_(0), readS
 		}
 
 		if (com) {
-			com_ = com;
+			paramsGlobal->com_ = com;
 
 			/* Register message type callbacks */
-			com_->registerCallback(lspc::MessageTypesFromPC::GetParameter, GetParameter_Callback, (void *)this);
-			com_->registerCallback(lspc::MessageTypesFromPC::SetParameter, SetParameter_Callback, (void *)this);
-			com_->registerCallback(lspc::MessageTypesFromPC::StoreParameters, StoreParameters_Callback, (void *)this);
-			com_->registerCallback(lspc::MessageTypesFromPC::DumpParameters, DumpParameters_Callback, (void *)this);
+			paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::GetParameter, &GetParameter_Callback, (void *)paramsGlobal);
+			paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::SetParameter, &SetParameter_Callback, (void *)paramsGlobal);
+			paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::StoreParameters, &StoreParameters_Callback, (void *)paramsGlobal);
+			paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::DumpParameters, &DumpParameters_Callback, (void *)paramsGlobal);
 		}
 	}
 
@@ -183,16 +183,45 @@ void Parameters::SetParameter_Callback(void * param, const std::vector<uint8_t>&
 	if (!params) return;
 	if (params != paramsGlobal) return;
 
-	volatile lspc::MessageTypesFromPC::SetParameter_t msg;
-	if (payload.size() != sizeof(msg)) return;
+	lspc::MessageTypesFromPC::SetParameter_t msg;
+	if (payload.size() <= sizeof(msg)) return; // package is too short (missing parameter value)
 	memcpy((uint8_t *)&msg, payload.data(), sizeof(msg));
+	uint16_t paramValueLengthBytes = payload.size() - sizeof(msg);
+	void * paramValuePtr = (uint8_t *)(payload.data() + sizeof(msg));
 
 	/* Lock for change */
 	xSemaphoreTake( paramsGlobal->writeSemaphore_, ( TickType_t ) portMAX_DELAY);
 	xSemaphoreTake( paramsGlobal->readSemaphore_, ( TickType_t ) portMAX_DELAY);
+	paramsGlobal->changeCounter_++; // increase change counter to indicate a change
 
 	/* Change/set the given parameter */
+	bool acknowledged = false;
+	void * paramPtr;
+	lspc::ParameterLookup::ValueType_t valueType;
+	uint8_t arraySize;
+	paramsGlobal->LookupParameter(msg.type, msg.param, &paramPtr, valueType, arraySize);
+	if (valueType != lspc::ParameterLookup::_unknown) {
+		uint8_t copyLength = 0;
+		if (valueType == lspc::ParameterLookup::_bool) copyLength = 1;
+		else if (valueType == lspc::ParameterLookup::_float) copyLength = 4;
+		else if (valueType == lspc::ParameterLookup::_uint8) copyLength = 1;
+		else if (valueType == lspc::ParameterLookup::_uint16) copyLength = 2;
+		else if (valueType == lspc::ParameterLookup::_uint32) copyLength = 4;
 
+		// Determine and verify length
+		if (arraySize == msg.arraySize && valueType == msg.valueType && arraySize*copyLength == paramValueLengthBytes) {
+			// Update the parameter
+			memcpy((uint8_t *)paramPtr, (uint8_t *)paramValuePtr, arraySize*copyLength);
+			acknowledged = true;
+		}
+	}
+
+	/* Send acknowledge response back to PC */
+	lspc::MessageTypesToPC::SetParameterAck_t msgAck;
+	msgAck.type = msg.type;
+	msgAck.param = msg.param;
+	msgAck.acknowledged = acknowledged;
+	paramsGlobal->com_->TransmitAsync(lspc::MessageTypesToPC::SetParameterAck, (uint8_t *)&msgAck, sizeof(msgAck));
 
 	/* Unlock after change */
 	xSemaphoreGive( paramsGlobal->readSemaphore_ ); // give back the protection semaphore since we are now finished with changes
@@ -215,17 +244,31 @@ void Parameters::GetParameter_Callback(void * param, const std::vector<uint8_t>&
 	/* Change/set the given parameter */
 	void * paramPtr;
 	lspc::ParameterLookup::ValueType_t valueType;
-	uint16_t arraySize;
+	uint8_t arraySize;
 	paramsGlobal->LookupParameter(msg.type, msg.param, &paramPtr, valueType, arraySize);
 	if (valueType != lspc::ParameterLookup::_unknown) {
 		// Read parameter and send response
-		uint8_t copyLength;
+		uint8_t copyLength = 0;
 		if (valueType == lspc::ParameterLookup::_bool) copyLength = 1;
 		else if (valueType == lspc::ParameterLookup::_float) copyLength = 4;
 		else if (valueType == lspc::ParameterLookup::_uint8) copyLength = 1;
 		else if (valueType == lspc::ParameterLookup::_uint16) copyLength = 2;
 		else if (valueType == lspc::ParameterLookup::_uint32) copyLength = 4;
-		paramsGlobal->com_->TransmitAsync(lspc::MessageTypesToPC::GetParameter, (uint8_t *)paramPtr, copyLength);
+
+		lspc::MessageTypesToPC::GetParameter_t response;
+		response.type = msg.type;
+		response.param = msg.param;
+		response.valueType = valueType;
+		response.arraySize = arraySize;
+
+		uint16_t responseLengthBytes = sizeof(response) + copyLength*arraySize;
+		uint8_t * msgBuf = (uint8_t *)pvPortMalloc(responseLengthBytes);
+		if (msgBuf) {
+			memcpy(msgBuf, &response, sizeof(response));
+			memcpy(&msgBuf[sizeof(response)], (uint8_t *)paramPtr, arraySize*copyLength);
+			paramsGlobal->com_->TransmitAsync(lspc::MessageTypesToPC::GetParameter, msgBuf, responseLengthBytes);
+			vPortFree(msgBuf);
+		}
 	}
 
 	/* Unlock after reading */
@@ -238,20 +281,27 @@ void Parameters::StoreParameters_Callback(void * param, const std::vector<uint8_
 	if (!params) return;
 	if (params != paramsGlobal) return;
 
+	lspc::MessageTypesToPC::StoreParametersAck_t msgAck;
+
 	/* Lock for change */
 	xSemaphoreTake( paramsGlobal->writeSemaphore_, ( TickType_t ) portMAX_DELAY);
 	xSemaphoreTake( paramsGlobal->readSemaphore_, ( TickType_t ) portMAX_DELAY);
 
 	/* Store the parameters into EEPROM */
-	params->StoreParameters();
+	if (paramsGlobal->eeprom_) {
+		if (paramsGlobal->eeprom_->WriteData(paramsGlobal->eeprom_->sections.parameters, (uint8_t *)&paramsGlobal->ForceDefaultParameters, PARAMETERS_LENGTH) == EEPROM::EEPROM_FLASH_COMPLETE)
+			msgAck.acknowledged = true;
+		else
+			msgAck.acknowledged = false;
+	} else {
+		msgAck.acknowledged = false; // EEPROM not configured
+	}
 
 	/* Unlock after change */
 	xSemaphoreGive( paramsGlobal->readSemaphore_ ); // give back the protection semaphore since we are now finished with changes
 	xSemaphoreGive( paramsGlobal->writeSemaphore_ ); // give back the EEPROM storing protection semaphore
 
 	/* Send acknowledge to PC */
-	volatile lspc::MessageTypesToPC::StoreParametersAck_t msgAck;
-	msgAck.acknowledged = true;
 	paramsGlobal->com_->TransmitAsync(lspc::MessageTypesToPC::StoreParametersAck, (uint8_t *)&msgAck, sizeof(msgAck));
 }
 
@@ -264,69 +314,85 @@ void Parameters::DumpParameters_Callback(void * param, const std::vector<uint8_t
 	/* Lock for reading */
 	xSemaphoreTake( paramsGlobal->readSemaphore_, ( TickType_t ) portMAX_DELAY);
 
+	/* Transmit first package to PC indicating parameter length, and hence how many packages that will be sent */
+	lspc::MessageTypesToPC::DumpParameters_t msg;
+	msg.parameters_size_bytes = PARAMETERS_LENGTH;
+	msg.packages_to_follow = (msg.parameters_size_bytes / LSPC_MAXIMUM_PACKAGE_LENGTH) + ((msg.parameters_size_bytes % LSPC_MAXIMUM_PACKAGE_LENGTH) > 0);
+	paramsGlobal->com_->TransmitAsync(lspc::MessageTypesToPC::DumpParameters, (uint8_t *)&msg, sizeof(msg));
+
 	/* Send parameter dump to PC */
-	paramsGlobal->com_->TransmitAsync(lspc::MessageTypesToPC::DumpParameters, (uint8_t *)&paramsGlobal->ForceDefaultParameters, PARAMETERS_LENGTH);
+	uint16_t LeftToTransmit = PARAMETERS_LENGTH;
+	uint16_t TransmitLength;
+	uint8_t * paramPtr =  (uint8_t *)&paramsGlobal->ForceDefaultParameters;
+	while (LeftToTransmit > 0) {
+		TransmitLength = LeftToTransmit;
+		if (TransmitLength > LSPC_MAXIMUM_PACKAGE_LENGTH) TransmitLength = LSPC_MAXIMUM_PACKAGE_LENGTH;
+
+		paramsGlobal->com_->TransmitAsync(lspc::MessageTypesToPC::DumpParameters, paramPtr, TransmitLength);
+		LeftToTransmit -= TransmitLength;
+		paramPtr += TransmitLength;
+	}
 
 	/* Unlock after reading */
 	xSemaphoreGive( paramsGlobal->readSemaphore_ ); // give back the read protection semaphore
 }
 
-void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, lspc::ParameterLookup::ValueType_t& valueType, uint16_t& arraySize)
+void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, lspc::ParameterLookup::ValueType_t& valueType, uint8_t& arraySize)
 {
 	valueType = lspc::ParameterLookup::_unknown;
 	*paramPtr = (void *)0;
 	arraySize = 1; // arrays not supported yet
 
-	if (type == lspc::ParameterLookup::Type::debug) {
+	if (type == lspc::ParameterLookup::debug) {
 		switch (param) {
-			case lspc::ParameterLookup::debug::EnableLogOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableLogOutput; return;
-			case lspc::ParameterLookup::debug::EnableRawSensorOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableRawSensorOutput; return;
+			case lspc::ParameterLookup::EnableLogOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableLogOutput; return;
+			case lspc::ParameterLookup::EnableRawSensorOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableRawSensorOutput; return;
 			default: return;
 		}
 	}
-	else if (type == lspc::ParameterLookup::Type::test) {
+	else if (type == lspc::ParameterLookup::test) {
 		switch (param) {
-			case lspc::ParameterLookup::test::tmp: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->test.tmp; return;
-			case lspc::ParameterLookup::test::tmp2: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->test.tmp2; return;
+			case lspc::ParameterLookup::tmp: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->test.tmp; return;
+			case lspc::ParameterLookup::tmp2: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->test.tmp2; return;
 			default: return;
 		}
 	}
-	else if (type == lspc::ParameterLookup::Type::behavioural) {
+	else if (type == lspc::ParameterLookup::behavioural) {
 		switch (param) {
-			case lspc::ParameterLookup::behavioural::IndependentHeading: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.IndependentHeading; return;
-			case lspc::ParameterLookup::behavioural::YawVelocityBraking: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.YawVelocityBraking; return;
-			case lspc::ParameterLookup::behavioural::StepTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.StepTestEnabled; return;
-			case lspc::ParameterLookup::behavioural::VelocityControllerEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.VelocityControllerEnabled; return;
-			case lspc::ParameterLookup::behavioural::JoystickVelocityControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.JoystickVelocityControl; return;
+			case lspc::ParameterLookup::IndependentHeading: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.IndependentHeading; return;
+			case lspc::ParameterLookup::YawVelocityBraking: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.YawVelocityBraking; return;
+			case lspc::ParameterLookup::StepTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.StepTestEnabled; return;
+			case lspc::ParameterLookup::VelocityControllerEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.VelocityControllerEnabled; return;
+			case lspc::ParameterLookup::JoystickVelocityControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.JoystickVelocityControl; return;
 			default: return;
 		}
 	}
-	else if (type == lspc::ParameterLookup::Type::controller) {
+	else if (type == lspc::ParameterLookup::controller) {
 		switch (param) {
-			case lspc::ParameterLookup::controller::ControllerSampleRate: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.SampleRate; return;
-			case lspc::ParameterLookup::controller::Mode: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Mode; return;
-			case lspc::ParameterLookup::controller::Type: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Type; return;
-			case lspc::ParameterLookup::controller::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
+			case lspc::ParameterLookup::ControllerSampleRate: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.SampleRate; return;
+			case lspc::ParameterLookup::ControllerMode: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Mode; return;
+			case lspc::ParameterLookup::ControllerType: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Type; return;
+			case lspc::ParameterLookup::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
 			default: return;
 		}
 	}
-	else if (type == lspc::ParameterLookup::Type::estimator) {
+	else if (type == lspc::ParameterLookup::estimator) {
 		switch (param) {
-			case lspc::ParameterLookup::estimator::EstimatorSampleRate: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.SampleRate; return;
-			case lspc::ParameterLookup::estimator::EnableSensorLPFfilters: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSensorLPFfilters; return;
-			case lspc::ParameterLookup::estimator::EnableSoftwareLPFfilters: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSoftwareLPFfilters; return;
-			case lspc::ParameterLookup::estimator::CreateQdotFromQDifference: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.CreateQdotFromQDifference; return;
-			case lspc::ParameterLookup::estimator::UseMadgwick: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseMadgwick; return;
-			case lspc::ParameterLookup::estimator::UseVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseVelocityEstimator; return;
-			case lspc::ParameterLookup::estimator::EstimateCOM: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
+			case lspc::ParameterLookup::EstimatorSampleRate: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.SampleRate; return;
+			case lspc::ParameterLookup::EnableSensorLPFfilters: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSensorLPFfilters; return;
+			case lspc::ParameterLookup::EnableSoftwareLPFfilters: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSoftwareLPFfilters; return;
+			case lspc::ParameterLookup::CreateQdotFromQDifference: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.CreateQdotFromQDifference; return;
+			case lspc::ParameterLookup::UseMadgwick: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseMadgwick; return;
+			case lspc::ParameterLookup::UseVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseVelocityEstimator; return;
+			case lspc::ParameterLookup::EstimateCOM: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
 			default: return;
 		}
 	}
-	else if (type == lspc::ParameterLookup::Type::model) {
+	else if (type == lspc::ParameterLookup::model) {
 		switch (param) {
-			case lspc::ParameterLookup::model::l: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.l; return;
-			case lspc::ParameterLookup::model::Mk: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mk; return;
-			case lspc::ParameterLookup::model::Mb: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mb; return;
+			case lspc::ParameterLookup::l: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.l; return;
+			case lspc::ParameterLookup::Mk: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mk; return;
+			case lspc::ParameterLookup::Mb: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mb; return;
 			default: return;
 		}
 	}
