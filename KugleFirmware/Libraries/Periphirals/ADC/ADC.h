@@ -43,7 +43,9 @@ class ADC
 		void InitPeripheral(adc_t adc, uint32_t channel, uint32_t resolution);
 		void ConfigureADCPeripheral();
 		void ConfigureADCGPIO();
-		void ConfigureADCChannel();
+		void ConfigureADCChannels();
+		void ConfigureDMA(void);
+		HAL_StatusTypeDef StartDMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length);
 
 		float Read();
 		int32_t ReadRaw();
@@ -52,8 +54,12 @@ class ADC
 		typedef struct hardware_resource_t {
 			adc_t adc;
 			uint32_t resolution;
-			uint16_t configuredChannels; // each bit indicate whether the corresponding channel is configured and in use by another object
+			uint8_t numberOfConfiguredChannels;
 			ADC_HandleTypeDef handle;
+			DMA_HandleTypeDef DMA_handle;
+			ALIGN_32BYTES (uint16_t buffer[16]);
+			uint8_t bufferSize;
+			uint8_t map_channel2bufferIndex[20];
 		} hardware_resource_t;
 
 		static hardware_resource_t * resADC1;

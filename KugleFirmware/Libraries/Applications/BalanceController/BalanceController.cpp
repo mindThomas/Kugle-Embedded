@@ -418,8 +418,14 @@ __attribute__((optimize("O0")))
 		dt_meas2 = HAL_toc(timerPrev);
 
 		//Debug::printf("Balance controller compute time: %9.7f s\n", dt_meas);
-
 		balanceController->SendControllerInfo(params.controller.Type, params.controller.Mode, Torque, dt_meas);
+
+		float TorqueApplied[3];
+		TorqueApplied[0] = motor1.GetAppliedTorque();
+		TorqueApplied[1] = motor2.GetAppliedTorque();
+		TorqueApplied[2] = motor3.GetAppliedTorque();
+
+		Debug::printf("Applied torque: %4.2f\t%4.2f\t%4.2f\n", TorqueApplied[0], TorqueApplied[1], TorqueApplied[2]);
 	}
 	/* End of control loop */
 

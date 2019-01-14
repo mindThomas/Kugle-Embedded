@@ -68,8 +68,7 @@ void MainTask(void * pvParameters)
 	/* Initialize EEPROM */
 	EEPROM * eeprom = new EEPROM;
 
-	/* Initialize global parameters and MATLAB coder globals */
-	Parameters& params = *(new Parameters(eeprom));
+	/* Initialize MATLAB coder globals */
 	MATLABCoder_initialize();
 
 	/* Initialize power management */
@@ -80,6 +79,9 @@ void MainTask(void * pvParameters)
 	USBCDC * usb = new USBCDC(USBCDC_TRANSMITTER_PRIORITY);
 	LSPC * lspcUSB = new LSPC(usb, LSPC_RECEIVER_PRIORITY, LSPC_TRANSMITTER_PRIORITY); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
 	Debug * dbg = new Debug(lspcUSB); // pair debug module with configured LSPC module to enable "Debug::print" functionality
+
+	/* Initialize global parameters */
+	Parameters& params = *(new Parameters(eeprom, lspcUSB));
 
 	/* Initialize and configure IMU */
 	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);

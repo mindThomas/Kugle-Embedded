@@ -27,6 +27,7 @@
  */
 #define HIGH_RES_TIMER_TICK_PRIORITY	0		// This timer is also used to generate ticks for any ST HAL library (eg. HAL_Delay)
 #define ENCODER_TIMER_OVERFLOW_PRIORITY	1
+#define ADC_DMA_INTERRUPT_PRIORITY		15
 
 // Below are periphiral priorities which uses FreeRTOS functions
 #define USB_INTERRUPT_PRIORITY		5
