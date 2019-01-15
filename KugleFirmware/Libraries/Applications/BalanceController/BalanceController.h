@@ -68,7 +68,7 @@ class BalanceController
 		static void Thread(void * pvParameters);
 		void SendEstimates(void);
 		void SendRawSensors(Parameters& params, const IMU::Measurement_t& imuMeas, const float EncoderAngle[3]);
-		void SendControllerInfo(const Parameters::controllerType_t Type, const Parameters::controllerMode_t Mode, const float Torque[3], const float ComputeTime, const float TorqueDelivered[3]);
+		void SendControllerInfo(const lspc::ParameterTypes::controllerType_t Type, const lspc::ParameterTypes::controllerMode_t Mode, const float Torque[3], const float ComputeTime, const float TorqueDelivered[3]);
 		static void CalibrateIMUCallback(void * param, const std::vector<uint8_t>& payload);
 		static void VelocityReference_Heading_Callback(void * param, const std::vector<uint8_t>& payload);
 		static void VelocityReference_Inertial_Callback(void * param, const std::vector<uint8_t>& payload);

@@ -1,6 +1,26 @@
+/* Copyright (C) 2018-2019 Thomas Jespersen, TKJ Electronics. All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * Contact information
+ * ------------------------------------------
+ * Thomas Jespersen, TKJ Electronics
+ * Web      :  http://www.tkjelectronics.dk
+ * e-mail   :  thomasj@tkjelectronics.dk
+ * ------------------------------------------
+ */
+
 #include "MainTask.h"
 #include "cmsis_os.h"
 #include "Priorities.h"
+#include "ProcessorInit.h"
 
 /* Include Periphiral drivers */
 #include "ADC.h"
@@ -80,6 +100,10 @@ void MainTask(void * pvParameters)
 	LSPC * lspcUSB = new LSPC(usb, LSPC_RECEIVER_PRIORITY, LSPC_TRANSMITTER_PRIORITY); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
 	Debug * dbg = new Debug(lspcUSB); // pair debug module with configured LSPC module to enable "Debug::print" functionality
 
+	/* Register general (system wide) LSPC callbacks */
+	lspcUSB->registerCallback(lspc::MessageTypesFromPC::Reboot, &Reboot_Callback);
+	lspcUSB->registerCallback(lspc::MessageTypesFromPC::EnterBootloader, &EnterBootloader_Callback);
+
 	/* Initialize global parameters */
 	Parameters& params = *(new Parameters(eeprom, lspcUSB));
 
@@ -130,4 +154,18 @@ void MainTask(void * pvParameters)
 	{
 		vTaskSuspend(NULL); // suspend this task
 	}*/
+}
+
+void Reboot_Callback(void * param, const std::vector<uint8_t>& payload)
+{
+	// ToDo: Need to check for magic key
+	NVIC_SystemReset();
+}
+
+void EnterBootloader_Callback(void * param, const std::vector<uint8_t>& payload)
+{
+	// ToDo: Need to check for magic key
+	USBD_Stop(&USBCDC::hUsbDeviceFS);
+	USBD_DeInit(&USBCDC::hUsbDeviceFS);
+	Enter_DFU_Bootloader();
 }

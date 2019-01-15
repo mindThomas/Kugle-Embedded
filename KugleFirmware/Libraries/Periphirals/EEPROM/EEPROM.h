@@ -66,7 +66,7 @@
 
 /* EEPROM emulation start address in Flash */
 
-  #define EEPROM_START_ADDRESS  ADDR_FLASH_SECTOR_5_BANK2 /* sector6 of bank 2 */
+  #define EEPROM_START_ADDRESS  ADDR_FLASH_SECTOR_6_BANK2 /* sector6 of bank 2 */
 
 
 /* Pages 0 and 1 base and end addresses */
@@ -103,8 +103,9 @@ class EEPROM
 {
 	public:
 		/* The struct below contains a list of addresses of assigned EEPROM sections (address) */
+		/* Important not to use address 0x000 */
 		const struct {
-			uint16_t internal = 0x000;
+			uint16_t internal = 0x001;
 			uint16_t sys_info = 0x050;
 			uint16_t imu_calibration = 0x100;
 			uint16_t parameters = 0x1000;

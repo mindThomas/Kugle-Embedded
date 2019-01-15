@@ -5,7 +5,6 @@
 
 namespace lspc
 {
-
 	namespace ParameterLookup {
 		typedef enum: uint8_t
 		{
@@ -44,8 +43,8 @@ namespace lspc
 		typedef enum: uint8_t
 		{
 			ControllerSampleRate = 0x01,
-			ControllerType,
-			ControllerMode,
+			type,
+			mode,
 			EnableTorqueLPF,
 			TorqueLPFtau,
 			EnableTorqueSaturation,
@@ -126,6 +125,23 @@ namespace lspc
 		} test_t;
 	}
 
+	namespace ParameterTypes {
+		typedef enum: uint8_t {
+			UNKNOWN_CONTROLLER = 0x00,
+			LQR_CONTROLLER = 0x01,
+			SLIDING_MODE_CONTROLLER
+		} controllerType_t;
+
+		typedef enum: uint8_t {
+			OFF = 0x00,
+			QUATERNION_CONTROL,
+			ANGULAR_VELOCITY_CONTROL,
+			VELOCITY_CONTROL,
+			PATH_FOLLOWING,
+			UNKNOWN_MODE = 0xFF
+		} controllerMode_t;
+	}
+
 	namespace MessageTypesFromPC
 	{
 		typedef enum MessageTypesFromPC: uint8_t
@@ -175,7 +191,8 @@ namespace lspc
 
         typedef struct
         {
-            uint8_t mode;
+        	ParameterTypes::controllerMode_t mode;
+        	ParameterTypes::controllerType_t type;
         } ControllerSettings_t;
 
         typedef struct
@@ -361,8 +378,8 @@ namespace lspc
         typedef struct
         {
             float time;
-            uint8_t type;
-            uint8_t mode;
+            ParameterTypes::controllerType_t type;
+            ParameterTypes::controllerMode_t mode;
             float torque1;
             float torque2;
             float torque3;

@@ -27,6 +27,7 @@ class FirstOrderLPF
 		~FirstOrderLPF();
 		
 		float Filter(float input);
+		void Reset(void);
 
 	private:
 		const float _Ts;             // Sampling Time

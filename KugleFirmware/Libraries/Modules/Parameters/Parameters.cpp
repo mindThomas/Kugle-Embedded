@@ -370,8 +370,8 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 	else if (type == lspc::ParameterLookup::controller) {
 		switch (param) {
 			case lspc::ParameterLookup::ControllerSampleRate: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.SampleRate; return;
-			case lspc::ParameterLookup::ControllerMode: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Mode; return;
-			case lspc::ParameterLookup::ControllerType: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.Type; return;
+			case lspc::ParameterLookup::mode: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.mode; return;
+			case lspc::ParameterLookup::type: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.type; return;
 			case lspc::ParameterLookup::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
 			default: return;
 		}
