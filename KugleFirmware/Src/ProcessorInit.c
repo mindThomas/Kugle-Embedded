@@ -21,6 +21,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "Debug.h" // for Error_Handler
+#include "usbd_core.h"
 
 /* Configure clocks to:
 	- 400 MHz CPU clock
@@ -129,16 +130,20 @@ void Enter_DFU_Bootloader(void)
 {
 	//call this at any time to initiate a reboot into bootloader
 	//__disable_irq();
-	//SCB_CleanDCache();
-	//SCB_DisableDCache();
-	HAL_SuspendTick();
+
+	// Important to stop current USB periphiral before entering DFU bootloader (see "EnterBootloader_Callback" in MainTask.cpp)
+
+	//HAL_SuspendTick();
 	/* Disable SysTick Interrupt */
-    SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
-    taskENTER_CRITICAL();
-    portDISABLE_INTERRUPTS();
+    //SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+    //taskENTER_CRITICAL();
+    //portDISABLE_INTERRUPTS();
     *BOOTLOADER_MAGIC_ADDR = BOOTLOADER_MAGIC_TOKEN;
-    //SCB_DisableDCache();
-    //__DSB();
+    SCB_InvalidateDCache_by_Addr((uint32_t *) BOOTLOADER_MAGIC_ADDR, 4);
+
+    SCB_CleanDCache();
+	SCB_DisableDCache();
+
 	//(*(__IO uint32_t *) (BKPSRAM_BASE + 0)) = A_VALUE;
     NVIC_SystemReset();
 }

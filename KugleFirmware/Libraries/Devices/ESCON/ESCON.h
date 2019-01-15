@@ -36,9 +36,9 @@ class ESCON
 
 		const float ESCON_MAX_RAD_PR_SEC = 6000 * 2 * M_PI / 60;  // rad/s   (6000 rpm)
 		const float ESCON_MAX_AMP_SETPOINT = 15;	 // A
-		const float EC60_TORQUE_CONSTANT = 53.4E-3;  // Nm/A
-		const uint16_t ENCODER_TICKS_PR_REV = 4*4096;	 // ticks/rev
-		const float GEARING_RATIO = 4.3;
+		const float EC60_TORQUE_CONSTANT = 30.5E-3;  // Nm/A     (Maxon 412819)
+		const uint16_t ENCODER_TICKS_PR_REV = 4*4096;	 // ticks/rev   (Maxon 421988)
+		const float GEARING_RATIO = 13/3;   // 4.3 : 1 (Maxon 223081)
 
 	public:
 		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder); // minimal operation general constructor

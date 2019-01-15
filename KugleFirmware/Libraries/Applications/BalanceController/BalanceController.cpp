@@ -149,6 +149,7 @@ void BalanceController::Thread(void * pvParameters)
 
 	/* Control output variables */
 	float Torque[3];
+	float TorqueDelivered[3];
 	float TorqueRampUpGain = 0;
 	bool TorqueRampUpFinished = false;
 
@@ -363,14 +364,14 @@ __attribute__((optimize("O0")))
 	    /* Compute internal q_ref, omega_ref_body and omega_ref_inertial based on mode and setpoints */
 
 	    /* Compute control output based on references */
-	    if (params.controller.Type == Parameters::LQR_CONTROLLER) {
+	    if (params.controller.type == lspc::ParameterTypes::LQR_CONTROLLER && params.controller.mode != lspc::ParameterTypes::OFF) {
 	    	lqr.Step(balanceController->q, balanceController->dq, balanceController->q_ref, balanceController->omega_ref_body, Torque);
-		} else if (params.controller.Type == Parameters::SLIDING_MODE_CONTROLLER) {
+		} else if (params.controller.type == lspc::ParameterTypes::SLIDING_MODE_CONTROLLER && params.controller.mode != lspc::ParameterTypes::OFF) {
 			// OBS. When running the Sliding Mode controller, inertial angular velocity reference is needed
 			float S[3];
 	    	sm.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->q_ref, balanceController->omega_ref_inertial, Torque, S);
 		} else {
-			// Undefined controller mode - set torque output to 0
+			// Undefined controller mode, eg. OFF - set torque output to 0
 			Torque[0] = 0;
 			Torque[1] = 0;
 			Torque[2] = 0;
@@ -391,41 +392,71 @@ __attribute__((optimize("O0")))
 	    }
 
 	    /* Initial Torque ramp up */
-	    if (params.controller.TorqueRampUp && !TorqueRampUpFinished) {
-	    	Torque[0] *= TorqueRampUpGain;
-	    	Torque[1] *= TorqueRampUpGain;
-	    	Torque[2] *= TorqueRampUpGain;
+	    if (params.controller.TorqueRampUp) {
+	    	if (params.controller.mode == lspc::ParameterTypes::OFF) {
+				TorqueRampUpGain = 0;
+				TorqueRampUpFinished = false;
+	    	}
+	    	else if (!TorqueRampUpFinished) { // if controller is running and ramp up is not finished
+	    		Torque[0] *= TorqueRampUpGain;
+	    		Torque[1] *= TorqueRampUpGain;
+	    		Torque[2] *= TorqueRampUpGain;
 
-	    	TorqueRampUpGain += 1.0f / (params.controller.TorqueRampUpTime * params.controller.SampleRate); // ramp up rate
-	    	if (TorqueRampUpGain >= 1.0) {
-	    		TorqueRampUpFinished = true;
+	    		TorqueRampUpGain += 1.0f / (params.controller.TorqueRampUpTime * params.controller.SampleRate); // ramp up rate
+	    		if (TorqueRampUpGain >= 1.0) {
+	    			TorqueRampUpFinished = true;
+	    		}
 	    	}
 	    }
 
 	    /* Torque output LPF filtering */
-	    if (params.controller.EnableTorqueLPF) {
+	    if (params.controller.EnableTorqueLPF && params.controller.mode != lspc::ParameterTypes::OFF) {
 			Torque[0] = Motor1_LPF.Filter(Torque[0]);
 			Torque[1] = Motor2_LPF.Filter(Torque[1]);
 			Torque[2] = Motor3_LPF.Filter(Torque[2]);
+	    } else {
+	    	Motor1_LPF.Reset();
+	    	Motor2_LPF.Reset();
+	    	Motor3_LPF.Reset();
 	    }
 
-		/* Set control output */
-		motor1.SetTorque(Torque[0]);
-		motor2.SetTorque(Torque[1]);
-		motor3.SetTorque(Torque[2]);
+	    if (params.controller.mode != lspc::ParameterTypes::OFF) {
+			/* Set control output */
+			motor1.SetTorque(Torque[0]);
+			motor2.SetTorque(Torque[1]);
+			motor3.SetTorque(Torque[2]);
 
+	    	/* Ensure that motor drivers are enabled */
+	    	motor1.Enable();
+	    	motor2.Enable();
+	    	motor3.Enable();
+
+			/* Measure delivered torque feedback from ESCON drivers */
+			TorqueDelivered[0] = motor1.GetAppliedTorque();
+			TorqueDelivered[1] = motor2.GetAppliedTorque();
+			TorqueDelivered[2] = motor3.GetAppliedTorque();
+	    } else {
+	    	/* Controller is disabled, so disable motor drivers */
+	    	motor1.Disable();
+	    	motor2.Disable();
+	    	motor3.Disable();
+
+	    	/* Delivered torque can not be measured when the motors are disabled */
+	    	TorqueDelivered[0] = 0;
+	    	TorqueDelivered[1] = 0;
+	    	TorqueDelivered[2] = 0;
+	    }
+
+		/* Measure compute time */
 		dt_meas = microsTimer.GetDeltaTime(prevTimer);
 		dt_meas2 = HAL_toc(timerPrev);
 
-		float TorqueDelivered[3];
-		TorqueDelivered[0] = motor1.GetAppliedTorque();
-		TorqueDelivered[1] = motor2.GetAppliedTorque();
-		TorqueDelivered[2] = motor3.GetAppliedTorque();
-
-		balanceController->SendControllerInfo(params.controller.Type, params.controller.Mode, Torque, dt_meas, TorqueDelivered);
+		/* Send controller info package */
+		balanceController->SendControllerInfo(params.controller.type, params.controller.mode, Torque, dt_meas, TorqueDelivered);
 		//Debug::printf("Balance controller compute time: %9.7f s\n", dt_meas);
 		//Debug::printf("Applied torque: %4.2f\t%4.2f\t%4.2f\n", TorqueApplied[0], TorqueApplied[1], TorqueApplied[2]);
 
+		/* Send IMU Log (test package) for MATH dump */
 		float imuLog[] = {microsTimer.GetTime(), imuMeas.Accelerometer[0], imuMeas.Accelerometer[1], imuMeas.Accelerometer[2], imuMeas.Gyroscope[0], imuMeas.Gyroscope[1], imuMeas.Gyroscope[2]};
 		com.TransmitAsync(lspc::MessageTypesToPC::MathDump, (uint8_t *)&imuLog, sizeof(imuLog));
 	}
@@ -622,20 +653,20 @@ void BalanceController::SendRawSensors(Parameters& params, const IMU::Measuremen
 	com.TransmitAsync(lspc::MessageTypesToPC::RawSensor_Encoders, (uint8_t *)&encoders_msg, sizeof(encoders_msg));
 }
 
-void BalanceController::SendControllerInfo(const Parameters::controllerType_t Type, const Parameters::controllerMode_t Mode, const float Torque[3], const float ComputeTime, const float TorqueDelivered[3])
+void BalanceController::SendControllerInfo(const lspc::ParameterTypes::controllerType_t Type, const lspc::ParameterTypes::controllerMode_t Mode, const float Torque[3], const float ComputeTime, const float TorqueDelivered[3])
 {
 	lspc::MessageTypesToPC::ControllerInfo_t msg;
 
 	msg.time = microsTimer.GetTime();
-	msg.type = (uint8_t)Type;
-	msg.mode = (uint8_t)Mode;
+	msg.type = Type;
+	msg.mode = Mode;
 	msg.torque1 = Torque[0];
 	msg.torque2 = Torque[1];
 	msg.torque3 = Torque[2];
 	msg.compute_time = ComputeTime;
 	msg.delivered_torque1 = TorqueDelivered[0];
-	msg.delivered_torque1 = TorqueDelivered[1];
-	msg.delivered_torque1 = TorqueDelivered[2];
+	msg.delivered_torque2 = TorqueDelivered[1];
+	msg.delivered_torque3 = TorqueDelivered[2];
 
 	com.TransmitAsync(lspc::MessageTypesToPC::ControllerInfo, (uint8_t *)&msg, sizeof(msg));
 }
@@ -656,16 +687,18 @@ void BalanceController::CalibrateIMUCallback(void * param, const std::vector<uin
 		// Send acknowledge back to PC
 		msgAck.acknowledged = false;
 		balanceController->com.TransmitAsync(lspc::MessageTypesToPC::CalibrateIMUAck, (uint8_t *)&msgAck, sizeof(msgAck));
+		return;
 	}
 
 	/* Check current control mode as a calibration can not be performed if the robot is balancing */
 	Parameters * params = new Parameters;
-	Parameters::controllerMode_t mode = params->controller.Mode;
+	lspc::ParameterTypes::controllerMode_t mode = params->controller.mode;
 	delete(params);
-	if (mode != Parameters::OFF) {
+	if (mode != lspc::ParameterTypes::OFF) {
 		// Send acknowledge back to PC
 		msgAck.acknowledged = false;
 		balanceController->com.TransmitAsync(lspc::MessageTypesToPC::CalibrateIMUAck, (uint8_t *)&msgAck, sizeof(msgAck));
+		return;
 	}
 
 	bool restartAfterCalibration = false;

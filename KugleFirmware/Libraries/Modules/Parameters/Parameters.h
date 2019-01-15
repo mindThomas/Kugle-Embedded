@@ -30,23 +30,8 @@
 
 class Parameters
 {
-	public:
-		typedef enum {
-			LQR_CONTROLLER,
-			SLIDING_MODE_CONTROLLER
-		} controllerType_t;
-
-		typedef enum {
-			OFF,
-			QUATERNION_CONTROL,
-			ANGULAR_VELOCITY_CONTROL,
-			VELOCITY_CONTROL,
-			PATH_FOLLOWING
-		} controllerMode_t;
-
-
 	public:	
-		bool ForceDefaultParameters = false; // always load the default parameters listed below, no matter what is stored in EEPROM
+		bool ForceDefaultParameters = true; // always load the default parameters listed below, no matter what is stored in EEPROM
 		uint16_t ParametersSize = 0;
 
 		struct debug_t {
@@ -70,8 +55,8 @@ class Parameters
 			/* Balance Controller Tuning parameters */
 			float SampleRate = 200;
 			
-			controllerType_t Type = LQR_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
-			controllerMode_t Mode = VELOCITY_CONTROL;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
+			lspc::ParameterTypes::controllerType_t type = lspc::ParameterTypes::LQR_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
+			lspc::ParameterTypes::controllerMode_t mode = lspc::ParameterTypes::OFF;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
 
 			bool EnableTorqueLPF = true;
 			float TorqueLPFtau = 0.02; // 0.005 (sliding mode)

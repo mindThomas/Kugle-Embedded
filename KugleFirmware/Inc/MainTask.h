@@ -26,9 +26,14 @@ extern "C" {
 #endif
 
 void MainTask(void * pvParameters);
-	
+
 #ifdef __cplusplus
 }
+
+#include "LSPC.hpp"
+void Reboot_Callback(void * param, const std::vector<uint8_t>& payload);
+void EnterBootloader_Callback(void * param, const std::vector<uint8_t>& payload);
+
 #endif
 
 #endif 

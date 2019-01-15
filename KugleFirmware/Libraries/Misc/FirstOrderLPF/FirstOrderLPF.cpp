@@ -40,3 +40,9 @@ float FirstOrderLPF::Filter(float input)
 	_inputOld = input;
 	return out;
 }
+
+void FirstOrderLPF::Reset(void)
+{
+	_inputOld = 0;
+	_lpfOld = 0;
+}
