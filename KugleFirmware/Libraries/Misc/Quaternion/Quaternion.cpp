@@ -275,6 +275,24 @@ void Quaternion_quat2eul_zyx(const float q[4], float yaw_pitch_roll[3])
 	yaw_pitch_roll[2] = atan2( 2*(qy*qz+qw*qx), qw*qw - qx*qx - qy*qy + qz*qz ); // roll
 }
 
+/* Rotate vector within body frame into inertial frame */
+void Quaternion_RotateVector_Body2Inertial(const float q[4], const float v[3], float v_out[3])
+{
+	// v_out = devec * q o dev*v o q* = Phi(q) * Gamma(q)^T * vec*v
+	v_out[0] = (q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3])*v[0] + (2*q[1]*q[2] - 2*q[0]*q[3])					 *v[1] + (2*q[0]*q[2] + 2*q[1]*q[3])					*v[2];
+	v_out[1] = (2*q[0]*q[3] + 2*q[1]*q[2])					  *v[0] + (q[0]*q[0] - q[1]*q[1] + q[2]*q[2] - q[3]*q[3])*v[1] + (2*q[2]*q[3] - 2*q[0]*q[1])					*v[2];
+	v_out[2] = (2*q[1]*q[3] - 2*q[0]*q[2])					  *v[0] + (2*q[0]*q[1] + 2*q[2]*q[3])					 *v[1] + (q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3])*v[2];
+}
+
+/* Rotate vector within inertial frame into body frame */
+void Quaternion_RotateVector_Inertial2Body(const float q[4], const float v[3], float v_out[3])
+{
+	// v_out = devec * q* o dev*v o q = Phi(q)^T * Gamma(q) * vec*v
+	v_out[0] = (q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3])*v[0] + (2*q[0]*q[3] + 2*q[1]*q[2])					 *v[1] + (2*q[1]*q[3] - 2*q[0]*q[2])					*v[2];
+	v_out[1] = (2*q[1]*q[2] - 2*q[0]*q[3])					  *v[0] + (q[0]*q[0] - q[1]*q[1] + q[2]*q[2] - q[3]*q[3])*v[1] + (2*q[0]*q[1] + 2*q[2]*q[3])					*v[2];
+	v_out[2] = (2*q[0]*q[2] + 2*q[1]*q[3])					  *v[0] + (2*q[2]*q[3] - 2*q[0]*q[1])					 *v[1] + (q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3])*v[2];
+}
+
 void Quaternion_AngleClamp(const float q[4], const float angleMax, float q_clamped[4])
 {
 	// Bound/clamp quaternion rotation amount by angle
