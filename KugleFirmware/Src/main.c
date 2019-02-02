@@ -57,7 +57,7 @@ int main(void)
 
   /* Configure the system clock */
   SystemClock_Config();
-  ZeroInitFreeRTOSheap();
+  ZeroInitRAM_D1();
 
   /* Create the main thread which creates objects and spawns the rest of the threads */
   xTaskCreate(MainTask, "mainTask", 1024, (void*) NULL, MAIN_TASK_PRIORITY, &mainTaskHandle);

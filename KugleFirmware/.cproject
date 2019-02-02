@@ -38,6 +38,11 @@
 								<option id="gnu.c.compiler.option.debugging.level.203353286" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1411768352" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Inc"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC/codegen"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC/qpoases3"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC/qpoases3/include"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC/qpoases3/src"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/EEPROM"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/Math"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Debug"/>
@@ -56,6 +61,8 @@
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.243992057" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__weak=__attribute__((weak))"/>
+									<listOptionValue builtIn="false" value="QPOASES_CUSTOM_INTERFACE=acado_qpoases3_interface.h"/>
+									<listOptionValue builtIn="false" value="__CODE_GENERATION__"/>
 									<listOptionValue builtIn="false" value="__FPU_PRESENT=1"/>
 									<listOptionValue builtIn="false" value="ARM_MATH_CM7"/>
 									<listOptionValue builtIn="false" value="__packed=__attribute__((__packed__))"/>
@@ -87,6 +94,11 @@
 									<listOptionValue builtIn="false" value="../Libraries/Misc/FirstOrderLPF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/IIR"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/ModelMatrices"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC/codegen"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC/qpoases3"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC/qpoases3/include"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC/qpoases3/src"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/QuaternionVelocityControl"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingModeMATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingModeMATLABCoder/MATLABCoder"/>
@@ -140,6 +152,8 @@
 								</option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.2021347189" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__weak=__attribute__((weak))"/>
+									<listOptionValue builtIn="false" value="__CODE_GENERATION__"/>
+									<listOptionValue builtIn="false" value="QPOASES_CUSTOM_INTERFACE=acado_qpoases3_interface.h"/>
 									<listOptionValue builtIn="false" value="__FPU_PRESENT=1"/>
 									<listOptionValue builtIn="false" value="ARM_MATH_CM7"/>
 									<listOptionValue builtIn="false" value="__packed=__attribute__((__packed__))"/>
@@ -210,6 +224,68 @@
 							<tool errorParsers="org.eclipse.cdt.core.GASErrorParser" id="fr.ac6.managedbuild.tool.gnu.cross.assembler.1097325599" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.539838764">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.896155029" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.861768861" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1000332105.1153433828" name="/" resourcePath="Libraries/Modules/Controllers/MPC/codegen">
+						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.685069137" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
+							<option id="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616.678697828" name="Prefix" superClass="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.mcu.202581599.646737407" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu.202581599"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.board.410326283.768602322" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board.410326283"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.core.1083960614.1374440705" name="Core" superClass="fr.ac6.managedbuild.option.gnu.cross.core.1083960614"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.instructionSet.629493224.263638265" name="Instruction Set" superClass="fr.ac6.managedbuild.option.gnu.cross.instructionSet.629493224"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.fpu.1199197787.112832695" name="Floating point hardware" superClass="fr.ac6.managedbuild.option.gnu.cross.fpu.1199197787"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.floatabi.1563162206.830647602" name="Floating-point ABI" superClass="fr.ac6.managedbuild.option.gnu.cross.floatabi.1563162206"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="fr.ac6.managedbuild.targetPlatform.gnu.cross" isAbstract="false" osList="all" superClass="fr.ac6.managedbuild.targetPlatform.gnu.cross"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1349048001" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.308977759">
+								<option id="fr.ac6.managedbuild.gnu.c.compiler.option.optimization.level.131882040" name="Optimization Level" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="fr.ac6.managedbuild.gnu.c.optimization.level.most" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.debugging.level.80637735" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.none" valueType="enumerated"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1588625845" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.880582651" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
+							</tool>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.195919327" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.318870537">
+								<option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level.2110341043" name="Optimization Level" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="fr.ac6.managedbuild.gnu.cpp.optimization.level.most" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.debugging.level.302157021" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1556826625" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s.1639443588" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s"/>
+							</tool>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.317734739" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.292940054"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.997299066" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.266891313"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.archiver.1298607114" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver.554655037"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.387229705" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.539838764">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.423540749" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.156913315" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1000332105.1680842030" name="/" resourcePath="Libraries/Modules/Controllers/MPC/qpoases3">
+						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.1203736564" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
+							<option id="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616.192643779" name="Prefix" superClass="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.mcu.202581599.1093167656" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu.202581599"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.board.410326283.1677421102" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board.410326283"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.core.1083960614.638523351" name="Core" superClass="fr.ac6.managedbuild.option.gnu.cross.core.1083960614"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.instructionSet.629493224.1105703865" name="Instruction Set" superClass="fr.ac6.managedbuild.option.gnu.cross.instructionSet.629493224"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.fpu.1199197787.565279960" name="Floating point hardware" superClass="fr.ac6.managedbuild.option.gnu.cross.fpu.1199197787"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.floatabi.1563162206.1929589583" name="Floating-point ABI" superClass="fr.ac6.managedbuild.option.gnu.cross.floatabi.1563162206"/>
+							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="fr.ac6.managedbuild.targetPlatform.gnu.cross" isAbstract="false" osList="all" superClass="fr.ac6.managedbuild.targetPlatform.gnu.cross"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1591165375" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.308977759">
+								<option id="fr.ac6.managedbuild.gnu.c.compiler.option.optimization.level.198587387" name="Optimization Level" superClass="fr.ac6.managedbuild.gnu.c.compiler.option.optimization.level" useByScannerDiscovery="false" value="fr.ac6.managedbuild.gnu.c.optimization.level.most" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.debugging.level.711269850" name="Debug Level" superClass="gnu.c.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.c.debugging.level.none" valueType="enumerated"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.417135066" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.1187305005" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
+							</tool>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1458303014" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.318870537">
+								<option id="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level.2025546596" name="Optimization Level" superClass="fr.ac6.managedbuild.gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="fr.ac6.managedbuild.gnu.cpp.optimization.level.most" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.debugging.level.2059169750" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1598788208" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s.53515042" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s"/>
+							</tool>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.617143050" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.292940054"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1479699450" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.266891313"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.archiver.1199588831" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver.554655037"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.579481285" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.539838764">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1182281106" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.128880239" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
 							</tool>
 						</toolChain>
 					</folderInfo>
@@ -369,7 +445,7 @@
 					<sourceEntries>
 						<entry excluding="CMSIS/DSP/Source/ComplexMathFunctions|CMSIS/DSP/Source/ControllerFunctions|CMSIS/DSP/Source/TransformFunctions|STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_sdmmc.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_fmc.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_swpmi.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sram.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spdifrx.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_smartcard.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_smartcard_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sdram.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sd.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sd_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sai.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_sai_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_qspi.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_opamp.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_opamp_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_nor.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_nand.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mmc.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mmc_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdios.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_jpeg.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_irda.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hash.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hash_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_fdcan.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_eth.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_eth_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dfsdm.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dcmi.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cryp.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cryp_ex.c|STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cec.c|CMSIS/Device/ST/STM32H7xx/Source|CMSIS/RTOS2/Template|CMSIS/DSP/Examples|CMSIS/Device/ST/STM32H7xx/Source/Templates/iar|CMSIS/Device/ST/STM32H7xx/Source/Templates/arm|CMSIS/Device/ST/STM32H7xx/Source/Templates/gcc|CMSIS/RTOS" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Drivers"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Inc"/>
-						<entry excluding="Modules/Estimators/MadgwickAHRS/extras|Modules/Estimators/MadgwickAHRS/examples|Devices/LCD/fontconvert|Devices/LCD/examples|Devices/MPU9250/examples|Devices/LSPC/LSPC/tests|Devices/LSPC/LSPC/lspc/boost|Devices/LSPC/LSPC/lspc/arduino" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Libraries"/>
+						<entry excluding="Modules/Controllers/MPC/qpoases3/src/OQPinterface.c|Modules/Estimators/MadgwickAHRS/extras|Modules/Estimators/MadgwickAHRS/examples|Devices/LCD/fontconvert|Devices/LCD/examples|Devices/MPU9250/examples|Devices/LSPC/LSPC/tests|Devices/LSPC/LSPC/lspc/boost|Devices/LSPC/LSPC/lspc/arduino" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Libraries"/>
 						<entry excluding="ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_cdc_if_template.c|ST/STM32_USB_Device_Library/Class/CDC/Inc/usbd_cdc_if_template.h|ST/STM32_USB_Device_Library/Core/Inc/usbd_conf_template.h|ST/STM32_USB_Device_Library/Core/Src/usbd_conf_template.c|Third_Party/FreeRTOS/Source/include/FreeRTOSConfig_template.h|Third_Party/FreeRTOS/Source/portable/MemMang/heap_1.c|Third_Party/FreeRTOS/Source/portable/MemMang/heap_2.c|Third_Party/FreeRTOS/Source/portable/MemMang/heap_3.c|Third_Party/FreeRTOS/Source/portable/MemMang/heap_5.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Middlewares"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="Src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="startup"/>

@@ -34,5 +34,7 @@
 #define ROUND_UP_2DEC(x)   (ceilf(x * 100) / 100)     /* Result: 37.78 */
 
 float Math_Round(float num, unsigned int dec);
+void Math_Rotate2D(const float rotationAngle, const float in[2], float out[2]);
+void Math_Rotate2D(const double rotationAngle, const double in[2], double out[2]);
 
 #endif

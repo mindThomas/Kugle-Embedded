@@ -50,6 +50,7 @@
 /* Include Module libraries */
 #include "LQR.h"
 #include "SlidingMode.h"
+#include "MPC.h"
 #include "Debug.h"
 #include "COMEKF.h"
 #include "MadgwickAHRS.h"
@@ -127,17 +128,36 @@ void MainTask(void * pvParameters)
 	/* Initialize microseconds timer */
 	Timer * microsTimer = new Timer(Timer::TIMER6, 1000000);
 
+	/* Initialize MPC */
+	MPC::MPC * mpc = new MPC::MPC;
+
 	/* Initialize motors */
 	ESCON * motor1 = new ESCON(1);
 	ESCON * motor2 = new ESCON(2);
 	ESCON * motor3 = new ESCON(3);
 
+	motor1->Enable();
+	motor2->Enable();
+	motor3->Enable();
+	while (1)
+	{
+		motor1->SetTorque(0.15);
+		motor2->SetTorque(0.15);
+		motor3->SetTorque(0.15);
+		osDelay(2000);
+		motor1->SetTorque(-0.15);
+		motor2->SetTorque(-0.15);
+		motor3->SetTorque(-0.15);
+		osDelay(2000);
+	}
+
+
 	/* Test info */
 	Debug::print("Booting...\n");
 
 	/******* APPLICATION LAYERS *******/
-	BalanceController * balanceController = new BalanceController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
-	if (!balanceController) ERROR("Could not initialize balance controller");
+	/*BalanceController * balanceController = new BalanceController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
+	if (!balanceController) ERROR("Could not initialize balance controller");*/
 
 	/* Send CPU load every second */
 	char * pcWriteBuffer = (char *)pvPortMalloc(1024);

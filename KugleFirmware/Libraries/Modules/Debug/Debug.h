@@ -77,6 +77,7 @@ class Debug
 #else  // for C usage
 
 void Error_Handler(void);
+void Debug_print(const char * msg);
 
 #endif
 	

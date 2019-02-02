@@ -15,7 +15,8 @@
 
 #define USE_FREERTOS
 
-extern int _sfreertos_heap; // get address to global symbol defined in linker file
+extern int _sramd1_heap; // get address to global symbol defined in linker file
+extern int _eramd1_heap; // get address to global symbol defined in linker file
 extern uint8_t freeRTOSMemoryScheme;
 
 /*void ZeroInitFreeRTOSheap(void);
@@ -72,11 +73,12 @@ void __wrap__free_r (void * ptr)
 #endif
 #endif
 
-void ZeroInitFreeRTOSheap(void)
+void ZeroInitRAM_D1(void)
 {
-	uint8_t * heapPtr = (uint8_t*)&_sfreertos_heap; // heap is placed at this global symbol address
+	uint8_t * heapPtr = (uint8_t*)&_sramd1_heap; // heap is placed at this global symbol address
+	uint8_t * heapEndPtr = (uint8_t*)&_eramd1_heap; // heap is placed at this global symbol address
 	freeRTOSMemoryScheme = configUSE_HEAP_SCHEME;
-	memset(heapPtr, 0, configTOTAL_HEAP_SIZE);
+	memset(heapPtr, 0, heapEndPtr-heapPtr);
 }
 
 #if 0

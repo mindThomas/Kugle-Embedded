@@ -31,3 +31,31 @@ float Math_Round(float num, unsigned int dec)
 
 	return roundf(num * power) / power;
 }
+
+void Math_Rotate2D(const float rotationAngle, const float in[2], float out[2])
+{
+	/*
+	 * R = [cos(A), -sin(A)
+	 * 	    sin(A), cos(A)]
+	 *
+	 * out = R * in
+	 */
+	float sinA = sinf(rotationAngle);
+	float cosA = cosf(rotationAngle);
+	out[0] = cosA*in[0] - sinA*in[1];
+	out[1] = sinA*in[0] + cosA*in[1];
+}
+
+void Math_Rotate2D(const double rotationAngle, const double in[2], double out[2])
+{
+	/*
+	 * R = [cos(A), -sin(A)
+	 * 	    sin(A), cos(A)]
+	 *
+	 * out = R * in
+	 */
+	double sinA = sin(rotationAngle);
+	double cosA = cos(rotationAngle);
+	out[0] = cosA*in[0] - sinA*in[1];
+	out[1] = sinA*in[0] + cosA*in[1];
+}

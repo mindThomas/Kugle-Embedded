@@ -21,6 +21,6 @@
 #ifndef MEMORY_MANAGEMENT_H
 #define MEMORY_MANAGEMENT_H
 
-void ZeroInitFreeRTOSheap(void);
+void ZeroInitRAM_D1(void);
 	
 #endif 

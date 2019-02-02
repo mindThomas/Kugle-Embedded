@@ -25,6 +25,7 @@ Debug * Debug::debugHandle = 0;
 
 // Necessary to export for compiler such that the Error_Handler function can be called by C code
 extern "C" __EXPORT void Error_Handler(void);
+extern "C" __EXPORT void Debug_print(const char * msg);
 
 Debug::Debug(void * com) : com_(com)
 {
@@ -190,11 +191,14 @@ void Debug::Error(const char * type, const char * functionName, const char * msg
 	}
 }
 
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+/* C function exports below */
 void Error_Handler(void)
 {
 	Debug::Error("ERROR: ", "Error_Handler", "Global ");
+}
+
+
+void Debug_print(const char * msg)
+{
+	Debug::print(msg);
 }
