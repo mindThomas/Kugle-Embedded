@@ -17,22 +17,17 @@
  * ------------------------------------------
  */
  
-#ifndef MISC_MATH_H
-#define MISC_MATH_H
-
-#include <stddef.h>
+#include "MathLib.h"
+#include <math.h>
 #include <stdlib.h>
 
-#define M_PI 3.14159265358979323846264338327950288
+float Math_Round(float num, unsigned int dec)
+{
+	//float power = powf(10, dec);
+	long long power = 1;
+	for (int i = 0; i < dec; i++) {
+		power *= 10;
+	}
 
-#define deg2rad(x) (M_PI*x/180.f)
-#define rad2deg(x) (180.f*x/M_PI)
-
-// Example number = 37.777779
-#define ROUND_DOWN_2DEC(x) (floorf(x * 100) / 100)    /* Result: 37.77 */
-#define ROUND_2DEC(x) 	   (roundf(x * 100) / 100)    /* Result: 37.78 */
-#define ROUND_UP_2DEC(x)   (ceilf(x * 100) / 100)     /* Result: 37.78 */
-
-float Math_Round(float num, unsigned int dec);
-
-#endif
+	return roundf(num * power) / power;
+}

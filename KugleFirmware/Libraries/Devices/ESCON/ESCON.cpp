@@ -26,7 +26,12 @@
 #include "ADC.h"
 #include "Encoder.h"
 
-ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder) :
+ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed) :
+	ESCON_MAX_AMP_SETPOINT(MaxCurrent),
+	MOTOR_TORQUE_CONSTANT(TorqueConstant),
+	ENCODER_TICKS_PR_REV(EncoderTicksPrRev),
+	GEARING_RATIO(GearRatio),
+	ESCON_MAX_RAD_PR_SEC(MaxMotorSpeed),
 	_torqueSetpoint(TorqueSetpoint),
 	_enablePin(EnablePin),
 	_encoder(encoder),
@@ -39,7 +44,12 @@ ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder) :
 	Disable();
 }
 
-ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, ADC * CurrentFeedback, ADC * VelocityFeedback, IO * DirectionFeedbackPin) :
+ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed, ADC * CurrentFeedback, ADC * VelocityFeedback, IO * DirectionFeedbackPin) :
+	ESCON_MAX_AMP_SETPOINT(MaxCurrent),
+	MOTOR_TORQUE_CONSTANT(TorqueConstant),
+	ENCODER_TICKS_PR_REV(EncoderTicksPrRev),
+	GEARING_RATIO(GearRatio),
+	ESCON_MAX_RAD_PR_SEC(MaxMotorSpeed),
 	_torqueSetpoint(TorqueSetpoint),
 	_enablePin(EnablePin),
 	_encoder(encoder),
@@ -52,7 +62,12 @@ ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, ADC * Curr
 	Disable();
 }
 
-ESCON::ESCON(uint8_t MotorIndex) :
+ESCON::ESCON(uint8_t MotorIndex, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed) :
+	ESCON_MAX_AMP_SETPOINT(MaxCurrent),
+	MOTOR_TORQUE_CONSTANT(TorqueConstant),
+	ENCODER_TICKS_PR_REV(EncoderTicksPrRev),
+	GEARING_RATIO(GearRatio),
+	ESCON_MAX_RAD_PR_SEC(MaxMotorSpeed),
 	_torqueSetpoint(0),
 	_enablePin(0),
 	_encoder(0),
@@ -134,7 +149,7 @@ bool ESCON::SetTorque(float torqueNewtonMeter)
 
 	// Torque is set as a current setpoint
 	// The current setpoint is calculated from the desired torque using the torque constant
-	float currentSetpoint = torqueNewtonMeter / EC60_TORQUE_CONSTANT;
+	float currentSetpoint = torqueNewtonMeter / MOTOR_TORQUE_CONSTANT;
 
 	// The current setpoint is normalized to a range between -1 to 1 using the maximum current defined in ESCON controller
 	float normalizedCurrentSetpoint = currentSetpoint / ESCON_MAX_AMP_SETPOINT;
@@ -164,6 +179,13 @@ bool ESCON::SetTorque(float torqueNewtonMeter)
 	return didClip;
 }
 
+// Set output shaft (after gearing) torque in Newton meters (Nm)
+// Returns a boolean indicating whether the applied torque was saturated/clipped
+bool ESCON::SetOutputTorque(float torqueNewtonMeter)
+{
+	return SetTorque(torqueNewtonMeter / GEARING_RATIO);
+}
+
 // Return actual motor current reading in Amps (A)
 float ESCON::GetCurrent()
 {
@@ -186,7 +208,13 @@ float ESCON::GetAppliedTorque()
 	//if (Current < 0) return -1.0f; // error
 
 	// The applied motor current can be converted to torque using the torque constant (Nm/A)
-	return EC60_TORQUE_CONSTANT * Current;
+	return MOTOR_TORQUE_CONSTANT * Current;
+}
+
+// Return applied torque (based on current reading) on the output shaft (after gearing) in Newton meters (Nm)
+float ESCON::GetAppliedOutputTorque()
+{
+	return GEARING_RATIO * GetAppliedTorque();
 }
 
 int32_t ESCON::GetEncoderRaw()

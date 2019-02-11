@@ -34,23 +34,25 @@ class ESCON
 		const int ESCON_PWM_FREQUENCY	= 1000;		// 4 kHz
 		const int ESCON_PWM_RANGE = 2000;			// 0-2000, corresponding to 0.1% resolution
 
-		const float ESCON_MAX_RAD_PR_SEC = 6000 * 2 * M_PI / 60;  // rad/s   (6000 rpm)
-		const float ESCON_MAX_AMP_SETPOINT = 15;	 // A
-		const float EC60_TORQUE_CONSTANT = 30.5E-3;  // Nm/A     (Maxon 412819)
-		const uint16_t ENCODER_TICKS_PR_REV = 4*4096;	 // ticks/rev   (Maxon 421988)
-		const float GEARING_RATIO = 13/3;   // 4.3 : 1 (Maxon 223081)
+		const float ESCON_MAX_RAD_PR_SEC = 1; // rad/s
+		const float ESCON_MAX_AMP_SETPOINT = 1;	 // A
+		const float MOTOR_TORQUE_CONSTANT = 1;  // Nm/A
+		const uint16_t ENCODER_TICKS_PR_REV = 1;	 // ticks/rev on encoder side - hence one revolution on motor shaft (before gearing)
+		const float GEARING_RATIO = 1;
 
 	public:
-		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder); // minimal operation general constructor
-		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, ADC * CurrentFeedback, ADC * VelocityFeedback, IO * DirectionFeedbackPin); // extended operation general constructor
-		ESCON(uint8_t MotorIndex); // platform specific constructor
+		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed); // minimal operation general constructor
+		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed, ADC * CurrentFeedback, ADC * VelocityFeedback, IO * DirectionFeedbackPin); // extended operation general constructor
+		ESCON(uint8_t MotorIndex, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed); // platform specific constructor
 		~ESCON();
 
 		void Enable();
 		void Disable();
 
 		bool SetTorque(float torqueNewtonMeter);
+		bool SetOutputTorque(float torqueNewtonMeter);
 		float GetAppliedTorque();
+		float GetAppliedOutputTorque();
 		float GetCurrent();
 		float GetAngle();
 		float GetVelocity();

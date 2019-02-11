@@ -386,9 +386,9 @@ __attribute__((optimize("O0")))
 
 	    /* Clamp the torque outputs between configured limits */
 	    if (params.controller.EnableTorqueSaturation) {
-	    	Torque[0] = fmax(fmin(Torque[0], params.controller.TorqueMax), -params.controller.TorqueMax);
-	    	Torque[1] = fmax(fmin(Torque[1], params.controller.TorqueMax), -params.controller.TorqueMax);
-	    	Torque[2] = fmax(fmin(Torque[2], params.controller.TorqueMax), -params.controller.TorqueMax);
+	    	Torque[0] = fmax(fmin(Torque[0], params.model.MaxOutputTorque), -params.model.MaxOutputTorque);
+	    	Torque[1] = fmax(fmin(Torque[1], params.model.MaxOutputTorque), -params.model.MaxOutputTorque);
+	    	Torque[2] = fmax(fmin(Torque[2], params.model.MaxOutputTorque), -params.model.MaxOutputTorque);
 	    }
 
 	    /* Initial Torque ramp up */
@@ -422,9 +422,9 @@ __attribute__((optimize("O0")))
 
 	    if (params.controller.mode != lspc::ParameterTypes::OFF) {
 			/* Set control output */
-			motor1.SetTorque(Torque[0]);
-			motor2.SetTorque(Torque[1]);
-			motor3.SetTorque(Torque[2]);
+			motor1.SetOutputTorque(Torque[0]);
+			motor2.SetOutputTorque(Torque[1]);
+			motor3.SetOutputTorque(Torque[2]);
 
 	    	/* Ensure that motor drivers are enabled */
 	    	motor1.Enable();
@@ -432,9 +432,9 @@ __attribute__((optimize("O0")))
 	    	motor3.Enable();
 
 			/* Measure delivered torque feedback from ESCON drivers */
-			TorqueDelivered[0] = motor1.GetAppliedTorque();
-			TorqueDelivered[1] = motor2.GetAppliedTorque();
-			TorqueDelivered[2] = motor3.GetAppliedTorque();
+			TorqueDelivered[0] = motor1.GetAppliedOutputTorque();
+			TorqueDelivered[1] = motor2.GetAppliedOutputTorque();
+			TorqueDelivered[2] = motor3.GetAppliedOutputTorque();
 	    } else {
 	    	/* Controller is disabled, so disable motor drivers */
 	    	motor1.Disable();
