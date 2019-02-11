@@ -39,7 +39,7 @@
 								<option id="gnu.c.compiler.option.include.paths.1411768352" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Inc"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/EEPROM"/>
-									<listOptionValue builtIn="false" value="../Libraries/Misc/Math"/>
+									<listOptionValue builtIn="false" value="../Libraries/Misc/MathLib"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Debug"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/USBCDC"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/DSP/Include"/>
@@ -73,7 +73,7 @@
 								<option id="gnu.cpp.compiler.option.debugging.level.165604567" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1025994982" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Libraries/Devices/Battery"/>
-									<listOptionValue builtIn="false" value="../Libraries/Misc/Math"/>
+									<listOptionValue builtIn="false" value="../Libraries/Misc/MathLib"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Watchdog"/>
 									<listOptionValue builtIn="false" value="../Libraries/Applications/HealthMonitor"/>
 									<listOptionValue builtIn="false" value="../Libraries/Applications/BalanceController"/>

@@ -19,7 +19,7 @@
  
 #include "IMU.h"
 #include "Debug.h"
-#include "Math.h"
+#include "MathLib.h"
 #include <arm_math.h>
 
 // Class for sensor abstraction, sampling and calibration

@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include "Math.h"
+#include "MathLib.h"
 
 #define devec(x) (&x[1]) // devectorize from dimension 4 to dimension 3 (take bottom 3 elements) - works only on vector (float array)
 

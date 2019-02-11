@@ -20,7 +20,7 @@
 #include "QEKF.h"
 #include "QEKF_coder.h"
 #include "QEKF_initialize.h"
-#include "Math.h"
+#include "MathLib.h"
 #include <string.h> // for memcpy
  
 #include "Quaternion.h"

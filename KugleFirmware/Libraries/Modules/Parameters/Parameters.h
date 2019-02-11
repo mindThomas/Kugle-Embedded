@@ -56,12 +56,11 @@ class Parameters
 			float SampleRate = 200;
 			
 			lspc::ParameterTypes::controllerType_t type = lspc::ParameterTypes::LQR_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
-			lspc::ParameterTypes::controllerMode_t mode = lspc::ParameterTypes::OFF;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
+			lspc::ParameterTypes::controllerMode_t mode = lspc::ParameterTypes::QUATERNION_CONTROL;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
 
 			bool EnableTorqueLPF = true;
 			float TorqueLPFtau = 0.02; // 0.005 (sliding mode)
 			bool EnableTorqueSaturation = false; // saturate the torque before filtering
-			float TorqueMax = 0.7; // maximum torque - related to motors and motor controller - currently maximum is 15 A = 0.8 Nm
 			bool TorqueRampUp = true;
 			float TorqueRampUpTime = 1.0; // seconds to ramp up Torque after initialization
 
@@ -92,9 +91,11 @@ class Parameters
 															  -12.2230549843242,	 21.1709522565575, -5.77350269189626,	-1.43177569351758,	 2.48115307232164,	-0.579208874021105,
 																-12.2230549843242,	-21.1709522565575, -5.77350269189626,	-1.43177569351758,	-2.48115307232165,	-0.579208874021106};
 			*/
-			float LQR_K[3*6] = {22.0217540086999,	1.1248573671829e-14,	-0.182574185835055,	2.71774528131163,	1.44298962102302e-15,	-0.101363312648735,
-			-11.01087700435,	19.0713984074259,	-0.182574185835056,	-1.35887264065581,	2.35481794807652,	-0.101363312648735,
-			-11.01087700435,	-19.0713984074259,	-0.182574185835055,	-1.35887264065582,	-2.35481794807652,	-0.101363312648735};
+			float LQR_K[3*6] = {
+			  24.967484660001379,   0.000000000000011,  -0.182574185835056,   3.371292809244463,   0.000000000000001,  -0.066330720270475,
+			 -12.483742330000688,  21.622475984159514,  -0.182574185835056,  -1.685646404622232,   2.923439906251729,  -0.066330720270475,
+			 -12.483742330000691, -21.622475984159500,  -0.182574185835055,  -1.685646404622232,  -2.923439906251727,  -0.066330720270475
+			};
 			float LQR_MaxYawError = 3.0; // yaw error clamp [degrees]
 
 
@@ -163,38 +164,52 @@ class Parameters
 		} estimator;
 		
 		struct model_t {
-			/* Model parameters (defined in SI units) */	
-			float l = 0.35f;
-
-			float COM_X = 0.0f;
-			float COM_Y = 0.0f;
-			float COM_Z = l;
-
+			/* Model parameters (defined in SI units) */
+			double pi = 3.14159265358979323846264338327950288;
 			float g = 9.82f;
 
+			// Ball constants
 			float rk = 0.129f;
 			float Mk = 1.46f;
-			float Jk = ((2.f * Mk * rk*rk) / 3.f);
+			float coating = 4e-3; // 4 mm rubber coating around ball
+			float Jk = ((2.f * Mk * (rk-coating)*(rk-coating)) / 3.f);			
 
+			// Body center of mass defined with origin in ball center
+			float COM_X = -0.02069e-3;
+			float COM_Y = -3.20801e-3;
+			float COM_Z = 550.23854e-3 - rk; // subtract rk since the values are extracted from OnShape with origin in contact point (bottom of ball)
+			
+			float l = 0.4213f; // norm(COM)
+
+			// Body constants
+			float Mb = (12.892f + 1.844f);
+			float Jbx = 3.9096f;
+			float Jby = 3.9212f;
+			float Jbz = 0.1004f;
+		
+			// Wheel and motor physical constants
 			float rw = 0.05f;
 			float Mw = 0.270f;
-			float i_gear = 4.3;
-			float Jow = 9.f * 0.0001f;
-			float Jm = 1.21f * 0.0001f;
+			float i_gear = 13.0f / 3; // gear ratio = 4.3 : 1   (https://www.maxonmotor.com/maxon/view/product/223081)
+			float Jow = 9.f * 1E-4;
+			float Jm = 1.21f * 1E-4;
 			float Jw = (Jow + i_gear*i_gear*Jm);
 
-			float Mb = (8.205f + 5.856f);
-
-			float Jbx = (0.958f + Mb * l*l);
-			float Jby = (0.961f + Mb * l*l);
-			float Jbz = 0.31f;
-
+			// Friction constants
 			float Bvk = 0*0.001f;
 			float Bvm = 0*0.001f;
 			float Bvb = 0*0.001f;
-
+			
+			// Encoder constants
 			uint16_t EncoderTicksPrRev = 4*4096;	 // ticks/rev
 			float TicksPrRev = i_gear * EncoderTicksPrRev;
+			
+			// ESCON motor parameters
+			float MotorMaxCurrent = 15; // ESCON 50/5 motor driver (https://www.maxonmotor.com/maxon/view/product/control/4-Q-Servokontroller/438725)
+			float MotorTorqueConstant = 30.5e-3; // Nm / A   (https://www.maxonmotor.com/maxon/view/product/412819)
+			float MotorMaxTorque = MotorTorqueConstant * MotorMaxCurrent; // Nm
+			float MotorMaxSpeed = 6000 * 2 * pi / 60;  // rad/s of motor (before gearing)  ==  6000 rpm
+			float MaxOutputTorque = i_gear * MotorMaxTorque;
 			/* Model parameters end */	
 		} model;
 		

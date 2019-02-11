@@ -24,7 +24,7 @@
 #include <stdlib.h>
 
 #include "Quaternion.h"
-#include "Math.h"
+#include "MathLib.h"
 #include "Matrix.h"
 #include "Parameters.h"
 #include "Debug.h"
