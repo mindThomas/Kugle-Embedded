@@ -46,7 +46,8 @@ RAM_D1 (xrw)      : ORIGIN = 0x24000000, LENGTH = 512K
 RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 288K
 RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 64K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 2048K
+FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 1536K
+EEPROM(rwx)	    : ORIGIN = 0x8180000, LENGTH = 512K
 }
 
 /* Define output sections */
@@ -168,6 +169,13 @@ SECTIONS
     . = ALIGN(4);
     _efreertos_heap = .;        /* define a global symbol at data end */
   } >RAM_D1
+
+  .eeprom_data (NOLOAD) :
+  {
+    . = ALIGN(4);
+    KEEP (*(.eeprom_data))
+    . = ALIGN(4);
+  } >EEPROM
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

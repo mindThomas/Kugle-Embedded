@@ -347,6 +347,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 		switch (param) {
 			case lspc::ParameterLookup::EnableLogOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableLogOutput; return;
 			case lspc::ParameterLookup::EnableRawSensorOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableRawSensorOutput; return;
+			case lspc::ParameterLookup::UseFilteredIMUinRawSensorOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.UseFilteredIMUinRawSensorOutput; return;
 			default: return;
 		}
 	}
@@ -362,8 +363,6 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::IndependentHeading: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.IndependentHeading; return;
 			case lspc::ParameterLookup::YawVelocityBraking: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.YawVelocityBraking; return;
 			case lspc::ParameterLookup::StepTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.StepTestEnabled; return;
-			case lspc::ParameterLookup::VelocityControllerEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.VelocityControllerEnabled; return;
-			case lspc::ParameterLookup::JoystickVelocityControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.JoystickVelocityControl; return;
 			default: return;
 		}
 	}
@@ -373,6 +372,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::mode: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.mode; return;
 			case lspc::ParameterLookup::type: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.type; return;
 			case lspc::ParameterLookup::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
+			case lspc::ParameterLookup::DisableQdot: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableQdot; return;
 			default: return;
 		}
 	}
@@ -383,8 +383,10 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::EnableSoftwareLPFfilters: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSoftwareLPFfilters; return;
 			case lspc::ParameterLookup::CreateQdotFromQDifference: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.CreateQdotFromQDifference; return;
 			case lspc::ParameterLookup::UseMadgwick: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseMadgwick; return;
+			case lspc::ParameterLookup::Use2Lvelocity: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.Use2Lvelocity; return;
 			case lspc::ParameterLookup::UseVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseVelocityEstimator; return;
 			case lspc::ParameterLookup::EstimateCOM: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
+			case lspc::ParameterLookup::EstimateBias: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateBias; return;
 			default: return;
 		}
 	}

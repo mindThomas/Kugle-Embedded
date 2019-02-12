@@ -39,6 +39,7 @@ class QEKF
 
 		void GetQuaternion(float q[4]);
 		void GetQuaternionDerivative(float dq[4]);
+		void GetGyroBias(float bias[2]);
 		void GetQuaternionCovariance(float Cov_q[4*4]);
 		void GetQuaternionDerivativeCovariance(float Cov_dq[4*4]);
 

@@ -105,7 +105,7 @@ class EEPROM
 		/* The struct below contains a list of addresses of assigned EEPROM sections (address) */
 		/* Important not to use address 0x000 */
 		const struct {
-			uint16_t internal = 0x001;
+			uint16_t internal = 0x002;
 			uint16_t sys_info = 0x050;
 			uint16_t imu_calibration = 0x100;
 			uint16_t parameters = 0x1000;

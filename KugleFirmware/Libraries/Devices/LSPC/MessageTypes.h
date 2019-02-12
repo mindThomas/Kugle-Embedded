@@ -28,7 +28,8 @@ namespace lspc
 		typedef enum: uint8_t
 		{
 			EnableLogOutput = 0x01,
-			EnableRawSensorOutput
+			EnableRawSensorOutput,
+			UseFilteredIMUinRawSensorOutput
 		} debug_t;
 
 		typedef enum: uint8_t

@@ -55,9 +55,6 @@ class BalanceController
 		int Stop(uint32_t timeout = 1000);
 		int Restart(uint32_t timeout = 1000);
 
-		//void SetReference(const float q_ref_[4], const float omega_ref_[3]);
-		//void SetReference(const float omega_ref_[3]);
-
 		void CalibrateIMU(void);
 
 	private:
@@ -92,15 +89,16 @@ class BalanceController
 		float dq[4];
 		float dxy[2];
 		float COM[3];
+		float GyroBias[2];
 
 		// Internal references
 		float q_ref[4];
 		float omega_ref_body[3];
 		float omega_ref_inertial[3];
-		bool PropagateQuaternionReference; // if only omega_ref is set, then propagate quaternion reference based on this angular velocity reference
+		float velocityReference[2];
+		float headingVelocityReference;
 		float headingReference;
 		int ReferenceGenerationStep;
-		uint32_t prevTimerValue;
 
 		// Setpoints (settable references)
 		// Consider to combine semaphores into 1 common setpoint/mode semaphore for all
