@@ -70,6 +70,8 @@ extern void Quaternion_Normalize(const float q[4], float q_out[4]);
 extern void Quaternion_Normalize(float q[4]);
 extern void Quaternion_eul2quat_zyx(const float yaw, const float pitch, const float roll, float q[4]);
 extern void Quaternion_quat2eul_zyx(const float q[4], float yaw_pitch_roll[3]);
+extern void Quaternion_RotateVector_Body2Inertial(const float q[4], const float v[3], float v_out[3]);
+extern void Quaternion_RotateVector_Inertial2Body(const float q[4], const float v[3], float v_out[3]);
 extern void Quaternion_AngleClamp(const float q[4], const float angleMax, float q_clamped[4]);
 extern void Quaternion_Integration_Body(const float q[4], const float omega_body[3], const float dt, float q_out[4]);
 extern void Quaternion_Integration_Inertial(const float q[4], const float omega_inertial[3], const float dt, float q_out[4]);

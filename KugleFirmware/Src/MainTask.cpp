@@ -72,6 +72,10 @@
 #include <vector>
 #include "ProcessorInit.h"
 
+int32_t encoder1 = 0;
+int32_t encoder2 = 0;
+int32_t encoder3 = 0;
+
 void MainTask(void * pvParameters)
 {
 	/* Use this task to:
@@ -134,24 +138,6 @@ void MainTask(void * pvParameters)
 
 	/* Test info */
 	Debug::print("Booting...\n");
-
-#if 0
-	/* Motor test */
-	motor1->Enable();
-	motor2->Enable();
-	motor3->Enable();
-	while (1)
-	{
-		motor1->SetOutputTorque(0.5);
-		motor2->SetOutputTorque(0.5);
-		motor3->SetOutputTorque(0.5);
-		osDelay(1000);
-		motor1->SetOutputTorque(-0.5);
-		motor2->SetOutputTorque(-0.5);
-		motor3->SetOutputTorque(-0.5);
-		osDelay(1000);
-	}
-#endif
 
 	/******* APPLICATION LAYERS *******/
 	BalanceController * balanceController = new BalanceController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);

@@ -136,6 +136,7 @@
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/USBCDC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/Quaternion"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/Matrix"/>
+									<listOptionValue builtIn="false" value="../Libraries/Misc/Matrix/SVD"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Parameters"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.preprocessor.def.2021347189" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">

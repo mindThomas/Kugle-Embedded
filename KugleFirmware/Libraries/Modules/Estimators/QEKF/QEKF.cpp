@@ -161,6 +161,16 @@ void QEKF::GetQuaternionDerivative(float dq[4])
 }
 
 /**
+ * @brief 	Get estimated gyroscope bias
+ * @param	bias[2]		Output: estimated gyroscope bias
+ */
+void QEKF::GetGyroBias(float bias[2])
+{
+	bias[0] = X[8];
+	bias[1] = X[9];
+}
+
+/**
  * @brief 	Get covariance matrix of estimated quaternion
  * @param	Cov_q[4*4]		Output: quaternion estimate covariance
  */

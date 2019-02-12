@@ -21,6 +21,7 @@
 #include "Debug.h"
 #include "MathLib.h"
 #include <arm_math.h>
+#include "svd.h"
 
 // Class for sensor abstraction, sampling and calibration
 // Should eg. configure MPU-9250 interrupt
@@ -76,7 +77,7 @@ void IMU::ValidateCalibration(void)
 
 	if (!calibration_.calibrated) return; // the calibration flag is not even set, so nothing to validate
 
-	calibration_.calibrated = false; // set the flag to false until we suceed with all checks
+	calibration_.calibrated = false; // set the flag to false until we succeed with all checks
 
 	// We perform a crude validation by ensuring that the calibration matrix is orthogonal : R*R' = I and R'*R = I
 	float * R = calibration_.imu_calibration_matrix; arm_matrix_instance_f32 R_; arm_mat_init_f32(&R_, 3, 3, R);
@@ -141,10 +142,6 @@ void IMU::Calibrate(bool storeInEEPROM)
 
     calibrateImu(reference_acc_vector_, avg_acc, calibration_.imu_calibration_matrix);
 
-    if (storeInEEPROM && eeprom_) { // if EEPROM is configured, store new calibration in EEPROM
-    	eeprom_->WriteData(eeprom_->sections.imu_calibration, (uint8_t *)&calibration_, sizeof(calibration_));
-    }
-
     Debug::print("Resulting calibration matrix:\n");
     Debug::printf("%f", calibration_.imu_calibration_matrix[0]); Debug::print("\t");
     Debug::printf("%f", calibration_.imu_calibration_matrix[1]); Debug::print("\t");
@@ -160,7 +157,12 @@ void IMU::Calibrate(bool storeInEEPROM)
     ValidateCalibration();
     if (!calibration_.calibrated) {
     	Debug::print("Calibration failed: Could not validate calibration\n\n");
+    	osDelay(5000);
     	return;
+    }
+
+    if (storeInEEPROM && eeprom_) { // if EEPROM is configured, store new calibration in EEPROM
+    	eeprom_->WriteData(eeprom_->sections.imu_calibration, (uint8_t *)&calibration_, sizeof(calibration_));
     }
 
     Debug::print("Testing:\n");
@@ -228,23 +230,39 @@ void IMU::calibrateImu(const float desired_acc_vector[3],
   // cross product matrix of v
   // It is not applicable if a and b point into exactly opposite directions,
   // which is unlikely so we do not handle it.
-  float I_data[9] = {1.f, 0.f, 0.f,
+  float R[9] = {1.f, 0.f, 0.f,
                      0.f, 1.f, 0.f,
                      0.f, 0.f, 1.f,};
-  arm_matrix_instance_f32 R;
-  arm_mat_init_f32(&R, 3, 3, I_data);
+  arm_matrix_instance_f32 R_;
+  arm_mat_init_f32(&R_, 3, 3, R);
   float v_x_data[9] = { 0.f, -v[2],  v[1],
                        v[2],   0.f, -v[0],
                       -v[1],  v[0],   0.f};
   arm_matrix_instance_f32 temp;
   arm_mat_init_f32(&temp, 3, 3, v_x_data);
-  arm_mat_add_f32(&R, &temp, &R);
+  arm_mat_add_f32(&R_, &temp, &R_);
   arm_mat_mult_f32(&temp, &temp, &temp);
   arm_mat_scale_f32(&temp, (1.f - c) / (s * s), &temp);
-  arm_mat_add_f32(&R, &temp, &R);
+  arm_mat_add_f32(&R_, &temp, &R_);
+
+  // Regularize rotation matrix by making an SVD decomposition and forcing singular values to be 1
+  float U[3*3]; arm_matrix_instance_f32 U_; arm_mat_init_f32(&U_, 3, 3, (float32_t *)U);
+  float S[3*3]; arm_matrix_instance_f32 S_; arm_mat_init_f32(&S_, 3, 3, (float32_t *)S);
+  float V[3*3]; arm_matrix_instance_f32 V_; arm_mat_init_f32(&V_, 3, 3, (float32_t *)V);
+
+  /*svd(R[0], R[1], R[2], R[3], R[4], R[5], R[6], R[7], R[8],
+      U[0], U[1], U[2], U[3], U[4], U[5], U[6], U[7], U[8],
+      S[0], S[1], S[2], S[3], S[4], S[5], S[6], S[7], S[8],
+      V[0], V[1], V[2], V[3], V[4], V[5], V[6], V[7], V[8]);*/
+  svd(R, U, S, V);
+
+  // Compute the regularized rotation matrix
+  float V_T[3*3]; arm_matrix_instance_f32 V_T_; arm_mat_init_f32(&V_T_, 3, 3, (float32_t *)V_T);
+  arm_mat_trans_f32(&V_, &V_T_);
+  arm_mat_mult_f32(&U_, &V_T_, &R_); // R = U * V'
 
   // Return the matrix
-  memcpy(calibration_matrix, R.pData, 9*sizeof(*R.pData));
+  memcpy(calibration_matrix, R, 9*sizeof(R[0]));
 }
 
 void IMU::adjustImuMeasurement(float& gx, float& gy, float& gz,

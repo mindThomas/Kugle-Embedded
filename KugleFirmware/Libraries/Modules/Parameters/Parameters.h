@@ -38,6 +38,7 @@ class Parameters
 			/* Debugging parameters */
 			bool EnableLogOutput = false;
 			bool EnableRawSensorOutput = true;
+			bool UseFilteredIMUinRawSensorOutput = true;
 			/* Debugging parameters end */
 		} debug;
 
@@ -46,8 +47,6 @@ class Parameters
 			bool IndependentHeading = false;
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
 			bool StepTestEnabled = false;
-			bool VelocityControllerEnabled = false;
-			bool JoystickVelocityControl = true;
 			/* Behavioural parameters end */
 		} behavioural;
 		
@@ -56,13 +55,17 @@ class Parameters
 			float SampleRate = 200;
 			
 			lspc::ParameterTypes::controllerType_t type = lspc::ParameterTypes::LQR_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
-			lspc::ParameterTypes::controllerMode_t mode = lspc::ParameterTypes::QUATERNION_CONTROL;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
+			lspc::ParameterTypes::controllerMode_t mode = lspc::ParameterTypes::OFF;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
 
-			bool EnableTorqueLPF = true;
+			bool EnableTorqueLPF = false;
 			float TorqueLPFtau = 0.02; // 0.005 (sliding mode)
-			bool EnableTorqueSaturation = false; // saturate the torque before filtering
+			bool SaturateBeforeFiltering = false; // saturate the torque to the motor limitation before low-pass filtering
 			bool TorqueRampUp = true;
 			float TorqueRampUpTime = 1.0; // seconds to ramp up Torque after initialization
+
+			bool MotorFailureDetection = false; // detect ESCON motor driver failures (due to current overload, above nominal, for prolonged time)
+			float MotorFailureDetectionTime = 0.02; // 20 ms response time for detecting motor failure until the motor driver is reset
+			float MotorFailureThreshold = 0.1; // 10% difference between torque setpoint and delivered torque for longer than MotorFailureDetectionTime will trigger the motor failure event
 
 			bool DisableQdot = false;
 
@@ -88,8 +91,8 @@ class Parameters
 			/* LQR parameters */
 			/*
 			float LQR_K[3*6] = {24.4461099686484,	 0.0000000000000,	 -5.77350269189626,	 2.86355138703516,   0.00000000000000,  -0.579208874021106,
-															  -12.2230549843242,	 21.1709522565575, -5.77350269189626,	-1.43177569351758,	 2.48115307232164,	-0.579208874021105,
-																-12.2230549843242,	-21.1709522565575, -5.77350269189626,	-1.43177569351758,	-2.48115307232165,	-0.579208874021106};
+							   -12.2230549843242,	 21.1709522565575,   -5.77350269189626,	-1.43177569351758,	 2.48115307232164,	-0.579208874021105,
+							   -12.2230549843242,	-21.1709522565575,   -5.77350269189626,	-1.43177569351758,	-2.48115307232165,	-0.579208874021106};
 			*/
 			float LQR_K[3*6] = {
 			  24.967484660001379,   0.000000000000011,  -0.182574185835056,   3.371292809244463,   0.000000000000001,  -0.066330720270475,
@@ -97,7 +100,7 @@ class Parameters
 			 -12.483742330000691, -21.622475984159500,  -0.182574185835055,  -1.685646404622232,  -2.923439906251727,  -0.066330720270475
 			};
 			float LQR_MaxYawError = 3.0; // yaw error clamp [degrees]
-
+			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
 
 			/* Velocity controller parameters */
 			float VelocityController_MaxTilt	= 5.0; // max tilt that velocity controller can set [degrees]
@@ -113,12 +116,12 @@ class Parameters
 			
 			#define EnableSensorLPFfilters_ 	false
 			bool EnableSensorLPFfilters = EnableSensorLPFfilters_;
-			bool EnableSoftwareLPFfilters = false;
+			bool EnableSoftwareLPFfilters = true;
 			float SoftwareLPFcoeffs_a[3] = {1.000000000000000, -1.870860377550659, 0.878777573775756};	// 20 Hz LPF
 			float SoftwareLPFcoeffs_b[3] = {0.011353393934590, -0.014789591644084, 0.011353393934590};	// Created using:  [num, den] = cheby2(2,40,20/(Fs/2))
 			bool CreateQdotFromQDifference = false;
 			bool UseMadgwick = false;
-			bool EstimateBias = true;
+			bool EstimateBias = false;
 			bool Use2Lvelocity = true; // if velocity estimator is not used
 			bool UseVelocityEstimator = true;
 			bool UseCOMestimateInVelocityEstimator = false;
@@ -210,6 +213,7 @@ class Parameters
 			float MotorMaxTorque = MotorTorqueConstant * MotorMaxCurrent; // Nm
 			float MotorMaxSpeed = 6000 * 2 * pi / 60;  // rad/s of motor (before gearing)  ==  6000 rpm
 			float MaxOutputTorque = i_gear * MotorMaxTorque;
+			float SaturationTorque = 0.95f * MaxOutputTorque;
 			/* Model parameters end */	
 		} model;
 		
