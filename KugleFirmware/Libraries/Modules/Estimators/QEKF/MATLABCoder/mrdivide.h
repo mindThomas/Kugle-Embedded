@@ -2,20 +2,28 @@
 // Academic License - for use in teaching, academic research, and meeting
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
-// File: QEKF_WithAllCorrections_types.h
+// File: mrdivide.h
 //
 // MATLAB Coder version            : 4.0
 // C/C++ source code generated on  : 13-Feb-2019 17:37:28
 //
-#ifndef QEKF_WITHALLCORRECTIONS_TYPES_H
-#define QEKF_WITHALLCORRECTIONS_TYPES_H
+#ifndef MRDIVIDE_H
+#define MRDIVIDE_H
 
 // Include Files
+#include <stddef.h>
+#include <stdlib.h>
 #include "rtwtypes.h"
+#include "QEKF_types.h"
+
+// Function Declarations
+extern void b_mrdivide(const float A[60], const float B[36], float y[60]);
+extern void mrdivide(const float A[70], const float B[49], float y[70]);
+
 #endif
 
 //
-// File trailer for QEKF_WithAllCorrections_types.h
+// File trailer for mrdivide.h
 //
 // [EOF]
 //

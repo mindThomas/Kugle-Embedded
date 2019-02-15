@@ -165,6 +165,7 @@ namespace lspc
 			MPCpathReference = 0x35,
             CalibrateIMU = 0xE0,
             CPUload = 0xE1,
+			RestartController = 0xE2,
             EnterBootloader = 0xF0,
             Reboot = 0xF1,
             Debug = 0xFF
@@ -273,6 +274,11 @@ namespace lspc
         typedef struct
         {
             uint32_t magic_key;
+        } RestartController_t;
+
+        typedef struct
+        {
+            uint32_t magic_key;
         } EnterBootloader_t;
 
         typedef struct
@@ -303,6 +309,7 @@ namespace lspc
             RawSensor_Battery = 0x33,
             CalibrateIMUAck = 0xE0,
 			CPUload = 0xE1,
+			RestartControllerAck = 0xE2,
 			MathDump = 0xFA, // publish array of floats (parsed by PC and dumped into tabulated .txt file in "~/kugle_dump/")
 			Debug = 0xFF
 		} MessageTypesToPC_t;
@@ -507,6 +514,11 @@ namespace lspc
         {
             bool acknowledged;
         } CalibrateIMUAck_t;
+
+        typedef struct
+        {
+            bool acknowledged;
+        } RestartControllerAck_t;
     }
 
 } // namespace lspc

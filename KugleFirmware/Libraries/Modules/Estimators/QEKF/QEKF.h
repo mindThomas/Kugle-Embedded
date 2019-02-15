@@ -32,14 +32,15 @@ class QEKF
 
 		void Reset();
 		void Reset(const float accelerometer[3]);
+		void Reset(const float accelerometer[3], const float heading);
 		void Step(const float accelerometer[3], const float gyroscope[3]);
 		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias);
 		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float dt);
-		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float sigma2_bias, const float g, const float dt);
+		void Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool UseHeadingForCorrection, const bool EstimateBias, const bool EstimateYawBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float sigma2_omega, const float sigma2_heading, const float sigma2_bias, const float g, const float dt);
 
 		void GetQuaternion(float q[4]);
 		void GetQuaternionDerivative(float dq[4]);
-		void GetGyroBias(float bias[2]);
+		void GetGyroBias(float bias[3]);
 		void GetQuaternionCovariance(float Cov_q[4*4]);
 		void GetQuaternionDerivativeCovariance(float Cov_dq[4*4]);
 
@@ -51,7 +52,8 @@ class QEKF
 		uint32_t _prevTimerValue;
 
 		/* State estimate */
-		float X[10];    // state estimates = { q[0], q[1], q[2], q[3], dq[0], dq[1], dq[2], dq[3], gyro_bias[0], gyro_bias[1] }
+		//float X[11];    // state estimates = { q[0], q[1], q[2], q[3], dq[0], dq[1], dq[2], dq[3], gyro_bias[0], gyro_bias[1], gyro_bias[2] }
+		float X[10];    // state estimates = { q[0], q[1], q[2], q[3], omega_x, omega_y, omega_z, gyro_bias[0], gyro_bias[1], gyro_bias[2] }
 		float P[10*10]; // covariance matrix
 };
 	

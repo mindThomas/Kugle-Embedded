@@ -72,7 +72,9 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLFRACN = 0;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
-    Error_Handler();
+      //Error_Handler();
+	  HAL_Delay(200);
+	  NVIC_SystemReset(); // reset and try again
   }
   /**Initializes the CPU, AHB and APB busses clocks 
   */
@@ -89,7 +91,9 @@ void SystemClock_Config(void)
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
-    Error_Handler();
+      //Error_Handler();
+	  HAL_Delay(200);
+	  NVIC_SystemReset(); // reset and try again
   }
   PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_UART4
                               |RCC_PERIPHCLK_UART7|RCC_PERIPHCLK_SPI3
@@ -122,7 +126,9 @@ void SystemClock_Config(void)
   PeriphClkInitStruct.Spi6ClockSelection = RCC_SPI6CLKSOURCE_PLL2;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
   {
-    Error_Handler();
+      //Error_Handler();
+	  HAL_Delay(200);
+	  NVIC_SystemReset(); // reset and try again
   }
 }
 

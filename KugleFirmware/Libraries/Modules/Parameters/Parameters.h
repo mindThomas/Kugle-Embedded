@@ -47,6 +47,7 @@ class Parameters
 			bool IndependentHeading = false;
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
 			bool StepTestEnabled = false;
+			bool SineTestEnabled = false;
 			/* Behavioural parameters end */
 		} behavioural;
 		
@@ -57,17 +58,18 @@ class Parameters
 			lspc::ParameterTypes::controllerType_t type = lspc::ParameterTypes::LQR_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
 			lspc::ParameterTypes::controllerMode_t mode = lspc::ParameterTypes::OFF;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
 
-			bool EnableTorqueLPF = false;
-			float TorqueLPFtau = 0.02; // 0.005 (sliding mode)
-			bool SaturateBeforeFiltering = false; // saturate the torque to the motor limitation before low-pass filtering
+			bool EnableTorqueLPF = true;
+			float TorqueLPFtau = 0.005; // 0.005 (sliding mode)
 			bool TorqueRampUp = true;
 			float TorqueRampUpTime = 1.0; // seconds to ramp up Torque after initialization
 
 			bool MotorFailureDetection = false; // detect ESCON motor driver failures (due to current overload, above nominal, for prolonged time)
-			float MotorFailureDetectionTime = 0.02; // 20 ms response time for detecting motor failure until the motor driver is reset
-			float MotorFailureThreshold = 0.1; // 10% difference between torque setpoint and delivered torque for longer than MotorFailureDetectionTime will trigger the motor failure event
+			float MotorFailureDetectionTime = 0.05; // 50 ms response time for detecting motor failure until the motor driver is reset
+			//float MotorFailureThreshold = 0.1; // 10% difference between torque setpoint and delivered torque for longer than MotorFailureDetectionTime will trigger the motor failure event
+			float MotorFailureThreshold = 0.2; // more than 0.2 Nm difference between setpoint/requested torque and delivered torque is detected as a failure
 
 			bool DisableQdot = false;
+			float ReferenceTimeout = 0.1; // if reference is older than 100 ms, do not use it!
 
 			/* Sliding Mode parameters */
 			/*float K[3] = {20, 20, 20}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
@@ -94,19 +96,30 @@ class Parameters
 							   -12.2230549843242,	 21.1709522565575,   -5.77350269189626,	-1.43177569351758,	 2.48115307232164,	-0.579208874021105,
 							   -12.2230549843242,	-21.1709522565575,   -5.77350269189626,	-1.43177569351758,	-2.48115307232165,	-0.579208874021106};
 			*/
+			/*float LQR_K[3*6] = {  // Fairly well working gains for Kugle V1
+					// Q = diag([200 200 3 1 1 0.1]);
+					// R = 0.1 * diag([1 1 1]);
+					50.2853305369288,	2.29267873313278e-14,	-3.16227766016839,	5.28615222444946,	2.68374861500103e-15,	-0.62962764938032,
+					-25.1426652684644,	43.5483736826777,	-3.16227766016839,	-2.64307611222473,	4.58265789413395,	-0.62962764938032,
+					-25.1426652684644,	-43.5483736826776,	-3.16227766016838,	-2.64307611222473,	-4.58265789413395,	-0.62962764938032
+			};*/
+
 			float LQR_K[3*6] = {
-			  24.967484660001379,   0.000000000000011,  -0.182574185835056,   3.371292809244463,   0.000000000000001,  -0.066330720270475,
-			 -12.483742330000688,  21.622475984159514,  -0.182574185835056,  -1.685646404622232,   2.923439906251729,  -0.066330720270475,
-			 -12.483742330000691, -21.622475984159500,  -0.182574185835055,  -1.685646404622232,  -2.923439906251727,  -0.066330720270475
+					127.965073971969,	-4.73327185478132e-14,	-2.58198889747161,	7.44835148905302,	-8.87885179101105e-16,	-0.343781437652188,
+					-63.9825369859844,	110.82100485688,	-2.58198889747161,	-3.72417574452651,	6.45897730255226,	-0.343781437652188,
+					-63.9825369859844,	-110.82100485688,	-2.58198889747161,	-3.72417574452651,	-6.45897730255226,	-0.343781437652188
 			};
-			float LQR_MaxYawError = 3.0; // yaw error clamp [degrees]
+			float LQR_MaxYawError = 10.0; // yaw error clamp [degrees]
+			//float LQR_MaxYawVelocityError = 0.1; // rad/s
+			//float LQR_MaxAngleError = 5.0; // general clamp angle [degrees]    (after applying yaw clamp)
 			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
 
 			/* Velocity controller parameters */
-			float VelocityController_MaxTilt	= 5.0; // max tilt that velocity controller can set [degrees]
+			float VelocityController_MaxTilt	= 1.0; // max tilt that velocity controller can set [degrees]
 			float VelocityController_MaxIntegralCorrection = 8.0; // max tilt integral effect can compensate with [degrees]
-			float VelocityController_VelocityClamp = 0.15; // velocity clamp for the proportional gain - note that at this velocity MaxTilt will be set [meters pr. second]
-			float VelocityController_IntegralGain = 0.3; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
+			float VelocityController_VelocityClamp = 0.50; // velocity clamp for the proportional gain - note that at this velocity MaxTilt will be set [meters pr. second]
+			float VelocityController_IntegralGain = 0*0.1; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
+			float VelocityController_ReferenceLPFtau = 0.1; // time-constant for low pass filter on velocity reference input
 			/* Controller Tuning parameters end */
 		} controller;
 
@@ -116,14 +129,14 @@ class Parameters
 			
 			#define EnableSensorLPFfilters_ 	false
 			bool EnableSensorLPFfilters = EnableSensorLPFfilters_;
-			bool EnableSoftwareLPFfilters = true;
+			bool EnableSoftwareLPFfilters = false;
 			float SoftwareLPFcoeffs_a[3] = {1.000000000000000, -1.870860377550659, 0.878777573775756};	// 20 Hz LPF
 			float SoftwareLPFcoeffs_b[3] = {0.011353393934590, -0.014789591644084, 0.011353393934590};	// Created using:  [num, den] = cheby2(2,40,20/(Fs/2))
 			bool CreateQdotFromQDifference = false;
 			bool UseMadgwick = false;
-			bool EstimateBias = false;
-			bool Use2Lvelocity = true; // if velocity estimator is not used
-			bool UseVelocityEstimator = true;
+			bool EstimateBias = true;
+			bool Use2Lvelocity = false;
+			bool UseVelocityEstimator = false;
 			bool UseCOMestimateInVelocityEstimator = false;
 			bool EstimateCOM = false;
 			float EstimateCOMminVelocity = 0.05; // minimum velocity (checked against estimate) to run COM estimator
@@ -157,10 +170,12 @@ class Parameters
 															 0.0096E-03f*AccelCov_Tuning_Factor,    0.0041E-03f*AccelCov_Tuning_Factor,    1.0326E-03f*AccelCov_Tuning_Factor};
 			#endif
 
-			float sigma2_bias = 1E-11;
+			float sigma2_bias = 1E-6;
+			float sigma2_omega = 1E-5;
+			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
 
 			// X_QEKF = {q0, q1, q2, q3,   dq0, dq1, dq2, dq3,   gyro_bias_x, gyro_bias_y}
-			float QEKF_P_init_diagonal[10] = {1E-5, 1E-5, 1E-5, 1E-7,   1E-7, 1E-7, 1E-7, 1E-7,   1E-5, 1E-5}; // initialize q3 variance lower than others, since yaw can not be estimated so we are more certain on the initial value to let gyro integration (dead-reckoning) dominate the "yaw" estimate
+			float QEKF_P_init_diagonal[11] = {1E-5, 1E-5, 1E-5, 1E-7,   1E-7, 1E-7, 1E-7,   1E-5, 1E-5, 1E-5}; // initialize q3 variance lower than others, since yaw can not be estimated so we are more certain on the initial value to let gyro integration (dead-reckoning) dominate the "yaw" estimate
 			float VelocityEstimator_P_init_diagonal[2] = {1E-1, 1E-1}; // initialize velocity estimator covariance
 			float COMEstimator_P_init_diagonal[2] = {1E-12, 1E-12}; // initialize COM estimator covariance
 			/* Estimator Tuning parameters end */
@@ -178,11 +193,17 @@ class Parameters
 			float Jk = ((2.f * Mk * (rk-coating)*(rk-coating)) / 3.f);			
 
 			// Body center of mass defined with origin in ball center
+			/*
 			float COM_X = -0.02069e-3;
 			float COM_Y = -3.20801e-3;
 			float COM_Z = 550.23854e-3 - rk; // subtract rk since the values are extracted from OnShape with origin in contact point (bottom of ball)
-			
+			*/
+
 			float l = 0.4213f; // norm(COM)
+
+			float COM_X = 0;
+			float COM_Y = 0;
+			float COM_Z = l;
 
 			// Body constants
 			float Mb = (12.892f + 1.844f);

@@ -127,6 +127,10 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 	arm_scale_f32(omega_err, 2.0f, omega_err, 3); // 2*devec*Phi(q)^T*dq
 	arm_sub_f32(omega_err, (float*)omega_ref, omega_err, 3); // 2*devec*Phi(q)^T*dq - omega_ref
 
+	/* NON WORKING (NON USEFULL) CLAMPS! */
+	//omega_err[2] = fmax(fmin(omega_err[2], _params.controller.LQR_MaxYawVelocityError), -_params.controller.LQR_MaxYawVelocityError);
+	//Quaternion_AngleClamp(q_err, deg2rad(_params.controller.LQR_MaxAngleError), q_err);
+
 	/* Compute equillibrium/linearized/steady state torque */
 	float tau_ss[3] = {0, 0, 0}; // steady state torque
 	if (UseSteadyStateTorque) {

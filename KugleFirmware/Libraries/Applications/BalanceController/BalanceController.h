@@ -58,7 +58,7 @@ class BalanceController
 		void CalibrateIMU(void);
 
 	private:
-		void ReferenceGeneration(Parameters& params, QuaternionVelocityControl& velocityController);
+		void ReferenceGeneration(Parameters& params);
 		void StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEKF, Madgwick& madgwick, TickType_t loopWaitTicks, float stabilizationTime);
 
 	private:
@@ -67,6 +67,7 @@ class BalanceController
 		void SendRawSensors(Parameters& params, const IMU::Measurement_t& imuMeas, const float EncoderAngle[3]);
 		void SendControllerInfo(const lspc::ParameterTypes::controllerType_t Type, const lspc::ParameterTypes::controllerMode_t Mode, const float Torque[3], const float ComputeTime, const float TorqueDelivered[3]);
 		static void CalibrateIMUCallback(void * param, const std::vector<uint8_t>& payload);
+		static void RestartControllerCallback(void * param, const std::vector<uint8_t>& payload);
 		static void VelocityReference_Heading_Callback(void * param, const std::vector<uint8_t>& payload);
 		static void VelocityReference_Inertial_Callback(void * param, const std::vector<uint8_t>& payload);
 
@@ -89,7 +90,7 @@ class BalanceController
 		float dq[4];
 		float dxy[2];
 		float COM[3];
-		float GyroBias[2];
+		float GyroBias[3];
 
 		// Internal references
 		float q_ref[4];
@@ -105,6 +106,7 @@ class BalanceController
 		struct BalanceReference_t {
 			SemaphoreHandle_t semaphore;
 			referenceFrame_t frame;
+			float time;
 			float q[4];
 			float omega[3];
 		} BalanceReference;
