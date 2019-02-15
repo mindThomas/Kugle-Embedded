@@ -150,6 +150,10 @@ int MPU9250::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRa
         return -1;
     }
 
+	/*float SelfTestResult[6];
+	SelfTest(SelfTestResult);
+	_bus->setBusLowSpeed();*/
+
     /* setup the accel and gyro ranges */
     switch(accelRange) {
 
@@ -801,7 +805,7 @@ uint8_t MPU9250::whoAmIAK8963(){
 
 // Accelerometer and gyroscope self test; check calibration wrt factory settings
 // From https://github.com/kriswiner/ESP8285/blob/master/MPU9250/MPU9250_MS5637_BasicAHRS2_ESP8266.ino
-void MPU9250::SelfTest(float * result) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
+void MPU9250::SelfTest(float result[6]) // Should return percent deviation from factory trim values, +/- 14 or less deviation is a pass
 {
    uint8_t rawData[6] = {0, 0, 0, 0, 0, 0};
    uint8_t selfTest[6];
@@ -818,15 +822,17 @@ void MPU9250::SelfTest(float * result) // Should return percent deviation from f
   _bus->writeRegister(ACCEL_CONFIG, FS<<3); // Set full scale range for the accelerometer to 2 g
 
   for( int ii = 0; ii < 200; ii++) {  // get average current values of gyro and acclerometer
-		_bus->readRegisters(ACCEL_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers into data array
+	  _bus->readRegisters(ACCEL_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers into data array
 	  aAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
 	  aAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
 	  aAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
 
-		_bus->readRegisters(GYRO_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers sequentially into data array
+	  _bus->readRegisters(GYRO_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers sequentially into data array
 	  gAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
 	  gAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
 	  gAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
+
+	  osDelay(1);
   }
 
   for (int ii =0; ii < 3; ii++) {  // Get average of 200 values and store as average current readings
@@ -836,19 +842,21 @@ void MPU9250::SelfTest(float * result) // Should return percent deviation from f
 
 	// Configure the accelerometer for self-test
   _bus->writeRegister(ACCEL_CONFIG, 0xE0); // Enable self test on all three axes and set accelerometer range to +/- 2 g
-	_bus->writeRegister(GYRO_CONFIG,  0xE0); // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
-	osDelay(25);  // osDelay a while to let the device stabilize
+  _bus->writeRegister(GYRO_CONFIG,  0xE0); // Enable self test on all three axes and set gyro range to +/- 250 degrees/s
+  osDelay(25);  // osDelay a while to let the device stabilize
 
   for( int ii = 0; ii < 200; ii++) {  // get average self-test values of gyro and acclerometer
-		_bus->readRegisters(ACCEL_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers into data array
+	  _bus->readRegisters(ACCEL_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers into data array
 	  aSTAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
 	  aSTAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
 	  aSTAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
 
-		_bus->readRegisters(GYRO_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers sequentially into data array
+	  _bus->readRegisters(GYRO_OUT, sizeof(rawData), &rawData[0]); // Read the six raw data registers sequentially into data array
 	  gSTAvg[0] += (int16_t)(((int16_t)rawData[0] << 8) | rawData[1]) ;  // Turn the MSB and LSB into a signed 16-bit value
 	  gSTAvg[1] += (int16_t)(((int16_t)rawData[2] << 8) | rawData[3]) ;
 	  gSTAvg[2] += (int16_t)(((int16_t)rawData[4] << 8) | rawData[5]) ;
+
+	  osDelay(1);
   }
 
   for (int ii =0; ii < 3; ii++) {  // Get average of 200 values and store as average self-test readings
@@ -862,7 +870,7 @@ void MPU9250::SelfTest(float * result) // Should return percent deviation from f
    osDelay(25);  // osDelay a while to let the device stabilize
 
    // Retrieve accelerometer and gyro factory Self-Test Code from USR_Reg
-	 _bus->readRegisters(SELF_TEST_X_ACCEL, 1, &selfTest[0]);  // X-axis accel self-test results
+   _bus->readRegisters(SELF_TEST_X_ACCEL, 1, &selfTest[0]);  // X-axis accel self-test results
    _bus->readRegisters(SELF_TEST_Y_ACCEL, 1, &selfTest[1]); // Y-axis accel self-test results
    _bus->readRegisters(SELF_TEST_Z_ACCEL, 1, &selfTest[2]); // Z-axis accel self-test results
    _bus->readRegisters(SELF_TEST_X_GYRO, 1, &selfTest[3]);  // X-axis gyro self-test results

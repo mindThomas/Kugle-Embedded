@@ -56,6 +56,7 @@ BalanceController::BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, 
 
 	/* Register message type callbacks */
 	com.registerCallback(lspc::MessageTypesFromPC::CalibrateIMU, &CalibrateIMUCallback, (void *)this);
+	com.registerCallback(lspc::MessageTypesFromPC::RestartController, &RestartControllerCallback, (void *)this);
 	com.registerCallback(lspc::MessageTypesFromPC::VelocityReference_Heading, &VelocityReference_Heading_Callback, (void *)this);
 	com.registerCallback(lspc::MessageTypesFromPC::VelocityReference_Inertial, &VelocityReference_Inertial_Callback, (void *)this);
 
@@ -69,6 +70,7 @@ BalanceController::~BalanceController()
 
 	/* Unregister message callbacks */
 	com.unregisterCallback(lspc::MessageTypesFromPC::CalibrateIMU);
+	com.unregisterCallback(lspc::MessageTypesFromPC::RestartController);
 	com.unregisterCallback(lspc::MessageTypesFromPC::VelocityReference_Heading);
 	com.unregisterCallback(lspc::MessageTypesFromPC::VelocityReference_Inertial);
 
@@ -139,7 +141,7 @@ void BalanceController::Thread(void * pvParameters)
 	/* Create and initialize controller and estimator objects */
 	LQR& lqr = *(new LQR(params));
 	SlidingMode& sm = *(new SlidingMode(params));
-	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate));
+	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate, params.controller.VelocityController_ReferenceLPFtau));
 	QEKF& qEKF = *(new QEKF(params, &balanceController->microsTimer));
 	Madgwick& madgwick = *(new Madgwick(params.controller.SampleRate, params.estimator.MadgwickBeta));
 	VelocityEKF& velocityEKF = *(new VelocityEKF(params, &balanceController->microsTimer));
@@ -164,7 +166,7 @@ void BalanceController::Thread(void * pvParameters)
 	float Cov_dxy[2*2];
 
 	/* Temporary variables */
-	float dxy_old[2];
+	float dxy_kinematics_old[2];
 
 	/* Control output variables */
 	float Torque[3];
@@ -179,6 +181,7 @@ void BalanceController::Thread(void * pvParameters)
 	FirstOrderLPF& Motor2_LPF = *(new FirstOrderLPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau));
 	FirstOrderLPF& Motor3_LPF = *(new FirstOrderLPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau));
 
+#if 0  // UNIT TESTS DISABLED
 	if (!lqr.UnitTest()) {
 		ERROR("LQR Unit test failed!");
 	}
@@ -190,6 +193,7 @@ void BalanceController::Thread(void * pvParameters)
 	if (!qEKF.UnitTest()) {
 		ERROR("qEKF Unit test failed!");
 	}
+#endif
 
 	/* Reset estimators */
 	imu.Get(imuCorrected);
@@ -233,7 +237,8 @@ void BalanceController::Thread(void * pvParameters)
 
 	/* Reset quaternion reference input */
 	xSemaphoreTake( balanceController->BalanceReference.semaphore, ( TickType_t ) portMAX_DELAY); // lock for updating
-	balanceController->VelocityReference.frame = BODY_FRAME;
+	balanceController->BalanceReference.frame = BODY_FRAME;
+	balanceController->BalanceReference.time = BODY_FRAME;
 	balanceController->BalanceReference.q[0] = 1; // attitude reference = just upright
 	balanceController->BalanceReference.q[1] = 0;
 	balanceController->BalanceReference.q[2] = 0;
@@ -246,14 +251,15 @@ void BalanceController::Thread(void * pvParameters)
 	/* Reset velocity reference input */
 	xSemaphoreTake( balanceController->VelocityReference.semaphore, ( TickType_t ) portMAX_DELAY); // lock for updating
 	balanceController->VelocityReference.frame = BODY_FRAME;
+	balanceController->VelocityReference.time = 0;
 	balanceController->VelocityReference.dx = 0;
 	balanceController->VelocityReference.dy = 0;
 	balanceController->VelocityReference.dyaw = 0;
 	xSemaphoreGive( balanceController->VelocityReference.semaphore ); // give semaphore back
 
 	/* Reset temporary variables */
-	dxy_old[0] = 0;
-	dxy_old[1] = 0;
+	dxy_kinematics_old[0] = 0;
+	dxy_kinematics_old[1] = 0;
 	S[0] = 0;
 	S[1] = 0;
 	S[2] = 0;
@@ -366,20 +372,26 @@ __attribute__((optimize("O0")))
 	    	balanceController->dq[3] = 0;
 	    }
 
-	    /* Save previous velocity estimate for usage in trapezoidal integration for position estimation */
-	    dxy_old[0] = balanceController->dxy[0];
-	    dxy_old[1] = balanceController->dxy[1];
+	    /* Compute kinematics-based velocity and update position estimate by trapezoidal integration */
+		float dxy_kinematics[2];
+    	// compute velocity from encoder-based motor velocities and forward kinematics
+    	kinematics.EstimateMotorVelocity(EncoderAngle);
+		kinematics.ForwardKinematics(balanceController->q, balanceController->dq, dxy_kinematics);
+		// Update position estimate by trapezoidal integration of kinematics-based velocity estimate
+	    balanceController->xy[0] += (dxy_kinematics_old[0] + dxy_kinematics[0]) / (2.0f * params.controller.SampleRate);
+	    balanceController->xy[1] += (dxy_kinematics_old[1] + dxy_kinematics[1]) / (2.0f * params.controller.SampleRate);
+	    // Save previous velocity estimate for usage in trapezoidal integration for position estimation
+	    dxy_kinematics_old[0] = dxy_kinematics[0];
+	    dxy_kinematics_old[1] = dxy_kinematics[1];
 
-	    /* Velocity estimation using kinematics */
+	    /* If enabled, re-use the kinematics-based estimate as the velocity estimate for the controller */
 	    if (!params.estimator.UseVelocityEstimator) {
-	    	// compute velocity from encoder-based motor velocities and forward kinematics
-	    	kinematics.EstimateMotorVelocity(EncoderAngle);
 			if (params.estimator.Use2Lvelocity) {
-				float dxy_ball[2];
-				kinematics.ForwardKinematics(balanceController->q, balanceController->dq, dxy_ball);
-				kinematics.ConvertBallTo2Lvelocity(dxy_ball, balanceController->q, balanceController->dq, balanceController->dxy);            // put 2L velocity into dxy
+				kinematics.ConvertBallTo2Lvelocity(dxy_kinematics, balanceController->q, balanceController->dq, balanceController->dxy);            // put 2L velocity into dxy
 			} else {
-				kinematics.ForwardKinematics(balanceController->q, balanceController->dq, balanceController->dxy);       // put ball velocity into dxy
+				// put ball velocity into dxy
+				balanceController->dxy[0] = dxy_kinematics[0];
+				balanceController->dxy[1] = dxy_kinematics[1];
 			}
 	    }
 
@@ -402,10 +414,6 @@ __attribute__((optimize("O0")))
 	    	comEKF.GetCOM(balanceController->COM);
 	    }
 
-	    /* Update position estimate by trapezoidal integration of velocity estimate */
-	    balanceController->xy[0] += (dxy_old[0] + balanceController->dxy[0]) / (2.0f * params.controller.SampleRate);
-	    balanceController->xy[1] += (dxy_old[1] + balanceController->dxy[1]) / (2.0f * params.controller.SampleRate);
-
 		/* Send State Estimates message */
 		balanceController->SendEstimates();
 
@@ -416,38 +424,40 @@ __attribute__((optimize("O0")))
 		//Debug::printf("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%.3f\n", microsTimer.GetTime(), imuMeas.Accelerometer[0], imuMeas.Accelerometer[1], imuMeas.Accelerometer[2], imuMeas.Gyroscope[0], imuMeas.Gyroscope[1], imuMeas.Gyroscope[2]);*/
 
 	    /* Reference generation - get references */
-	    //balanceController->ReferenceGeneration(params, velocityController); // this function updates q_ref and omega_ref
+	    balanceController->ReferenceGeneration(params); // this function updates q_ref and omega_ref
 
 	    /* Compute internal q_ref, omega_ref_body and omega_ref_inertial based on mode and setpoints */
 		/* Quaternion control enabled */
 		if (params.controller.mode == lspc::ParameterTypes::QUATERNION_CONTROL) {
 			// Get quaternion references
 	    	if (xSemaphoreTake( balanceController->BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for reading
-	    		balanceController->q_ref[0] = balanceController->BalanceReference.q[0];
-	    		balanceController->q_ref[1] = balanceController->BalanceReference.q[1];
-	    		balanceController->q_ref[2] = balanceController->BalanceReference.q[2];
-	    		balanceController->q_ref[3] = balanceController->BalanceReference.q[3];
+				if ((microsTimer.GetTime() - balanceController->BalanceReference.time) < params.controller.ReferenceTimeout) {
+					balanceController->q_ref[0] = balanceController->BalanceReference.q[0];
+					balanceController->q_ref[1] = balanceController->BalanceReference.q[1];
+					balanceController->q_ref[2] = balanceController->BalanceReference.q[2];
+					balanceController->q_ref[3] = balanceController->BalanceReference.q[3];
 
-	    		if (balanceController->BalanceReference.frame == BODY_FRAME) {
-	    			balanceController->omega_ref_body[0] = balanceController->BalanceReference.omega[0];
-	    			balanceController->omega_ref_body[1] = balanceController->BalanceReference.omega[1];
-	    			balanceController->omega_ref_body[2] = balanceController->BalanceReference.omega[2];
-	    			Quaternion_RotateVector_Body2Inertial(balanceController->q, balanceController->omega_ref_body, balanceController->omega_ref_inertial);
-	    		}
-	    		else if (balanceController->BalanceReference.frame == INERTIAL_FRAME) {
-	    			balanceController->omega_ref_inertial[0] = balanceController->BalanceReference.omega[0];
-	    			balanceController->omega_ref_inertial[1] = balanceController->BalanceReference.omega[1];
-	    			balanceController->omega_ref_inertial[2] = balanceController->BalanceReference.omega[2];
-	    			Quaternion_RotateVector_Inertial2Body(balanceController->q, balanceController->omega_ref_inertial, balanceController->omega_ref_body);
-	    		}
-	    		else { // unknown frame for quaternion control mode
-	    			balanceController->omega_ref_body[0] = 0;
-	    			balanceController->omega_ref_body[1] = 0;
-	    			balanceController->omega_ref_body[2] = 0;
-	    			balanceController->omega_ref_inertial[0] = 0;
-	    			balanceController->omega_ref_inertial[1] = 0;
-	    			balanceController->omega_ref_inertial[2] = 0;
-	    		}
+					if (balanceController->BalanceReference.frame == BODY_FRAME) {
+						balanceController->omega_ref_body[0] = balanceController->BalanceReference.omega[0];
+						balanceController->omega_ref_body[1] = balanceController->BalanceReference.omega[1];
+						balanceController->omega_ref_body[2] = balanceController->BalanceReference.omega[2];
+						Quaternion_RotateVector_Body2Inertial(balanceController->q, balanceController->omega_ref_body, balanceController->omega_ref_inertial);
+					}
+					else if (balanceController->BalanceReference.frame == INERTIAL_FRAME) {
+						balanceController->omega_ref_inertial[0] = balanceController->BalanceReference.omega[0];
+						balanceController->omega_ref_inertial[1] = balanceController->BalanceReference.omega[1];
+						balanceController->omega_ref_inertial[2] = balanceController->BalanceReference.omega[2];
+						Quaternion_RotateVector_Inertial2Body(balanceController->q, balanceController->omega_ref_inertial, balanceController->omega_ref_body);
+					}
+					else { // unknown frame for quaternion control mode
+						balanceController->omega_ref_body[0] = 0;
+						balanceController->omega_ref_body[1] = 0;
+						balanceController->omega_ref_body[2] = 0;
+						balanceController->omega_ref_inertial[0] = 0;
+						balanceController->omega_ref_inertial[1] = 0;
+						balanceController->omega_ref_inertial[2] = 0;
+					}
+				}
 	    		xSemaphoreGive( balanceController->BalanceReference.semaphore ); // give semaphore back
 	    	}
 		}
@@ -456,9 +466,11 @@ __attribute__((optimize("O0")))
 	    if (params.controller.mode == lspc::ParameterTypes::VELOCITY_CONTROL) {
 			// Get velocity reference
 	    	if (xSemaphoreTake( balanceController->VelocityReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for reading
-	    		balanceController->velocityReference[0] = balanceController->VelocityReference.dx;
-	    		balanceController->velocityReference[1] = balanceController->VelocityReference.dy;
-	    		balanceController->headingVelocityReference = balanceController->VelocityReference.dyaw;
+	    		if ((microsTimer.GetTime() - balanceController->VelocityReference.time) < params.controller.ReferenceTimeout) {
+	    			balanceController->velocityReference[0] = balanceController->VelocityReference.dx;
+	    			balanceController->velocityReference[1] = balanceController->VelocityReference.dy;
+	    			balanceController->headingVelocityReference = balanceController->VelocityReference.dyaw;
+	    		}
 	    		xSemaphoreGive( balanceController->VelocityReference.semaphore ); // give semaphore back
 	    	}
 
@@ -491,12 +503,10 @@ __attribute__((optimize("O0")))
 	    	Torque[2] = 0;
 	    }
 
-	    /* Clamp the torque outputs between configured limits */
-	    if (params.controller.EnableTorqueLPF && params.controller.SaturateBeforeFiltering) {
-	    	Torque[0] = fmax(fmin(Torque[0], params.model.MaxOutputTorque), -params.model.MaxOutputTorque);
-	    	Torque[1] = fmax(fmin(Torque[1], params.model.MaxOutputTorque), -params.model.MaxOutputTorque);
-	    	Torque[2] = fmax(fmin(Torque[2], params.model.MaxOutputTorque), -params.model.MaxOutputTorque);
-	    }
+	    /* Clamp the torque between configurable limits less than or equal to max output torque */
+    	Torque[0] = fmax(fmin(Torque[0], params.model.SaturationTorque), -params.model.SaturationTorque);
+    	Torque[1] = fmax(fmin(Torque[1], params.model.SaturationTorque), -params.model.SaturationTorque);
+    	Torque[2] = fmax(fmin(Torque[2], params.model.SaturationTorque), -params.model.SaturationTorque);
 
 	    /* Initial Torque ramp up */
 	    if (params.controller.TorqueRampUp) {
@@ -527,10 +537,6 @@ __attribute__((optimize("O0")))
 	    	Motor3_LPF.Reset();
 	    }
 
-    	Torque[0] = fmax(fmin(Torque[0], params.model.SaturationTorque), -params.model.SaturationTorque);
-    	Torque[1] = fmax(fmin(Torque[1], params.model.SaturationTorque), -params.model.SaturationTorque);
-    	Torque[2] = fmax(fmin(Torque[2], params.model.SaturationTorque), -params.model.SaturationTorque);
-
 	    if (params.controller.mode != lspc::ParameterTypes::OFF) {
 			/* Set control output */
 			motor1.SetOutputTorque(Torque[0]);
@@ -550,7 +556,8 @@ __attribute__((optimize("O0")))
 			/* Detect motor driver failure mode - and if so, reset motor driver */
 			if (params.controller.MotorFailureDetection) {
 				for (int i = 0; i < 3; i++) {
-					if (fabs(Torque[i]) > 0.1 && fabs((Torque[i] / TorqueDelivered[i]) - 1.0) > params.controller.MotorFailureThreshold) {
+					//if (fabs(Torque[i]) > 0.1 && fabs((Torque[i] / TorqueDelivered[i]) - 1.0) > params.controller.MotorFailureThreshold) {
+					if (fabs(Torque[i]) > params.controller.MotorFailureThreshold && fabs(Torque[i] - TorqueDelivered[i]) > params.controller.MotorFailureThreshold) {
 						MotorDriverFailureCounts[i]++;
 					} else {
 						MotorDriverFailureCounts[i] = 0;
@@ -582,6 +589,20 @@ __attribute__((optimize("O0")))
 	    	TorqueDelivered[0] = 0;
 	    	TorqueDelivered[1] = 0;
 	    	TorqueDelivered[2] = 0;
+
+	    	/* Reset reference variables */
+	    	balanceController->q_ref[0] = 1; // attitude reference = just upright
+	    	balanceController->q_ref[1] = 0;
+	    	balanceController->q_ref[2] = 0;
+	    	balanceController->q_ref[3] = 0;
+	    	balanceController->omega_ref_inertial[0] = 0; // zero angular velocity reference
+	    	balanceController->omega_ref_inertial[1] = 0;
+	    	balanceController->omega_ref_inertial[2] = 0;
+	    	balanceController->omega_ref_body[0] = 0; // zero angular velocity reference
+	    	balanceController->omega_ref_body[1] = 0;
+	    	balanceController->omega_ref_body[2] = 0;
+	    	balanceController->headingReference = 0; // consider to replace this with current heading (based on estimate of stabilized QEKF filter)
+	    	balanceController->ReferenceGenerationStep = 0; // only used if test reference generation is enabled
 	    }
 
 		/* Measure compute time */
@@ -595,15 +616,15 @@ __attribute__((optimize("O0")))
 
 		/* Send IMU Log (test package) for MATH dump */
 		float mathDumpArray[] = {microsTimer.GetTime(),
-								 imuCorrected.Accelerometer[0],
-								 imuCorrected.Accelerometer[1],
-								 imuCorrected.Accelerometer[2],
-								 imuCorrected.Gyroscope[0],
-								 imuCorrected.Gyroscope[1],
-								 imuCorrected.Gyroscope[2],
-								 imuCorrected.Magnetometer[0],
-								 imuCorrected.Magnetometer[1],
-								 imuCorrected.Magnetometer[2],
+				imuRaw.Accelerometer[0],
+				imuRaw.Accelerometer[1],
+				imuRaw.Accelerometer[2],
+				imuRaw.Gyroscope[0],
+				imuRaw.Gyroscope[1],
+				imuRaw.Gyroscope[2],
+				imuRaw.Magnetometer[0],
+				imuRaw.Magnetometer[1],
+				imuRaw.Magnetometer[2],
 								 EncoderAngle[0],
 								 EncoderAngle[1],
 								 EncoderAngle[2],
@@ -624,6 +645,7 @@ __attribute__((optimize("O0")))
 								 balanceController->dq[3],
 								 balanceController->GyroBias[0],
 								 balanceController->GyroBias[1],
+								 balanceController->GyroBias[2],
 								 balanceController->COM[0],
 								 balanceController->COM[1],
 								 balanceController->COM[2],
@@ -697,10 +719,9 @@ void BalanceController::StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEK
 }
 
 /* Reference generation based on selected test */
-#if 0
-void BalanceController::ReferenceGeneration(Parameters& params, QuaternionVelocityControl& velocityController)
+void BalanceController::ReferenceGeneration(Parameters& params)
 {
-    if (params.behavioural.JoystickVelocityControl) {
+    /*if (params.behavioural.JoystickVelocityControl) {
 		// Get velocity references from input (eg. joystick)
 		float ref_dx = 0; // default values if the reference semaphore could not be obtained
 		float ref_dy = 0;
@@ -731,32 +752,69 @@ void BalanceController::ReferenceGeneration(Parameters& params, QuaternionVeloci
 
 		velocityController.Step(q, dq, dxy, VelRef, true, deg2rad(0.0f), q_ref);
 	}
-    else if (params.behavioural.StepTestEnabled) {
+    else */
+	if (params.behavioural.StepTestEnabled) {
+		float quaternion_reference[4];
     	ReferenceGenerationStep++;
 		if (ReferenceGenerationStep > 8*params.controller.SampleRate) // reset after 8 seconds
 			ReferenceGenerationStep = 0;
 
 		if (ReferenceGenerationStep < 2*params.controller.SampleRate) { // from 0-2 seconds
-			Quaternion_eul2quat_zyx(0, 0, deg2rad(0), q_ref);
+			Quaternion_eul2quat_zyx(0, 0, deg2rad(0), quaternion_reference);
 		}
 		else if (ReferenceGenerationStep < 4*params.controller.SampleRate) { // from 2-4 seconds
-			Quaternion_eul2quat_zyx(0, 0, deg2rad(5), q_ref);
+			Quaternion_eul2quat_zyx(0, 0, deg2rad(3), quaternion_reference);
 		}
 		else if (ReferenceGenerationStep < 6*params.controller.SampleRate) { // from 4-6 seconds
-			Quaternion_eul2quat_zyx(0, 0, deg2rad(0), q_ref);
+			Quaternion_eul2quat_zyx(0, 0, deg2rad(0), quaternion_reference);
 		}
 		else if (ReferenceGenerationStep < 8*params.controller.SampleRate) { // from 6-8 seconds
-			Quaternion_eul2quat_zyx(0, 0, deg2rad(-5), q_ref);
+			Quaternion_eul2quat_zyx(0, 0, deg2rad(-3), quaternion_reference);
+		}
+
+		if (xSemaphoreTake( BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for updating
+			/* Update references with input values from message */
+			BalanceReference.time = microsTimer.GetTime();
+			BalanceReference.omega[0] = 0;
+			BalanceReference.omega[1] = 0;
+			BalanceReference.omega[2] = 0;
+			BalanceReference.q[0] = quaternion_reference[0];
+			BalanceReference.q[1] = quaternion_reference[1];
+			BalanceReference.q[2] = quaternion_reference[2];
+			BalanceReference.q[3] = quaternion_reference[3];
+			BalanceReference.frame = BODY_FRAME;
+			xSemaphoreGive( BalanceReference.semaphore ); // give semaphore back
 		}
     }
+	else if (params.behavioural.SineTestEnabled) {
+			float quaternion_reference[4];
+			const float SineFrequency = 0.7; // hz
+			Quaternion_eul2quat_zyx(0, 0, deg2rad(3) * sinf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate), quaternion_reference);
+	    	ReferenceGenerationStep++;
+
+	    	if ((float)ReferenceGenerationStep * SineFrequency >= params.controller.SampleRate) {
+	    		ReferenceGenerationStep = 0;
+	    	}
+
+			if (xSemaphoreTake( BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for updating
+				/* Update references with input values from message */
+				BalanceReference.time = microsTimer.GetTime();
+				BalanceReference.omega[0] = 0;
+				BalanceReference.omega[1] = 0;
+				BalanceReference.omega[2] = 0;
+				BalanceReference.q[0] = quaternion_reference[0];
+				BalanceReference.q[1] = quaternion_reference[1];
+				BalanceReference.q[2] = quaternion_reference[2];
+				BalanceReference.q[3] = quaternion_reference[3];
+				BalanceReference.frame = BODY_FRAME;
+				xSemaphoreGive( BalanceReference.semaphore ); // give semaphore back
+			}
+	    }
 
     if (params.behavioural.IndependentHeading) {
     	HeadingIndependentReferenceManual(q_ref, q, q_ref);
     }
-
-    PropagateQuaternionReference = false;
 }
-#endif
 
 void BalanceController::SendEstimates(void)
 {
@@ -872,6 +930,54 @@ void BalanceController::CalibrateIMUCallback(void * param, const std::vector<uin
 		osDelay(5000);
 
 		balanceController->Start();
+	}
+}
+
+
+void BalanceController::RestartControllerCallback(void * param, const std::vector<uint8_t>& payload)
+{
+	BalanceController * balanceController = (BalanceController *)param;
+	if (!balanceController) return;
+
+	lspc::MessageTypesFromPC::RestartController_t msg;
+	lspc::MessageTypesToPC::RestartControllerAck_t msgAck;
+	if (payload.size() != sizeof(msg)) return;
+	memcpy((uint8_t *)&msg, payload.data(), sizeof(msg));
+
+	/* Should both check whether the magic key in the payload is correct and that the system is not balancing - otherwise calibration can not be performed */
+	if (msg.magic_key != 0x12345678) {
+		// Send acknowledge back to PC
+		msgAck.acknowledged = false;
+		balanceController->com.TransmitAsync(lspc::MessageTypesToPC::RestartControllerAck, (uint8_t *)&msgAck, sizeof(msgAck));
+		return;
+	}
+
+	/* Check current control mode as a calibration can not be performed if the robot is balancing */
+	Parameters * params = new Parameters;
+	lspc::ParameterTypes::controllerMode_t mode = params->controller.mode;
+	delete(params);
+	if (mode != lspc::ParameterTypes::OFF) {
+		// Send acknowledge back to PC
+		msgAck.acknowledged = false;
+		balanceController->com.TransmitAsync(lspc::MessageTypesToPC::RestartControllerAck, (uint8_t *)&msgAck, sizeof(msgAck));
+		return;
+	}
+
+	if (balanceController->isRunning_) {
+		balanceController->Stop();
+
+		/* Send acknowledge message back to PC */
+		msgAck.acknowledged = true;
+		balanceController->com.TransmitAsync(lspc::MessageTypesToPC::RestartControllerAck, (uint8_t *)&msgAck, sizeof(msgAck));
+
+		Debug::print("Restarting controller...\n");
+		balanceController->Start();
+	}
+	else { // controller not running, so send NACK
+		/* Send acknowledge message back to PC */
+		msgAck.acknowledged = false;
+		balanceController->com.TransmitAsync(lspc::MessageTypesToPC::RestartControllerAck, (uint8_t *)&msgAck, sizeof(msgAck));
+
 	}
 }
 

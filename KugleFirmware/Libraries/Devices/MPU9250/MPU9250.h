@@ -101,7 +101,7 @@ class MPU9250 : public IMU {
 
         void Get(Measurement_t& measurement);
 
-        void SelfTest(float * result);
+        void SelfTest(float result[6]);
         void CalibrateMagnetometer(float * dest1, float * dest2);
 
         uint8_t whoAmI();

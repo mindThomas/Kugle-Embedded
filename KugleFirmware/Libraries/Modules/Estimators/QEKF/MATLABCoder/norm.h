@@ -5,7 +5,7 @@
 // File: norm.h
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 29-Oct-2018 20:49:17
+// C/C++ source code generated on  : 13-Feb-2019 17:37:28
 //
 #ifndef NORM_H
 #define NORM_H
@@ -17,6 +17,7 @@
 #include "QEKF_types.h"
 
 // Function Declarations
+extern float b_norm(const float x[4]);
 extern float norm(const float x[3]);
 
 #endif

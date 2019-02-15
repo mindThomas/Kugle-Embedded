@@ -21,9 +21,11 @@
 #include "QEKF_coder.h"
 #include "QEKF_initialize.h"
 #include "MathLib.h"
+#include <math.h>
 #include <string.h> // for memcpy
  
 #include "Quaternion.h"
+#include "arm_math.h"
 
 QEKF::QEKF(Parameters& params, Timer * microsTimer) : _params(params), _microsTimer(microsTimer)
 {
@@ -56,6 +58,17 @@ void QEKF::Reset()
 void QEKF::Reset(const float accelerometer[3])
 {
 	Reset();
+	// Reset into certain angle based on accelerometer measurement not yet implemented
+}
+
+/**
+ * @brief 	Reset attitude estimator to an angle based on an accelerometer measurement
+ * @param	accelerometer[3]   Input: acceleration measurement in body frame [m/s^2]
+ */
+void QEKF::Reset(const float accelerometer[3], const float heading)
+{
+	Reset();
+	// Reset into certain angle based on accelerometer and heading measurement not yet implemented
 }
 
 /**
@@ -94,7 +107,7 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
  */
 void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float dt)
 {
-	Step(accelerometer, gyroscope, EstimateBias, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.sigma2_bias, _params.model.g, dt);
+	Step(accelerometer, gyroscope, 0, false, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
 }
 
 /**
@@ -109,7 +122,7 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
  * @param   g                  Input: gravity constant [m/s^2]
  * @param	dt    			   Input: time passed since last estimate
  */
-void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float sigma2_bias, const float g, const float dt)
+void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool UseHeadingForCorrection, const bool EstimateBias, const bool EstimateYawBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float sigma2_omega, const float sigma2_heading, const float sigma2_bias, const float g, const float dt)
 {
 	if (dt == 0) return; // no time has passed
 
@@ -120,11 +133,12 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
 	memcpy(P_prev, P, sizeof(P_prev));
 
 	_QEKF(X_prev, P_prev,
-		 gyroscope, accelerometer,
+		 gyroscope, accelerometer, heading,
+		 UseHeadingForCorrection,
 		 dt,
-		 EstimateBias,
+		 EstimateBias, EstimateYawBias,
 		 true,  // normalize accelerometer = true
-		 cov_gyro, cov_acc, sigma2_bias,
+		 cov_gyro, cov_acc, sigma2_omega, sigma2_heading, sigma2_bias,
 		 g,
 		 X, P);
 
@@ -154,20 +168,27 @@ void QEKF::GetQuaternion(float q[4])
  */
 void QEKF::GetQuaternionDerivative(float dq[4])
 {
-	dq[0] = X[4];
+    /* Body angular velocity */
+    /* dq = 1/2 * Phi(q) * [0;omega]; */
+	float omega_q[4] = { 0, X[4], X[5], X[6] };
+    Quaternion_Phi(&X[0], omega_q, dq); // Phi(q) * [0;omega]
+    arm_scale_f32(dq, 0.5f, dq, 4);
+
+	/*dq[0] = X[4];
 	dq[1] = X[5];
 	dq[2] = X[6];
-	dq[3] = X[7];
+	dq[3] = X[7];*/
 }
 
 /**
  * @brief 	Get estimated gyroscope bias
  * @param	bias[2]		Output: estimated gyroscope bias
  */
-void QEKF::GetGyroBias(float bias[2])
+void QEKF::GetGyroBias(float bias[3])
 {
-	bias[0] = X[8];
-	bias[1] = X[9];
+	bias[0] = X[7];
+	bias[1] = X[8];
+	bias[2] = X[9];
 }
 
 /**
@@ -178,7 +199,7 @@ void QEKF::GetQuaternionCovariance(float Cov_q[4*4])
 {
     for (int m = 0; m < 4; m++) {
       for (int n = 0; n < 4; n++) {
-        Cov_q[4*m + n] = P[10*m + n];
+        Cov_q[4*m + n] = P[11*m + n];
       }
     }
 }
@@ -191,7 +212,7 @@ void QEKF::GetQuaternionDerivativeCovariance(float Cov_dq[4*4])
 {
     for (int m = 0; m < 4; m++) {
       for (int n = 0; n < 4; n++) {
-        Cov_dq[4*m + n] = P[10*m + n + 44];
+        Cov_dq[4*m + n] = P[11*m + n + (11*4 + 4)];
       }
     }
 }
@@ -208,20 +229,25 @@ bool QEKF::UnitTest(void)
 								  0.0096E-03,    0.0041E-03,    1.0326E-03};
 
 	const float sigma2_bias = 1E-11;
+	const float sigma2_omega = 1E-4;
+	const float sigma2_heading = powf(deg2rad(1) / 3.0f, 2);
 	const bool EstimateBias = true;
+	const bool EstimateYawBias = true;
 	const bool CreateQdotFromDifference = false;
+	const bool UseHeadingForCorrection = true;
 
-	const float QEKF_P_init_diagonal[10] = {1E-5, 1E-5, 1E-5, 1E-7,   1E-7, 1E-7, 1E-7, 1E-7,   1E-5, 1E-5};
+	const float QEKF_P_init_diagonal[11] = {1E-5, 1E-5, 1E-5, 1E-7,   1E-7, 1E-7, 1E-7, 1E-7,   1E-5, 1E-5, 1E-5};
 
 	QEKF_initialize(QEKF_P_init_diagonal, X, P); // reset
 
 	const float Accelerometer[3] = {0.05, 0, 9.82};
 	const float Gyroscope[3] = {1.0, 0.5, 0.09};
+	const float heading = 0.4;
 
-	const float dt = 1.0 / 400.0; // 400 Hz
+	const float dt = 1.0 / 200.0; // 400 Hz
 
-	Step(Accelerometer, Gyroscope, EstimateBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, sigma2_bias, g, dt);
-	Step(Accelerometer, Gyroscope, EstimateBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, sigma2_bias, g, dt);
+	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, sigma2_omega, sigma2_heading, sigma2_bias, g, dt);
+	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, sigma2_omega, sigma2_heading, sigma2_bias, g, dt);
 
 	float q[4];
 	GetQuaternion(q);
@@ -232,30 +258,32 @@ bool QEKF::UnitTest(void)
 	float Cov_q[4*4];
 	GetQuaternionCovariance(Cov_q);
 
-	float bias[2];
+	float bias[3];
 	bias[0] = X[8];
 	bias[1] = X[9];
+	bias[2] = X[10];
 
-	const float q_expected[4] = {999.9993e-03, 1.1463e-03, 0.1727e-03, 0.1130e-03};
+	const float q_expected[4] = {999.9893e-03, 0.8631e-03, 0.0246e-03, 4.5302e-03};
 	if (!(Math_Round(q[0], 3) == Math_Round(q_expected[0], 3) &&
 		  Math_Round(q[1], 7) == Math_Round(q_expected[1], 7) &&
 		  Math_Round(q[2], 7) == Math_Round(q_expected[2], 7) &&
 		  Math_Round(q[3], 7) == Math_Round(q_expected[3], 7)))
 		return false;
 
-	const float dq_expected[4] = {0.1649e-03, 499.9784e-03, 250.0039e-03, 45.2001e-03};
+	const float dq_expected[4] = {0.0180e-03, 0.2838339, 0.0631545, -0.0189311};
 	if (!(Math_Round(dq[0], 7) == Math_Round(dq_expected[0], 7) &&
-		  Math_Round(dq[1], 7) == Math_Round(dq_expected[1], 7) &&
-		  Math_Round(dq[2], 7) == Math_Round(dq_expected[2], 7) &&
-		  Math_Round(dq[3], 7) == Math_Round(dq_expected[3], 7)))
+		  Math_Round(dq[1], 6) == Math_Round(dq_expected[1], 6) &&
+		  Math_Round(dq[2], 6) == Math_Round(dq_expected[2], 6) &&
+		  Math_Round(dq[3], 6) == Math_Round(dq_expected[3], 6)))
 		return false;
 
-	const float bias_expected[2] = {1.3754e-07, 3.2047e-07};
-	if (!(Math_Round(bias[0], 10) == Math_Round(bias_expected[0], 10) &&
-		  Math_Round(bias[1], 10) == Math_Round(bias_expected[1], 10)))
+	const float bias_expected[3] = {0.0401830, 0.0085002, -0.0032197};
+	if (!(Math_Round(bias[0], 5) == Math_Round(bias_expected[0], 5) &&
+		  Math_Round(bias[1], 5) == Math_Round(bias_expected[1], 5) &&
+		  Math_Round(bias[2], 5) == Math_Round(bias_expected[2], 5)))
 		return false;
 
-	const float Cov_q_diag_expected[4] = {0.9281e-05, 0.8441e-05, 0.8424e-05, 0.0103e-05};
+	const float Cov_q_diag_expected[4] = {0.9262118e-05, 0.8441292e-05, 0.8419634e-05, 0.0098245e-05};
 	if (!(Math_Round(Cov_q[0], 9) == Math_Round(Cov_q_diag_expected[0], 9) &&
 		  Math_Round(Cov_q[1+4], 9) == Math_Round(Cov_q_diag_expected[1], 9) &&
 		  Math_Round(Cov_q[2+8], 9) == Math_Round(Cov_q_diag_expected[2], 9) &&
