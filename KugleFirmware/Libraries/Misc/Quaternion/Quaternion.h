@@ -78,6 +78,7 @@ extern void Quaternion_Integration_Inertial(const float q[4], const float omega_
 
 extern void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4]);
 extern void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4]);
+extern float HeadingFromQuaternion(const float q[4]);
 
 extern float invSqrt(float x);
 

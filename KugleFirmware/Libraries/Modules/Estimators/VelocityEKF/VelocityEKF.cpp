@@ -19,6 +19,7 @@
  
 #include "VelocityEKF.h"
 #include "VelocityEstimator.h"
+#include "VelocityEstimator2.h"
 #include "VelocityEstimator_initialize.h"
 #include <string.h> // for memcpy
 
@@ -103,7 +104,7 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
 		(float)(encoderTicks[2] - _prevEncoderTicks[2])
 	};
 
-    VelocityEstimator(X_prev, P_prev,
+    /*VelocityEstimator(X_prev, P_prev,
       EncoderDiffMeas,
       qEst, Cov_qEst, qDotEst,
       dt,
@@ -113,7 +114,17 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
       1E-5, // Var_COM
       10.0f, // eta_qQEKF_velocity
       0.0f, // eta_dqQEKF_encoder
-      X, P);
+      X, P);*/
+	VelocityEstimator2(X_prev, P_prev,
+	      EncoderDiffMeas,
+	      qEst, Cov_qEst, qDotEst,
+	      dt,
+	      _params.model.TicksPrRev,
+		  _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g,
+		  COMest,
+	      1E-6, // Var_COM
+	      10.0f, // eta_encoder
+	      X, P);
 
     _prevEncoderTicks[0] = encoderTicks[0];
     _prevEncoderTicks[1] = encoderTicks[1];
