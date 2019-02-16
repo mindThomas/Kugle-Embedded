@@ -373,6 +373,13 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::type: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.type; return;
 			case lspc::ParameterLookup::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
 			case lspc::ParameterLookup::DisableQdot: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableQdot; return;
+			case lspc::ParameterLookup::ContinousSwitching: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.ContinousSwitching; return;
+			case lspc::ParameterLookup::eta: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.eta; return;
+			case lspc::ParameterLookup::epsilon: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.epsilon; return;
+			case lspc::ParameterLookup::K: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[0]; arraySize = 3; return;
+			case lspc::ParameterLookup::Kx: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[0]; return;
+			case lspc::ParameterLookup::Ky: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[1]; return;
+			case lspc::ParameterLookup::Kz: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[2]; return;
 			default: return;
 		}
 	}

@@ -111,9 +111,12 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 	/* Form error state vector */
 	// Since the LQR is designed on error dynamics only for attitude control,
 	// we will have to convert the full state estimate vector into a reduced error state vector for the attitude
-	float X_err[7]; arm_matrix_instance_f32 X_err_; arm_mat_init_f32(&X_err_, 7, 1, (float32_t *)X_err);
+	float X_err[9]; arm_matrix_instance_f32 X_err_; arm_mat_init_f32(&X_err_, 9, 1, (float32_t *)X_err);
 	float * q_err = &X_err[0]; arm_matrix_instance_f32 q_err_; arm_mat_init_f32(&q_err_, 4, 1, (float32_t *)q_err);
-	float * omega_err = &X_err[4]; arm_matrix_instance_f32 omega_err_; arm_mat_init_f32(&omega_err_, 3, 1, (float32_t *)omega_err);
+	float * velocity_err = &X_err[4];
+	//float * omega_err = &X_err[4]; arm_matrix_instance_f32 omega_err_; arm_mat_init_f32(&omega_err_, 3, 1, (float32_t *)omega_err);
+	float omega_err[3];
+	float * dq_vec_err = &X_err[6];
 
 	/* Quaternion error in Body frame */
 	// q_err = Phi(q_ref)^T * q
@@ -121,11 +124,20 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 	/* Clamp "yaw" error - this is possibly a crude way of doing it */
 	q_err[4] = fmax(fmin(q_err[4], 1/2*deg2rad(_params.controller.LQR_MaxYawError)), -1/2*deg2rad(_params.controller.LQR_MaxYawError));
 
+	/* Velocity error */
+	velocity_err[0] = dxy[0];
+	velocity_err[1] = dxy[1];
+
 	/* Body angular velocity */
 	// omeg_err = 2*devec*Phi(q)^T*dq - omega_ref
 	Quaternion_devecPhiT(q, dq, omega_err); // devec*Phi(q)^T*dq
 	arm_scale_f32(omega_err, 2.0f, omega_err, 3); // 2*devec*Phi(q)^T*dq
 	arm_sub_f32(omega_err, (float*)omega_ref, omega_err, 3); // 2*devec*Phi(q)^T*dq - omega_ref
+
+	/* Quaternion derivative error */
+	dq_vec_err[0] = dq[1];
+	dq_vec_err[1] = dq[2];
+	dq_vec_err[2] = dq[3];
 
 	/* NON WORKING (NON USEFULL) CLAMPS! */
 	//omega_err[2] = fmax(fmin(omega_err[2], _params.controller.LQR_MaxYawVelocityError), -_params.controller.LQR_MaxYawVelocityError);
@@ -210,8 +222,8 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 	}
 
 	/* Compute control torque by matrix multiplication with LQR gain */
-	arm_matrix_instance_f32 LQR_K_; arm_mat_init_f32(&LQR_K_, 3, 6, (float32_t *)gainMatrix);
-	arm_matrix_instance_f32 X_err_reduced_; arm_mat_init_f32(&X_err_reduced_, 6, 1, (float32_t *)&X_err[1]); // removes q0 (first element)
+	arm_matrix_instance_f32 LQR_K_; arm_mat_init_f32(&LQR_K_, 3, 8, (float32_t *)gainMatrix);
+	arm_matrix_instance_f32 X_err_reduced_; arm_mat_init_f32(&X_err_reduced_, 8, 1, (float32_t *)&X_err[1]); // removes q0 (first element)
 	float tau_control[3]; arm_matrix_instance_f32 tau_control_; arm_mat_init_f32(&tau_control_, 3, 1, (float32_t *)tau_control);
 	arm_mat_mult_f32(&LQR_K_, &X_err_reduced_, &tau_control_); // tau = -K * X_err_reduced
 	arm_negate_f32(tau_control, tau_control, 3);

@@ -154,6 +154,9 @@ void BalanceController::Thread(void * pvParameters)
 	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> gyro_y_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
 	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> gyro_z_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
 
+	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> dx_filt(params.estimator.VelocityLPFcoeffs_a, params.estimator.VelocityLPFcoeffs_b);
+	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> dy_filt(params.estimator.VelocityLPFcoeffs_a, params.estimator.VelocityLPFcoeffs_b);
+
 	/* Measurement variables */
 	IMU::Measurement_t imuRaw;
 	IMU::Measurement_t imuCorrected;
@@ -393,6 +396,11 @@ __attribute__((optimize("O0")))
 				balanceController->dxy[0] = dxy_kinematics[0];
 				balanceController->dxy[1] = dxy_kinematics[1];
 			}
+
+			if (params.estimator.EnableVelocityLPF) {
+				balanceController->dxy[0] = dx_filt.Filter(balanceController->dxy[0]);
+				balanceController->dxy[1] = dy_filt.Filter(balanceController->dxy[1]);
+			}
 	    }
 
 	    /* Velocity estimation using velocity EKF */
@@ -403,9 +411,9 @@ __attribute__((optimize("O0")))
 
 	    	// OBS. dxy was in the original design supposed to be ball velocity, but the velocity estimator estimates the 2L velocity which gives indirect "stabilization"
 	    	// In the Sliding Mode controller this velocity is (only) used to calculated "feedforward" torque to counteract friction
-	        if (!params.estimator.Use2Lvelocity) { // however if the 2L velocity is not desired, it is here converted back to ball velocity
+	        /*if (!params.estimator.Use2Lvelocity) { // however if the 2L velocity is not desired, it is here converted back to ball velocity
 	        	kinematics.Convert2LtoBallVelocity(balanceController->dxy, balanceController->q, balanceController->dq, balanceController->dxy);
-	        }
+	        }*/
 	    }
 
 	    /* Center of Mass estimation */
@@ -436,6 +444,10 @@ __attribute__((optimize("O0")))
 					balanceController->q_ref[1] = balanceController->BalanceReference.q[1];
 					balanceController->q_ref[2] = balanceController->BalanceReference.q[2];
 					balanceController->q_ref[3] = balanceController->BalanceReference.q[3];
+
+				    if (params.behavioural.IndependentHeading) {
+				    	HeadingIndependentReferenceManual(balanceController->q_ref, balanceController->q, balanceController->q_ref);
+				    }
 
 					if (balanceController->BalanceReference.frame == BODY_FRAME) {
 						balanceController->omega_ref_body[0] = balanceController->BalanceReference.omega[0];
@@ -479,6 +491,10 @@ __attribute__((optimize("O0")))
 	    	balanceController->omega_ref_inertial[1] = 0;
 	    	balanceController->omega_ref_inertial[2] = balanceController->headingVelocityReference;
 			Quaternion_RotateVector_Inertial2Body(balanceController->q, balanceController->omega_ref_inertial, balanceController->omega_ref_body);
+
+			if (params.behavioural.IndependentHeading) {
+				balanceController->headingReference = HeadingFromQuaternion(balanceController->q);
+			}
 
 			velocityController.Step(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, true, balanceController->headingReference, balanceController->q_ref);
 	    }
@@ -564,17 +580,29 @@ __attribute__((optimize("O0")))
 					}
 					if (MotorDriverFailureCounts[i] > (params.controller.SampleRate * params.controller.MotorFailureDetectionTime)) {
 						MotorDriverFailureCounts[i] = 0;
-						if (i == 0) {
-							motor1.Disable();
-							Motor1_LPF.Reset();
-						}
-						else if (i == 1) {
-							motor2.Disable();
-							Motor2_LPF.Reset();
-						}
-						else if (i == 2) {
-							motor3.Disable();
-							Motor3_LPF.Reset();
+						if (params.controller.StopAtMotorFailure) {
+							// Disable motors
+					    	motor1.Disable();
+					    	motor2.Disable();
+					    	motor3.Disable();
+
+					    	// Change controller mode to OFF
+					    	params.LockForChange();
+					    	params.controller.mode = lspc::ParameterTypes::OFF;
+					    	params.UnlockAfterChange();
+						} else { // failing motor driver should be reset
+							if (i == 0) {
+								motor1.Disable();
+								Motor1_LPF.Reset();
+							}
+							else if (i == 1) {
+								motor2.Disable();
+								Motor2_LPF.Reset();
+							}
+							else if (i == 2) {
+								motor3.Disable();
+								Motor3_LPF.Reset();
+							}
 						}
 					}
 				}
@@ -589,6 +617,11 @@ __attribute__((optimize("O0")))
 	    	TorqueDelivered[0] = 0;
 	    	TorqueDelivered[1] = 0;
 	    	TorqueDelivered[2] = 0;
+
+	    	/* Reset failure counts */
+	    	MotorDriverFailureCounts[0] = 0;
+	    	MotorDriverFailureCounts[1] = 0;
+	    	MotorDriverFailureCounts[2] = 0;
 
 	    	/* Reset reference variables */
 	    	balanceController->q_ref[0] = 1; // attitude reference = just upright
@@ -616,15 +649,15 @@ __attribute__((optimize("O0")))
 
 		/* Send IMU Log (test package) for MATH dump */
 		float mathDumpArray[] = {microsTimer.GetTime(),
-				imuRaw.Accelerometer[0],
-				imuRaw.Accelerometer[1],
-				imuRaw.Accelerometer[2],
-				imuRaw.Gyroscope[0],
-				imuRaw.Gyroscope[1],
-				imuRaw.Gyroscope[2],
-				imuRaw.Magnetometer[0],
-				imuRaw.Magnetometer[1],
-				imuRaw.Magnetometer[2],
+				imuCorrected.Accelerometer[0],
+				imuCorrected.Accelerometer[1],
+				imuCorrected.Accelerometer[2],
+				imuCorrected.Gyroscope[0],
+				imuCorrected.Gyroscope[1],
+				imuCorrected.Gyroscope[2],
+				imuCorrected.Magnetometer[0],
+				imuCorrected.Magnetometer[1],
+				imuCorrected.Magnetometer[2],
 								 EncoderAngle[0],
 								 EncoderAngle[1],
 								 EncoderAngle[2],
@@ -788,8 +821,8 @@ void BalanceController::ReferenceGeneration(Parameters& params)
     }
 	else if (params.behavioural.SineTestEnabled) {
 			float quaternion_reference[4];
-			const float SineFrequency = 0.7; // hz
-			Quaternion_eul2quat_zyx(0, 0, deg2rad(3) * sinf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate), quaternion_reference);
+			const float SineFrequency = 0.5; // hz
+			Quaternion_eul2quat_zyx(0, 0, deg2rad(5) * sinf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate), quaternion_reference);
 	    	ReferenceGenerationStep++;
 
 	    	if ((float)ReferenceGenerationStep * SineFrequency >= params.controller.SampleRate) {
@@ -799,7 +832,7 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 			if (xSemaphoreTake( BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for updating
 				/* Update references with input values from message */
 				BalanceReference.time = microsTimer.GetTime();
-				BalanceReference.omega[0] = 0;
+				BalanceReference.omega[0] = deg2rad(5) * 2*M_PI*SineFrequency * cosf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate);
 				BalanceReference.omega[1] = 0;
 				BalanceReference.omega[2] = 0;
 				BalanceReference.q[0] = quaternion_reference[0];
@@ -810,10 +843,6 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 				xSemaphoreGive( BalanceReference.semaphore ); // give semaphore back
 			}
 	    }
-
-    if (params.behavioural.IndependentHeading) {
-    	HeadingIndependentReferenceManual(q_ref, q, q_ref);
-    }
 }
 
 void BalanceController::SendEstimates(void)

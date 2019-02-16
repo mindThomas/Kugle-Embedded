@@ -278,7 +278,7 @@ void Quaternion_quat2eul_zyx(const float q[4], float yaw_pitch_roll[3])
 /* Rotate vector within body frame into inertial frame */
 void Quaternion_RotateVector_Body2Inertial(const float q[4], const float v[3], float v_out[3])
 {
-	// v_out = devec * q o dev*v o q* = Phi(q) * Gamma(q)^T * vec*v
+	// v_out = devec * q o dev*v o q* = devec * Phi(q) * Gamma(q)^T * vec*v
 	v_out[0] = (q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3])*v[0] + (2*q[1]*q[2] - 2*q[0]*q[3])					 *v[1] + (2*q[0]*q[2] + 2*q[1]*q[3])					*v[2];
 	v_out[1] = (2*q[0]*q[3] + 2*q[1]*q[2])					  *v[0] + (q[0]*q[0] - q[1]*q[1] + q[2]*q[2] - q[3]*q[3])*v[1] + (2*q[2]*q[3] - 2*q[0]*q[1])					*v[2];
 	v_out[2] = (2*q[1]*q[3] - 2*q[0]*q[2])					  *v[0] + (2*q[0]*q[1] + 2*q[2]*q[3])					 *v[1] + (q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3])*v[2];
@@ -287,7 +287,7 @@ void Quaternion_RotateVector_Body2Inertial(const float q[4], const float v[3], f
 /* Rotate vector within inertial frame into body frame */
 void Quaternion_RotateVector_Inertial2Body(const float q[4], const float v[3], float v_out[3])
 {
-	// v_out = devec * q* o dev*v o q = Phi(q)^T * Gamma(q) * vec*v
+	// v_out = devec * q* o dev*v o q = devec * Phi(q)^T * Gamma(q) * vec*v
 	v_out[0] = (q[0]*q[0] + q[1]*q[1] - q[2]*q[2] - q[3]*q[3])*v[0] + (2*q[0]*q[3] + 2*q[1]*q[2])					 *v[1] + (2*q[1]*q[3] - 2*q[0]*q[2])					*v[2];
 	v_out[1] = (2*q[1]*q[2] - 2*q[0]*q[3])					  *v[0] + (q[0]*q[0] - q[1]*q[1] + q[2]*q[2] - q[3]*q[3])*v[1] + (2*q[0]*q[1] + 2*q[2]*q[3])					*v[2];
 	v_out[2] = (2*q[0]*q[2] + 2*q[1]*q[3])					  *v[0] + (2*q[2]*q[3] - 2*q[0]*q[1])					 *v[1] + (q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3])*v[2];
@@ -493,4 +493,18 @@ void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out
   q_dot_out[3] = dq[3]*q[1]*q[1] + dq[3]*q[2]*q[2] - dq[1]*q[0]*q[2] + dq[2]*q[0]*q[1] - dq[1]*q[1]*q[3] - dq[2]*q[2]*q[3];
 
   // The second method is only slightly different from the first, in the sense that it forces the q0 component of omega to be 0 (sort of a rectification)
+}
+
+float HeadingFromQuaternion(const float q[4])
+{
+	// Extract body x-axis direction in inertial frame
+	// I_e_x = devec * Phi(q) * Gamma(q)' * [0,1,0,0]';
+	const float B_e_x[3] = { 1, 0, 0 };
+	float I_e_x[3];
+	Quaternion_RotateVector_Body2Inertial(q, B_e_x, I_e_x);
+
+	// Now compute heading by taking the x-y components (projecting the x-axis vector down to the xy-plane)
+    // heading = atan2(x_vec(2), x_vec(1));
+	float heading = atan2(I_e_x[1], I_e_x[0]);
+	return heading;
 }

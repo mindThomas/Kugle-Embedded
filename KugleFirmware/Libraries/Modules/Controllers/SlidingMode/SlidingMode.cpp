@@ -107,10 +107,12 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
     #if DEBUG
     tic();
     #endif
+    float dq_ss[4] = { dq[0], dq[1], dq[2], dq[3] };
+    //float dq_ss[4] = { 0, 0, 0, 0 };
     mass(COM_X, COM_Y, COM_Z, Jbx, Jby, Jbz, Jk, Jw, Mb, Mk, q[0], q[1], q[2], q[3], rk, rw, M);
-    coriolis(COM_X, COM_Y, COM_Z, Jbx, Jby, Jbz, Jw, Mb, 0.0f, dq[0], dq[1], dq[2], dq[3], dxy[0], dxy[1], q[0], q[1], q[2], q[3], rk, rw, C); // beta = 0
+    coriolis(COM_X, COM_Y, COM_Z, Jbx, Jby, Jbz, Jw, Mb, 0.0f, dq_ss[0], dq_ss[1], dq_ss[2], dq_ss[3], dxy[0], dxy[1], q[0], q[1], q[2], q[3], rk, rw, C); // beta = 0
     gravity(COM_X, COM_Y, COM_Z, Mb, 0.0f, g_const, q[0], q[1], q[2], q[3], G); // beta = 0
-    friction(Bvb, Bvk, Bvm, 0.0f, dq[0], dq[1], dq[2], dq[3], dxy[0], dxy[1], q[0], q[1], q[2], q[3], rk, rw, D);
+    friction(Bvb, Bvk, Bvm, 0.0f, dq_ss[0], dq_ss[1], dq_ss[2], dq_ss[3], dxy[0], dxy[1], q[0], q[1], q[2], q[3], rk, rw, D);
     input_forces(q[0], q[1], q[2], q[3], rk, rw, Q);
     #if DEBUG
     toc();

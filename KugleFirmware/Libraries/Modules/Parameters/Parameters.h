@@ -44,7 +44,7 @@ class Parameters
 
 		struct behavioural_t {
 			/* Behavioural parameters */
-			bool IndependentHeading = false;
+			bool IndependentHeading = true;
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
 			bool StepTestEnabled = false;
 			bool SineTestEnabled = false;
@@ -55,18 +55,19 @@ class Parameters
 			/* Balance Controller Tuning parameters */
 			float SampleRate = 200;
 			
-			lspc::ParameterTypes::controllerType_t type = lspc::ParameterTypes::LQR_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
+			lspc::ParameterTypes::controllerType_t type = lspc::ParameterTypes::SLIDING_MODE_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
 			lspc::ParameterTypes::controllerMode_t mode = lspc::ParameterTypes::OFF;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
 
-			bool EnableTorqueLPF = true;
+			bool EnableTorqueLPF = false;
 			float TorqueLPFtau = 0.005; // 0.005 (sliding mode)
 			bool TorqueRampUp = true;
 			float TorqueRampUpTime = 1.0; // seconds to ramp up Torque after initialization
 
-			bool MotorFailureDetection = false; // detect ESCON motor driver failures (due to current overload, above nominal, for prolonged time)
+			bool MotorFailureDetection = true; // detect ESCON motor driver failures (due to current overload, above nominal, for prolonged time)
 			float MotorFailureDetectionTime = 0.05; // 50 ms response time for detecting motor failure until the motor driver is reset
 			//float MotorFailureThreshold = 0.1; // 10% difference between torque setpoint and delivered torque for longer than MotorFailureDetectionTime will trigger the motor failure event
-			float MotorFailureThreshold = 0.2; // more than 0.2 Nm difference between setpoint/requested torque and delivered torque is detected as a failure
+			float MotorFailureThreshold = 0.5; // more than 0.5 Nm difference between setpoint/requested torque and delivered torque is detected as a failure
+			bool StopAtMotorFailure = true; // determines what action to take at failure: the controller should stop (require manual start) or the motor driver should automatically be reset
 
 			bool DisableQdot = false;
 			float ReferenceTimeout = 0.1; // if reference is older than 100 ms, do not use it!
@@ -84,10 +85,10 @@ class Parameters
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
-			float K[3] = {50, 50, 30}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
+			float K[3] = {20, 20, 20}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
 			bool ContinousSwitching = true;
-			float eta = 2.5; // switching gain
-			float epsilon = 2.5;  // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
+			float eta = 3.0; // switching gain
+			float epsilon = 0.6;  // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 
 			/* LQR parameters */
@@ -104,10 +105,10 @@ class Parameters
 					-25.1426652684644,	-43.5483736826776,	-3.16227766016838,	-2.64307611222473,	-4.58265789413395,	-0.62962764938032
 			};*/
 
-			float LQR_K[3*6] = {
-					127.965073971969,	-4.73327185478132e-14,	-2.58198889747161,	7.44835148905302,	-8.87885179101105e-16,	-0.343781437652188,
-					-63.9825369859844,	110.82100485688,	-2.58198889747161,	-3.72417574452651,	6.45897730255226,	-0.343781437652188,
-					-63.9825369859844,	-110.82100485688,	-2.58198889747161,	-3.72417574452651,	-6.45897730255226,	-0.343781437652188
+			float LQR_K[3*8] = {
+					103.108742162512,	-1.76733821457925e-13,	-2.5819888974716,	-1.35358797102508e-14,	-2.58198889747157,	18.9597239445678,	-4.09220484536091e-14,	-0.56174108216915,
+					-51.5543710812559,	89.3044611421588,	-2.58198889747159,	2.23606797749985,	1.29099444873579,	-9.4798619722839,	16.4430776741983,	-0.561741082169149,
+					-51.5543710812559,	-89.3044611421589,	-2.5819888974716,	-2.23606797749985,	1.29099444873577,	-9.47986197228385,	-16.4430776741983,	-0.561741082169151
 			};
 			float LQR_MaxYawError = 10.0; // yaw error clamp [degrees]
 			//float LQR_MaxYawVelocityError = 0.1; // rad/s
@@ -115,7 +116,7 @@ class Parameters
 			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
 
 			/* Velocity controller parameters */
-			float VelocityController_MaxTilt	= 1.0; // max tilt that velocity controller can set [degrees]
+			float VelocityController_MaxTilt	= 8.0; // max tilt that velocity controller can set [degrees]
 			float VelocityController_MaxIntegralCorrection = 8.0; // max tilt integral effect can compensate with [degrees]
 			float VelocityController_VelocityClamp = 0.50; // velocity clamp for the proportional gain - note that at this velocity MaxTilt will be set [meters pr. second]
 			float VelocityController_IntegralGain = 0*0.1; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
@@ -135,8 +136,11 @@ class Parameters
 			bool CreateQdotFromQDifference = false;
 			bool UseMadgwick = false;
 			bool EstimateBias = true;
-			bool Use2Lvelocity = false;
+			bool Use2Lvelocity = true;
 			bool UseVelocityEstimator = false;
+			bool EnableVelocityLPF = true;
+			float VelocityLPFcoeffs_a[3] = {1.000000000000000, -1.870860377550659, 0.878777573775756};	// 20 Hz LPF
+			float VelocityLPFcoeffs_b[3] = {0.011353393934590, -0.014789591644084, 0.011353393934590};	// Created using:  [num, den] = cheby2(2,40,20/(Fs/2))
 			bool UseCOMestimateInVelocityEstimator = false;
 			bool EstimateCOM = false;
 			float EstimateCOMminVelocity = 0.05; // minimum velocity (checked against estimate) to run COM estimator
@@ -161,17 +165,17 @@ class Parameters
 																		 0.0033E-03f*AccelCov_Tuning_Factor,    0.0018E-03f*AccelCov_Tuning_Factor,    0.5446E-03f*AccelCov_Tuning_Factor};
 			#else
 				// LPF off
-				float cov_gyro_mpu[9] = {0.2529E-03f*GyroCov_Tuning_Factor,   -0.0064E-03f*GyroCov_Tuning_Factor,    0.1981E-03f*GyroCov_Tuning_Factor,
-																			 -0.0064E-03f*GyroCov_Tuning_Factor,    0.9379E-03f*GyroCov_Tuning_Factor,   -0.0038E-03f*GyroCov_Tuning_Factor,
-																			  0.1981E-03f*GyroCov_Tuning_Factor,   -0.0038E-03f*GyroCov_Tuning_Factor,    1.6828E-03f*GyroCov_Tuning_Factor};
-			  // LPF off
-				float cov_acc_mpu[9] = {0.4273E-03f*AccelCov_Tuning_Factor,    0.0072E-03f*AccelCov_Tuning_Factor,    0.0096E-03f*AccelCov_Tuning_Factor,
-														 0.0072E-03f*AccelCov_Tuning_Factor,    0.4333E-03f*AccelCov_Tuning_Factor,    0.0041E-03f*AccelCov_Tuning_Factor,
-															 0.0096E-03f*AccelCov_Tuning_Factor,    0.0041E-03f*AccelCov_Tuning_Factor,    1.0326E-03f*AccelCov_Tuning_Factor};
+				float cov_gyro_mpu[9] = {0.000488851271107,   0.000019498684537,   0.000017952156469,
+						   	   	   	     0.000019498684537,   0.000173518012650,  -0.000003619560060,
+										 0.000017952156469,  -0.000003619560060,   0.001417022105170};
+			    // LPF off
+				float cov_acc_mpu[9] = {0.000410857497899,   0.000005195881332,  -0.000007891794621,
+						   	   	   	    0.000005195881332,   0.000422554198050,  -0.000004392151709,
+									   -0.000007891794621,  -0.000004392151709,   0.001003932854130};
 			#endif
 
 			float sigma2_bias = 1E-6;
-			float sigma2_omega = 1E-5;
+			float sigma2_omega = 1E-6;
 			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
 
 			// X_QEKF = {q0, q1, q2, q3,   dq0, dq1, dq2, dq3,   gyro_bias_x, gyro_bias_y}
