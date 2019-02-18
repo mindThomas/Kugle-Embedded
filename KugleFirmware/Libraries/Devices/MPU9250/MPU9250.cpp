@@ -62,6 +62,12 @@ MPU9250::MPU9250(I2C * i2c) : _interruptPin(0), _interruptSemaphore(0), _accelSc
 
 MPU9250::~MPU9250()
 {
+	if (_interruptSemaphore) {
+		_interruptPin->DeregisterInterrupt(); // disable interrupt
+		vQueueUnregisterQueue(_interruptSemaphore);
+		vSemaphoreDelete(_interruptSemaphore);
+	}
+
 	if (_bus)
 		delete(_bus);
 }

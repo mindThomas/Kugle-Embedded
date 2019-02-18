@@ -23,7 +23,7 @@
 #include "stm32h7xx_hal.h"
 #include "cmsis_os.h" // for memory allocation (for the buffer) and callback
 
-#define UART_CALLBACK_PARAMS (uint8_t * buffer, uint32_t bufLen)
+#define UART_CALLBACK_PARAMS (void * param, uint8_t * buffer, uint32_t bufLen)
 
 class UART
 {
@@ -43,8 +43,8 @@ class UART
 		void InitPeripheral();
 		void DeInitPeripheral();
 		void ConfigurePeripheral();
-		void RegisterRXcallback(void (*callback)UART_CALLBACK_PARAMS); // each byte callback
-		void RegisterRXcallback(void (*callback)UART_CALLBACK_PARAMS, uint32_t chunkLength); // each byte callback
+		void RegisterRXcallback(void (*callback)UART_CALLBACK_PARAMS, void * parameter = (void*)0, uint32_t chunkLength = 0); // callback with chunks of available data
+		void DeregisterCallback();
 
 		void Write(uint8_t byte);
 		uint32_t Write(uint8_t * buffer, uint32_t length);
@@ -70,9 +70,10 @@ class UART
 		uint32_t _callbackChunkLength;
 		TaskHandle_t _callbackTaskHandle;
 		SemaphoreHandle_t _resourceSemaphore;
-		SemaphoreHandle_t TransmitByteFinished;
-		SemaphoreHandle_t RXdataAvailable;
-		void (*RXcallback)UART_CALLBACK_PARAMS;
+		SemaphoreHandle_t _transmitByteFinished;
+		SemaphoreHandle_t _RXdataAvailable;
+		void (*_RXcallback)UART_CALLBACK_PARAMS;
+		void * _RXcallbackParameter;
 
 	public:
 		static void UART_Interrupt(port_t port);
