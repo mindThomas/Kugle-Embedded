@@ -45,6 +45,7 @@ class IO
 
 		void RegisterInterrupt(interrupt_trigger_t trigger, SemaphoreHandle_t semaphore);
 		void RegisterInterrupt(interrupt_trigger_t trigger, void (*InterruptCallback)(void * params), void * callbackParams);
+		void DeregisterInterrupt();
 
 		void Set(bool state);
 		bool Read();
@@ -70,6 +71,7 @@ class IO
 
 	private:
 		void ConfigureInterrupt(interrupt_trigger_t level);
+		void DisableInterrupt();
 
 	public:
 		static void InterruptHandler(IO * io);

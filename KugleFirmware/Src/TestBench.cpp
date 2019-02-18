@@ -35,6 +35,7 @@
 #include "QuadratureKnob.h"
 #include "ADC.h"
 #include "MPU9250.h"
+#include "MTI200.h"
 #include "ESCON.h"
 #include "PowerManagement.h"
 #include "Parameters.h"
@@ -52,16 +53,12 @@ Timer * timer2;
 IO * pin;
 QuadratureKnob * knob;
 ADC * adc;
+MTI200 * mti200;
 
 void TestBench_Init()
 {
 	/* Create Test bench thread */
-	xTaskCreate(TestBench, "testBenchTask", 128, (void*) NULL, TEST_BENCH_PRIORITY, &testBenchTaskHandle);
-}
-
-void UART_Callback(uint8_t * buffer, uint32_t bufLen)
-{
-	uart->Write(buffer, bufLen);
+	xTaskCreate(TestBench, "testBenchTask", 256, (void*) NULL, TEST_BENCH_PRIORITY, &testBenchTaskHandle);
 }
 
 int32_t encoderValue;
@@ -120,7 +117,7 @@ void TestBench(void * pvParameters)
 }
 #endif
 
-#if 1
+#if 0
 void TestBench(void * pvParameters)
 {
 	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
@@ -174,6 +171,11 @@ void TestBench(void * pvParameters)
 #endif
 
 #if 0
+void UART_Callback(void * param, uint8_t * buffer, uint32_t bufLen)
+{
+	uart->Write(buffer, bufLen);
+}
+
 void TestBench(void * pvParameters)
 {
 	uart = new UART(UART::PORT_UART3, 115200, 100);
@@ -267,3 +269,41 @@ void TestBench(void * pvParameters)
 	}
 }
 #endif
+
+#if 0
+void UART_Callback(void * param, uint8_t * buffer, uint32_t bufLen)
+{
+	Debug::printf("Received %d bytes from UART3\n", bufLen);
+	uart->Write(buffer, bufLen);
+}
+
+void TestBench(void * pvParameters)
+{
+	uart = new UART(UART::PORT_UART3, 460800, 100);
+	uart->RegisterRXcallback(UART_Callback);
+
+	std::string testString("This is a test\n");
+	while (1) {
+		uart->Write(reinterpret_cast<uint8_t *>(const_cast<char *>(testString.c_str())), testString.length());
+		osDelay(1000);
+	}
+}
+#endif
+
+#if 1
+void TestBench(void * pvParameters)
+{
+	uart = new UART(UART::PORT_UART3, 460800, 100);
+	mti200 = new MTI200(uart);
+
+	IMU::Measurement_t meas;
+	while (1) {
+		mti200->Get(meas);
+		Debug::printf("Accelerometer = [%.3f, %.3f, %.3f]\n", meas.Accelerometer[0], meas.Accelerometer[1], meas.Accelerometer[2]);
+		Debug::printf("Gyroscope = [%.3f, %.3f, %.3f]\n", meas.Gyroscope[0], meas.Gyroscope[1], meas.Gyroscope[2]);
+		Debug::printf("Magnetometer = [%.3f, %.3f, %.3f]\n\n", meas.Magnetometer[0], meas.Magnetometer[1], meas.Magnetometer[2]);
+		osDelay(100);
+	}
+}
+#endif
+

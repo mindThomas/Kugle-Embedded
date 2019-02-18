@@ -141,6 +141,15 @@ void IO::RegisterInterrupt(interrupt_trigger_t trigger, void (*InterruptCallback
 	ConfigureInterrupt(trigger);
 }
 
+void IO::DeregisterInterrupt()
+{
+	if (!_GPIO || !_isInput || (!_InterruptSemaphore && !_InterruptCallback)) return; // no interrupt configured
+	_InterruptSemaphore = 0;
+	_InterruptCallback = 0;
+	_InterruptCallbackParams = 0;
+	DisableInterrupt();
+}
+
 void IO::ConfigureInterrupt(interrupt_trigger_t trigger)
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -209,6 +218,35 @@ void IO::ConfigureInterrupt(interrupt_trigger_t trigger)
 		HAL_NVIC_SetPriority(EXTI9_5_IRQn, IO_INTERRUPT_PRIORITY, 0);
 		HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 	}
+}
+
+void IO::DisableInterrupt()
+{
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+		if (!_GPIO || _isInput) return;
+
+		// Calculate pin index by extracting bit index from GPIO_PIN
+		uint16_t pinIndex;
+		uint16_t tmp = _pin;
+		for (pinIndex = -1; tmp != 0; pinIndex++)
+			tmp = tmp >> 1;
+
+		interruptObjects[pinIndex] = 0;
+
+		// Reconfigure pin to just input (disable interrupt)
+		GPIO_InitStruct.Pin = _pin;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+
+		if (_pull == PULL_NONE)
+			GPIO_InitStruct.Pull = GPIO_NOPULL;
+		else if (_pull == PULL_UP)
+			GPIO_InitStruct.Pull = GPIO_PULLUP;
+		else if (_pull == PULL_DOWN)
+			GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+
+		HAL_GPIO_Init(_GPIO, &GPIO_InitStruct);
 }
 
 void IO::Set(bool state)
