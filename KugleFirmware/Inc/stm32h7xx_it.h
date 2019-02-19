@@ -85,6 +85,7 @@ void TIM16_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 void vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName );
 void vApplicationMallocFailedHook( void );
+void DisableHardware(void);
 /* USER CODE END EFP */
 
 #ifdef __cplusplus

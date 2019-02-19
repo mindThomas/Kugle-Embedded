@@ -128,6 +128,10 @@ class Parameters
 			/* Estimator Tuning parameters */
 			float SampleRate = 200;
 			
+			bool UseXsensIMU = false;
+			bool ConfigureXsensIMUatBoot = false;
+			bool UseXsensEstimates = false; // should the orientation estimates computed by the Xsens IMU be used or should the calibrated sensor values be used
+
 			#define EnableSensorLPFfilters_ 	false
 			bool EnableSensorLPFfilters = EnableSensorLPFfilters_;
 			bool EnableSoftwareLPFfilters = false;

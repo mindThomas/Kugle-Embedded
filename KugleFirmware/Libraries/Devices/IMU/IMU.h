@@ -32,11 +32,18 @@ class IMU
 			float Magnetometer[3];
 		} Measurement_t;
 
+		typedef struct Estimates_t {
+			float q[4];
+			float dq[4];
+		} Estimates_t;
+
 	public:
 		virtual ~IMU() {};
 
 		virtual uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY) { return pdFALSE; };
 		virtual void Get(Measurement_t& measurement) {};
+		virtual void GetEstimates(Estimates_t& estimates) {}; // if supported, eg. by Xsens IMU
+
 		void Calibrate(bool storeInEEPROM = true);
 		void CorrectMeasurement(Measurement_t& measurement);
 
