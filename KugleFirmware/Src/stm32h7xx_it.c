@@ -247,16 +247,55 @@ void DebugMon_Handler(void)
   /* USER CODE END DebugMonitor_IRQn 1 */
 }
 
+void DisableHardware(void)
+{
+	__HAL_RCC_TIM1_CLK_DISABLE();
+	__HAL_RCC_TIM2_CLK_DISABLE();
+	__HAL_RCC_TIM3_CLK_DISABLE();
+	__HAL_RCC_TIM4_CLK_DISABLE();
+	__HAL_RCC_TIM5_CLK_DISABLE();
+	__HAL_RCC_TIM6_CLK_DISABLE();
+	__HAL_RCC_TIM7_CLK_DISABLE();
+	__HAL_RCC_TIM8_CLK_DISABLE();
+	__HAL_RCC_TIM15_CLK_DISABLE();
+	__HAL_RCC_TIM16_CLK_DISABLE();
+	__HAL_RCC_TIM17_CLK_DISABLE();
+	__HAL_RCC_GPIOA_CLK_DISABLE();
+	__HAL_RCC_GPIOB_CLK_DISABLE();
+	__HAL_RCC_GPIOC_CLK_DISABLE();
+	__HAL_RCC_GPIOD_CLK_DISABLE();
+	__HAL_RCC_GPIOE_CLK_DISABLE();
+	__HAL_RCC_GPIOF_CLK_DISABLE();
+	__HAL_RCC_GPIOG_CLK_DISABLE();
+	__HAL_RCC_GPIOH_CLK_DISABLE();
+	__HAL_RCC_USART1_CLK_DISABLE();
+	__HAL_RCC_USART2_CLK_DISABLE();
+	__HAL_RCC_USART3_CLK_DISABLE();
+	__HAL_RCC_UART4_CLK_DISABLE();
+	__HAL_RCC_UART5_CLK_DISABLE();
+	__HAL_RCC_USART6_CLK_DISABLE();
+	__HAL_RCC_I2C1_CLK_DISABLE();
+	__HAL_RCC_I2C2_CLK_DISABLE();
+	__HAL_RCC_I2C3_CLK_DISABLE();
+	__HAL_RCC_SPI1_CLK_DISABLE();
+	__HAL_RCC_SPI2_CLK_DISABLE();
+	__HAL_RCC_SPI3_CLK_DISABLE();
+	__HAL_RCC_SPI4_CLK_DISABLE();
+	__HAL_RCC_SPI5_CLK_DISABLE();
+}
 
 void vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName )
 {
     //Debug::printf("stack overflow in task id %lu, name: %s n", (uint32t)xTask, pcTaskName);
 	// pxCurrentTCB contains a pointer to the currently running task
+
+	DisableHardware();
     for( ;; );
 }
 
 void vApplicationMallocFailedHook( void )
 {
+	DisableHardware();
 	for( ;; );
 }
 

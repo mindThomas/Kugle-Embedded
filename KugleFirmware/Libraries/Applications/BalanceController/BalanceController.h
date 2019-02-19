@@ -33,6 +33,7 @@
 #include "MadgwickAHRS.h"
 #include "COMEKF.h"
 #include "VelocityEKF.h"
+#include "MTI200.h" // for logging only, if available
 
 class BalanceController
 {
@@ -48,7 +49,7 @@ class BalanceController
 		} referenceFrame_t;
 
 	public:
-		BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_);
+		BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_, MTI200 * mti_ = 0);
 		~BalanceController();
 
 		int Start();
@@ -83,6 +84,7 @@ class BalanceController
 		ESCON& motor3;
 		LSPC& com;
 		Timer& microsTimer;
+		MTI200 * mti;
 
 		// State estimates
 		float xy[2];

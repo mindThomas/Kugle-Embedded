@@ -37,32 +37,38 @@ class MTI200 : public IMU
 		const int MESSAGE_QUEUE_LENGTH = 4;
 
 	public:
+		typedef struct LastMeasurement_t {
+			uint16_t PackageCounter;
+			float Time;
+			float dt;
+			float Quaternion[4];
+			float DeltaQ[4];
+			float Accelerometer[3];
+			float Gyroscope[3];
+			float Magnetometer[3];
+			uint32_t Status;
+		};
+
+	public:
 		MTI200(UART * uart);
 		~MTI200();
 
 		uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY);
 		void Get(Measurement_t& measurement);
+		void GetEstimates(Estimates_t& estimates);
 
-		void Configure();
+		bool Configure();
+		LastMeasurement_t GetLastMeasurement();
 
 	private:
 		UART * _uart;
 		SemaphoreHandle_t _interruptSemaphore;
 		SemaphoreHandle_t _resourceSemaphore;
+		SemaphoreHandle_t _dataSemaphore;
 		XbusParser * _xbusParser;
 		QueueHandle_t _messageQueue;
 		QueueHandle_t _responseQueue;
-
-		struct {
-			uint16_t PackageCounter;
-			float Time;
-			float Quaternion[4];
-			float QuaternionDerivative[4];
-			float Accelerometer[3];
-			float Gyroscope[3];
-			float Magnetometer[3];
-			uint32_t Status;
-		} LastMeasurement;
+		LastMeasurement_t LastMeasurement;
 
 		static void UART_Callback(void * param, uint8_t * buffer, uint32_t bufLen);
 
@@ -78,6 +84,9 @@ class MTI200 : public IMU
 		uint32_t readDeviceId(void);
 		bool setOutputConfiguration(OutputConfiguration const* conf, uint8_t elements);
 		bool configureMotionTracker(void);
+
+		bool waitForWakeup(uint32_t timeout);
+		void sendWakeupAck(void);
 
 		XbusMessage GetMessage(uint32_t timeout = portMAX_DELAY);
 		void printMessageData(XbusMessage const* message);

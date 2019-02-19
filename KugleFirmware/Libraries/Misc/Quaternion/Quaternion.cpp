@@ -343,6 +343,15 @@ void Quaternion_GetAngularVelocity_Body(const float q[4], const float dq[4], flo
 	omega_out[2] *= 2;
 }
 
+void Quaternion_GetDQ_FromBody(const float q[4], const float omega_body[3], float dq[4])
+{
+	// dq = 1/2 * q o q_omega_body
+	// dq = 1/2 * Phi(q) * [0;q_omega_body];
+    float omega_q[4] = {0, omega_body[0], omega_body[1], omega_body[2]};
+    Quaternion_Phi(q, omega_q, dq); // Gamma(q_ref) * [0;omega_ref]
+    arm_scale_f32(dq, 0.5f, dq, 4);
+}
+
 void Quaternion_Integration_Body(const float q[4], const float omega_body[3], const float dt, float q_out[4])
 {
     /* Quaternion Exponential method

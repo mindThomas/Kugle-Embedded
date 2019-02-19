@@ -35,7 +35,7 @@
 
 #include <string> // for memcpy
 
-BalanceController::BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_) : TaskHandle_(0), isRunning_(false), shouldStop_(false), imu(imu_), motor1(motor1_), motor2(motor2_), motor3(motor3_), com(com_), microsTimer(microsTimer_)
+BalanceController::BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_, MTI200 * mti_) : TaskHandle_(0), isRunning_(false), shouldStop_(false), imu(imu_), motor1(motor1_), motor2(motor2_), motor3(motor3_), com(com_), microsTimer(microsTimer_), mti(mti_)
 {
 	/* Create setpoint semaphores */
 	BalanceReference.semaphore = xSemaphoreCreateBinary();
@@ -161,6 +161,9 @@ void BalanceController::Thread(void * pvParameters)
 	IMU::Measurement_t imuRaw;
 	IMU::Measurement_t imuCorrected;
 	IMU::Measurement_t imuFiltered;
+	IMU::Estimates_t imuEstimates;
+	MTI200::LastMeasurement_t MTImeas; // for logging
+	IMU::Estimates_t MTIest;
 	int32_t EncoderTicks[3];
 	float EncoderAngle[3];
 
@@ -307,7 +310,7 @@ __attribute__((optimize("O0")))
 		imu.CorrectMeasurement(imuCorrected);
 
 		imuFiltered = imuCorrected;
-		if (params.estimator.EnableSoftwareLPFfilters) {
+		if (params.estimator.EnableSoftwareLPFfilters && !params.estimator.UseXsensIMU) {
 			imuFiltered.Accelerometer[0] = accel_x_filt.Filter(imuCorrected.Accelerometer[0]);
 			imuFiltered.Accelerometer[1] = accel_y_filt.Filter(imuCorrected.Accelerometer[1]);
 			imuFiltered.Accelerometer[2] = accel_z_filt.Filter(imuCorrected.Accelerometer[2]);
@@ -357,6 +360,19 @@ __attribute__((optimize("O0")))
 	    dq[1] = dq1_filt.Filter(dq[1]);
 	    dq[2] = dq2_filt.Filter(dq[2]);
 	    dq[3] = dq3_filt.Filter(dq[3]);*/
+
+		/* Replace estimates with Xsens estimates */
+		if (params.estimator.UseXsensIMU && params.estimator.UseXsensEstimates) {
+			imu.GetEstimates(imuEstimates);
+			balanceController->q[0] = imuEstimates.q[0];
+			balanceController->q[1] = imuEstimates.q[1];
+			balanceController->q[2] = imuEstimates.q[2];
+			balanceController->q[3] = imuEstimates.q[3];
+			balanceController->dq[0] = imuEstimates.dq[0];
+			balanceController->dq[1] = imuEstimates.dq[1];
+			balanceController->dq[2] = imuEstimates.dq[2];
+			balanceController->dq[3] = imuEstimates.dq[3];
+		}
 
 		/* Independent heading requires dq to be decoupled around the yaw/heading axis */
 	    if (params.behavioural.IndependentHeading && !params.behavioural.YawVelocityBraking && !params.controller.DisableQdot) {
@@ -445,10 +461,6 @@ __attribute__((optimize("O0")))
 					balanceController->q_ref[2] = balanceController->BalanceReference.q[2];
 					balanceController->q_ref[3] = balanceController->BalanceReference.q[3];
 
-				    if (params.behavioural.IndependentHeading) {
-				    	HeadingIndependentReferenceManual(balanceController->q_ref, balanceController->q, balanceController->q_ref);
-				    }
-
 					if (balanceController->BalanceReference.frame == BODY_FRAME) {
 						balanceController->omega_ref_body[0] = balanceController->BalanceReference.omega[0];
 						balanceController->omega_ref_body[1] = balanceController->BalanceReference.omega[1];
@@ -472,6 +484,10 @@ __attribute__((optimize("O0")))
 				}
 	    		xSemaphoreGive( balanceController->BalanceReference.semaphore ); // give semaphore back
 	    	}
+
+		    if (params.behavioural.IndependentHeading) {
+		    	HeadingIndependentReferenceManual(balanceController->q_ref, balanceController->q, balanceController->q_ref);
+		    }
 		}
 
 	    /* Velocity control enabled */
@@ -647,17 +663,23 @@ __attribute__((optimize("O0")))
 		//Debug::printf("Balance controller compute time: %9.7f s\n", dt_compute);
 		//Debug::printf("Applied torque: %4.2f\t%4.2f\t%4.2f\n", TorqueApplied[0], TorqueApplied[1], TorqueApplied[2]);
 
+		/* Get values from Xsens IMU (if available) for logging */
+		if (balanceController->mti) {
+			MTImeas = balanceController->mti->GetLastMeasurement();
+			balanceController->mti->GetEstimates(MTIest);
+		}
+
 		/* Send IMU Log (test package) for MATH dump */
 		float mathDumpArray[] = {microsTimer.GetTime(),
-				imuCorrected.Accelerometer[0],
-				imuCorrected.Accelerometer[1],
-				imuCorrected.Accelerometer[2],
-				imuCorrected.Gyroscope[0],
-				imuCorrected.Gyroscope[1],
-				imuCorrected.Gyroscope[2],
-				imuCorrected.Magnetometer[0],
-				imuCorrected.Magnetometer[1],
-				imuCorrected.Magnetometer[2],
+								 imuCorrected.Accelerometer[0],
+								 imuCorrected.Accelerometer[1],
+								 imuCorrected.Accelerometer[2],
+								 imuCorrected.Gyroscope[0],
+								 imuCorrected.Gyroscope[1],
+								 imuCorrected.Gyroscope[2],
+								 imuCorrected.Magnetometer[0],
+								 imuCorrected.Magnetometer[1],
+								 imuCorrected.Magnetometer[2],
 								 EncoderAngle[0],
 								 EncoderAngle[1],
 								 EncoderAngle[2],
@@ -694,7 +716,21 @@ __attribute__((optimize("O0")))
 								 balanceController->q_ref[3],
 								 balanceController->omega_ref_body[0],
 								 balanceController->omega_ref_body[1],
-								 balanceController->omega_ref_body[2]
+								 balanceController->omega_ref_body[2],
+								 MTIest.q[0],
+								 MTIest.q[1],
+								 MTIest.q[2],
+								 MTIest.q[3],
+								 MTIest.dq[0],
+								 MTIest.dq[1],
+								 MTIest.dq[2],
+								 MTIest.dq[3],
+								 MTImeas.Accelerometer[0],
+								 MTImeas.Accelerometer[1],
+								 MTImeas.Accelerometer[2],
+								 MTImeas.Gyroscope[0],
+								 MTImeas.Gyroscope[1],
+								 MTImeas.Gyroscope[2]
 							};
 		com.TransmitAsync(lspc::MessageTypesToPC::MathDump, (uint8_t *)&mathDumpArray, sizeof(mathDumpArray));
 	}

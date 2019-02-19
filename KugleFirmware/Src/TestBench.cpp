@@ -290,18 +290,25 @@ void TestBench(void * pvParameters)
 }
 #endif
 
-#if 1
+#if 0
 void TestBench(void * pvParameters)
 {
+	osDelay(4000);
 	uart = new UART(UART::PORT_UART3, 460800, 100);
 	mti200 = new MTI200(uart);
+
+	osDelay(5000);
 
 	IMU::Measurement_t meas;
 	while (1) {
 		mti200->Get(meas);
+		MTI200::LastMeasurement_t meas2 = mti200->GetLastMeasurement();
+		Debug::printf("Time = [%.2f  (dt = %.2f ms)\n", meas2.Time, 1000*meas2.dt);
 		Debug::printf("Accelerometer = [%.3f, %.3f, %.3f]\n", meas.Accelerometer[0], meas.Accelerometer[1], meas.Accelerometer[2]);
 		Debug::printf("Gyroscope = [%.3f, %.3f, %.3f]\n", meas.Gyroscope[0], meas.Gyroscope[1], meas.Gyroscope[2]);
 		Debug::printf("Magnetometer = [%.3f, %.3f, %.3f]\n\n", meas.Magnetometer[0], meas.Magnetometer[1], meas.Magnetometer[2]);
+		Debug::printf("q = [%.3f, %.3f, %.3f, %.3f]\n\n", meas2.Quaternion[0], meas2.Quaternion[1], meas2.Quaternion[2], meas2.Quaternion[3]);
+		Debug::printf("dq = [%.3f, %.3f, %.3f, %.3f]\n\n", meas2.QuaternionDerivative[0], meas2.QuaternionDerivative[1], meas2.QuaternionDerivative[2], meas2.QuaternionDerivative[3]);
 		osDelay(100);
 	}
 }

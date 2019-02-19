@@ -287,13 +287,13 @@ void UART::RegisterRXcallback(void (*callback)UART_CALLBACK_PARAMS, void * param
 
 	switch (_port) {
 		case PORT_UART3:
-			xTaskCreate(UART::CallbackThread, (char *)"UART3 callback", 128, (void*) this, 3, &_callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART3 callback", 256, (void*) this, UART_RECEIVER_PRIORITY, &_callbackTaskHandle);
 			break;
 		case PORT_UART4:
-			xTaskCreate(UART::CallbackThread, (char *)"UART4 callback", 128, (void*) this, 3, &_callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART4 callback", 256, (void*) this, UART_RECEIVER_PRIORITY, &_callbackTaskHandle);
 			break;
 		case PORT_UART7:
-			xTaskCreate(UART::CallbackThread, (char *)"UART7 callback", 128, (void*) this, 3, &_callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART7 callback", 256, (void*) this, UART_RECEIVER_PRIORITY, &_callbackTaskHandle);
 			break;
 		default:
 			break;
@@ -403,6 +403,11 @@ bool UART::Available()
 	return (_bufferWriteIdx != _bufferReadIdx);
 }
 
+uint32_t UART::AvailableLength()
+{
+	return BufferContentSize();
+}
+
 bool UART::Connected()
 {
 	return true; // UART is always connected after initializing and configuring the periphiral (port is opened)
@@ -471,7 +476,7 @@ void UART::UART_IncomingDataInterrupt(UART * uart)
     //__HAL_UART_SEND_REQ(huart, UART_RXDATA_FLUSH_REQUEST); // should already have been cleared by reading
 
 	uart->BufferPush(uart->rxByte); // push into local buffer
-	if (uart->_RXcallback)
+	if (uart->_RXcallback && uart->_callbackTaskHandle)
 		xTaskResumeFromISR(uart->_callbackTaskHandle);
 
   if (uart->_RXdataAvailable)

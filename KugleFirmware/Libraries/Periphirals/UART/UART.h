@@ -51,6 +51,7 @@ class UART
 		uint32_t WriteBlocking(uint8_t * buffer, uint32_t length);
 		int16_t Read();
 		bool Available();
+		uint32_t AvailableLength();
 		uint32_t WaitForNewData(uint32_t xTicksToWait = portMAX_DELAY);
 		bool Connected();
 

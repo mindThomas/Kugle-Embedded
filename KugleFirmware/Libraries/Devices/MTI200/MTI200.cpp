@@ -21,6 +21,7 @@
 #include "UART.h"
 #include "Debug.h"
 #include "cmsis_os.h"
+#include "Quaternion.h"
 
 MTI200::MTI200(UART * uart) : _uart(uart)
 {
@@ -38,6 +39,14 @@ MTI200::MTI200(UART * uart) : _uart(uart)
 	}
 	vQueueAddToRegistry(_resourceSemaphore, "MTI200 Resource");
 	xSemaphoreGive( _resourceSemaphore ); // give the semaphore the first time
+
+	_dataSemaphore = xSemaphoreCreateBinary();
+	if (_dataSemaphore == NULL) {
+		ERROR("Could not create MTI200 data semaphore");
+		return;
+	}
+	vQueueAddToRegistry(_dataSemaphore, "MTI200 Data");
+	xSemaphoreGive( _dataSemaphore ); // give the semaphore the first time
 
 	_messageQueue = xQueueCreate( MESSAGE_QUEUE_LENGTH, sizeof(XbusMessage *) );
 	if (_messageQueue == NULL) {
@@ -65,8 +74,9 @@ MTI200::MTI200(UART * uart) : _uart(uart)
 		_uart->RegisterRXcallback(&UART_Callback, (void *)this);
 	}
 
-	osDelay(500);
-	Configure();
+	/* Reset last measurement and make the quaternion valid if requested before getting first message */
+	memset(&LastMeasurement, 0, sizeof(LastMeasurement_t));
+	LastMeasurement.Quaternion[0] = 1;
 }
 
 MTI200::~MTI200()
@@ -78,6 +88,10 @@ MTI200::~MTI200()
 	if (_resourceSemaphore) {
 		vQueueUnregisterQueue(_resourceSemaphore);
 		vSemaphoreDelete(_resourceSemaphore);
+	}
+	if (_dataSemaphore) {
+		vQueueUnregisterQueue(_dataSemaphore);
+		vSemaphoreDelete(_dataSemaphore);
 	}
 	if (_messageQueue) {
 		vQueueUnregisterQueue(_messageQueue);
@@ -93,11 +107,21 @@ MTI200::~MTI200()
 	}
 }
 
-void MTI200::Configure()
+bool MTI200::Configure()
 {
-	sendCommand(XMID_GotoConfig);
-	configureMotionTracker();
-	sendCommand(XMID_GotoMeasurement);
+	if (!sendCommand(XMID_GotoConfig)) return false;
+	if (!sendCommand(XMID_Reset)) return false;
+	if (waitForWakeup(2000))
+	{
+		sendWakeupAck();
+	}
+	if (!sendCommand(XMID_GotoConfig)) return false;
+	if (!configureMotionTracker()) {
+		Debug::print("Failed configuring MTI200 IMU\n");
+		return false;
+	}
+	if (!sendCommand(XMID_GotoMeasurement)) return false;
+	return true;
 }
 
 uint32_t MTI200::WaitForNewData(uint32_t xTicksToWait) // blocking call
@@ -128,6 +152,7 @@ void MTI200::UART_Callback(void * param, uint8_t * buffer, uint32_t bufLen)
  */
 void* MTI200::allocateMessageData(size_t bufSize)
 {
+	if (!bufSize) return 0;
 	return (void *)pvPortMalloc(bufSize);
 }
 
@@ -137,6 +162,7 @@ void* MTI200::allocateMessageData(size_t bufSize)
  */
 void MTI200::deallocateMessageData(void const* buffer)
 {
+	if (!buffer) return;
 	vPortFree((void *)buffer);
 }
 
@@ -223,7 +249,7 @@ XbusMessage const * MTI200::doTransaction(XbusMessage const* m)
 
 	// Wait for the transmission to finish
     XbusMessage * msgPtr = NULL;
-    xQueueReceive( _responseQueue, &msgPtr, ( TickType_t ) 500 ); // check USB connection every 100 ms
+    xQueueReceive( _responseQueue, &msgPtr, ( TickType_t ) 500 ); // wait for response
 
     xSemaphoreGive( _resourceSemaphore ); // give hardware resource back
 
@@ -266,15 +292,23 @@ void MTI200::dumpResponse(XbusMessage const* response)
     switch (response->mid)
     {
         case XMID_GotoConfigAck:
-        	Debug::print("Device went to config mode.\r\n");
+        	Debug::print("MTI200 went to config mode.\r\n");
+            break;
+
+        case XMID_GotoMeasurementAck:
+        	Debug::print("MTI200 went to measurement mode.\r\n");
+            break;
+
+        case XMID_ResetAck:
+        	Debug::print("MTI200 has been reset.\r\n");
             break;
 
         case XMID_Error:
-        	Debug::print("Device error!\r\n");
+        	Debug::print("MTI200 error!\r\n");
             break;
 
         default:
-            Debug::printf("Received response MID=%X, length=%d\r\n", response->mid, response->length);
+            Debug::printf("MTI200 response MID=%X, length=%d\r\n", response->mid, response->length);
             break;
     }
 }
@@ -415,6 +449,47 @@ bool MTI200::configureMotionTracker(void)
     return false;
 }
 
+/*!
+ * \brief Wait for a wakeup message from the MTi.
+ * \param timeout Time to wait to receive the wakeup message.
+ * \return true if wakeup received within timeout, else false.
+ *
+ * The MTi sends an XMID_Wakeup message once it has completed its bootup
+ * procedure. If this is acknowledged by an XMID_WakeupAck message then the MTi
+ * will stay in configuration mode. Otherwise it will automatically enter
+ * measurement mode with the stored output configuration.
+ */
+bool MTI200::waitForWakeup(uint32_t timeout)
+{
+	xSemaphoreTake( _resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
+
+    XbusMessage * msgPtr = NULL;
+    xQueueReceive( _responseQueue, &msgPtr, ( TickType_t ) timeout ); // wait for wakeup
+
+    xSemaphoreGive( _resourceSemaphore ); // give hardware resource back
+
+    if (msgPtr)
+    {
+        XbusMessageMemoryManager janitor(msgPtr);
+        return msgPtr->mid == XMID_Wakeup;
+    }
+    return false;
+}
+
+/*!
+ * \brief Send wakeup acknowledge message to MTi.
+ *
+ * Sending a wakeup acknowledge will cause the device to stay in configuration
+ * mode instead of automatically transitioning to measurement mode with the
+ * stored output configuration.
+ */
+void MTI200::sendWakeupAck(void)
+{
+    XbusMessage ack = {XMID_WakeupAck};
+    sendMessage(&ack);
+    Debug::print("MTI200 ready for operation.\r\n");
+}
+
 
 /*!
  * \brief Output the contents of a data message to the PC serial port.
@@ -484,34 +559,71 @@ XbusMessage MTI200::GetMessage(uint32_t timeout)
 
 void MTI200::parseMTData2Message(XbusMessage const* message)
 {
-    if (!message)
-        return;
+	LastMeasurement_t tmp;
+	memset(&tmp, 0, sizeof(LastMeasurement_t));
 
-    LastMeasurement.PackageCounter = 0;
-    XbusMessage_getDataItem(&LastMeasurement.PackageCounter, XDI_PacketCounter, message);
+    if (!message)  return;
 
-    uint32_t sampleTimeFine;
-    LastMeasurement.Time = 0;
-    if (XbusMessage_getDataItem(&sampleTimeFine, XDI_SampleTimeFine, message))
-    {
-    	LastMeasurement.Time = (float)sampleTimeFine / 10000.0f;
-    }
+    if (!XbusMessage_getDataItem(&tmp.PackageCounter, XDI_PacketCounter, message)) return;
 
-    memset(LastMeasurement.Quaternion, 0, sizeof(LastMeasurement.Quaternion));
-    XbusMessage_getDataItem(LastMeasurement.Quaternion, XDI_Quaternion, message);
+    uint32_t sampleTimeFine = 0;
+    if (!XbusMessage_getDataItem(&sampleTimeFine, XDI_SampleTimeFine, message)) return;
 
-    memset(LastMeasurement.QuaternionDerivative, 0, sizeof(LastMeasurement.QuaternionDerivative));
-    XbusMessage_getDataItem(LastMeasurement.QuaternionDerivative, XDI_DeltaQ, message);
+	float time = (float)sampleTimeFine / 10000.0f;
+	if (sampleTimeFine > 0)
+		tmp.dt = time - LastMeasurement.Time;
+	tmp.Time = time;
 
-    memset(LastMeasurement.Accelerometer, 0, sizeof(LastMeasurement.Accelerometer));
-    XbusMessage_getDataItem(LastMeasurement.Accelerometer, XDI_Acceleration, message);
+    if (!XbusMessage_getDataItem(tmp.Quaternion, XDI_Quaternion, message)) return;
 
-    memset(LastMeasurement.Gyroscope, 0, sizeof(LastMeasurement.Gyroscope));
-    XbusMessage_getDataItem(LastMeasurement.Gyroscope, XDI_RateOfTurn, message);
+    if (!XbusMessage_getDataItem(tmp.DeltaQ, XDI_DeltaQ, message)) return;
 
-    memset(LastMeasurement.Magnetometer, 0, sizeof(LastMeasurement.Magnetometer));
-    XbusMessage_getDataItem(LastMeasurement.Magnetometer, XDI_MagneticField, message);
+    if (!XbusMessage_getDataItem(tmp.Accelerometer, XDI_Acceleration, message)) return;
 
-    LastMeasurement.Status = 0;
-    XbusMessage_getDataItem(&LastMeasurement.Status, XDI_StatusWord, message);
+    if (!XbusMessage_getDataItem(tmp.Gyroscope, XDI_RateOfTurn, message)) return;
+
+    if (!XbusMessage_getDataItem(tmp.Magnetometer, XDI_MagneticField, message)) return;
+
+    if (!XbusMessage_getDataItem(&tmp.Status, XDI_StatusWord, message)) return;
+
+    /* Successfully read all data - now overwrite LastMeasurement */
+    xSemaphoreTake( _dataSemaphore, ( TickType_t ) portMAX_DELAY ); // take data semaphore to update data
+    memcpy(&LastMeasurement, &tmp, sizeof(LastMeasurement_t));
+
+    /* Rotate the measurements and estimates 180 degrees due to the mount/orientation of the Xsens IMU */
+    LastMeasurement.Quaternion[1] = -LastMeasurement.Quaternion[1];
+    LastMeasurement.Quaternion[2] = -LastMeasurement.Quaternion[2];
+    LastMeasurement.DeltaQ[1] = -LastMeasurement.DeltaQ[1];
+    LastMeasurement.DeltaQ[2] = -LastMeasurement.DeltaQ[2];
+    LastMeasurement.Accelerometer[0] = -LastMeasurement.Accelerometer[0];
+    LastMeasurement.Accelerometer[1] = -LastMeasurement.Accelerometer[1];
+    LastMeasurement.Gyroscope[0] = -LastMeasurement.Gyroscope[0];
+    LastMeasurement.Gyroscope[1] = -LastMeasurement.Gyroscope[1];
+    LastMeasurement.Magnetometer[0] = -LastMeasurement.Magnetometer[0];
+    LastMeasurement.Magnetometer[1] = -LastMeasurement.Magnetometer[1];
+    xSemaphoreGive( _dataSemaphore ); // give semaphore back
+}
+
+MTI200::LastMeasurement_t MTI200::GetLastMeasurement()
+{
+	MTI200::LastMeasurement_t tmp;
+	memset(&tmp, 0, sizeof(LastMeasurement_t));
+	tmp.Quaternion[0] = 1.0; // as a safety measure if the semaphore can not be taken
+
+	xSemaphoreTake( _dataSemaphore, ( TickType_t ) 1 ); // take data semaphore to read data
+	tmp = LastMeasurement; // copy data
+	xSemaphoreGive( _dataSemaphore ); // give semaphore back
+
+	return tmp;
+}
+
+void MTI200::GetEstimates(Estimates_t& estimates)
+{
+	xSemaphoreTake( _dataSemaphore, ( TickType_t ) 1 ); // take data semaphore to read data
+
+	memcpy(estimates.q, LastMeasurement.Quaternion, sizeof(LastMeasurement.Quaternion));
+	//memcpy(estimates.dq, LastMeasurement.DeltaQ, sizeof(LastMeasurement.Quaternion));
+	Quaternion_GetDQ_FromBody(estimates.q, LastMeasurement.Gyroscope, estimates.dq); // convert angular velocity into q_dot
+
+	xSemaphoreGive( _dataSemaphore ); // give semaphore back
 }

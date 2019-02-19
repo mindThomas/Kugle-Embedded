@@ -108,26 +108,50 @@ void MainTask(void * pvParameters)
 	lspcUSB->registerCallback(lspc::MessageTypesFromPC::Reboot, &Reboot_Callback);
 	lspcUSB->registerCallback(lspc::MessageTypesFromPC::EnterBootloader, &EnterBootloader_Callback);
 
+	/* Test info */
+	Debug::print("Booting...\n");
+
 	/* Initialize global parameters */
 	Parameters& params = *(new Parameters(eeprom, lspcUSB));
 
-	/* Initialize and configure IMU */
-	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
-	MPU9250 * imu = new MPU9250(spi);
-	imu->AttachEEPROM(eeprom);
-	imu->Configure(MPU9250::ACCEL_RANGE_4G, MPU9250::GYRO_RANGE_2000DPS);
-
-	if (params.estimator.EnableSensorLPFfilters) {
-		//imu->setFilt(MPU9250::DLPF_BANDWIDTH_92HZ, MPU9250::DLPF_BANDWIDTH_92HZ); // sensor bandwidths should be lower than half the sample rate to avoid aliasing problems
-		imu->setFilt(MPU9250::DLPF_BANDWIDTH_92HZ, MPU9250::DLPF_BANDWIDTH_250HZ); // however best results are seen with 250 Hz gyro bandwidth, even though we sample at 200 Hz
-	} else {
-		imu->setFilt(MPU9250::DLPF_BANDWIDTH_OFF, MPU9250::DLPF_BANDWIDTH_OFF);
-		//imu->setFilt(MPU9250::DLPF_BANDWIDTH_184HZ, MPU9250::DLPF_BANDWIDTH_184HZ);
-		//imu->setFilt(MPU9250::DLPF_BANDWIDTH_41HZ, MPU9250::DLPF_BANDWIDTH_41HZ);
-		//imu->setFilt(MPU9250::DLPF_BANDWIDTH_20HZ, MPU9250::DLPF_BANDWIDTH_20HZ);
-		//imu->setFilt(MPU9250::DLPF_BANDWIDTH_OFF, MPU9250::DLPF_BANDWIDTH_184HZ);
+	/* Prepare Xsens IMU always, since it is used for logging and comparison purposes */
+	UART * uart = new UART(UART::PORT_UART3, 460800, 100);
+	MTI200 * mti200 = new MTI200(uart);
+	if (params.estimator.ConfigureXsensIMUatBoot) {
+		if (!mti200->Configure()) { // configuration failed, so do not use/pass on to balance controller
+			delete(mti200);
+			mti200 = 0;
+		}
 	}
-	imu->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
+
+	/* Initialize and configure IMU */
+	IMU * imu = 0;
+	if (params.estimator.UseXsensIMU) {
+		if (!mti200)
+			ERROR("MTI200 selected but not available!");
+		imu = mti200; // use Xsens MTI200 in Balance controller
+	}
+	else {
+		// Prepare and configure MPU9250 IMU
+		SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
+		MPU9250 * mpu9250 = new MPU9250(spi);
+		imu->AttachEEPROM(eeprom);
+		if (mpu9250->Configure(MPU9250::ACCEL_RANGE_4G, MPU9250::GYRO_RANGE_2000DPS) != 0)
+			ERROR("MPU9250 selected but not available!");
+
+		if (params.estimator.EnableSensorLPFfilters) {
+			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_92HZ, MPU9250::DLPF_BANDWIDTH_92HZ); // sensor bandwidths should be lower than half the sample rate to avoid aliasing problems
+			mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_92HZ, MPU9250::DLPF_BANDWIDTH_250HZ); // however best results are seen with 250 Hz gyro bandwidth, even though we sample at 200 Hz
+		} else {
+			mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_OFF, MPU9250::DLPF_BANDWIDTH_OFF);
+			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_184HZ, MPU9250::DLPF_BANDWIDTH_184HZ);
+			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_41HZ, MPU9250::DLPF_BANDWIDTH_41HZ);
+			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_20HZ, MPU9250::DLPF_BANDWIDTH_20HZ);
+			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_OFF, MPU9250::DLPF_BANDWIDTH_184HZ);
+		}
+		mpu9250->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
+		imu = mpu9250; // use MPU9250 in Balance controller
+	}
 
 	/* Initialize microseconds timer */
 	Timer * microsTimer = new Timer(Timer::TIMER6, 1000000); // create a 1 MHz counting timer used for micros() timing
@@ -137,11 +161,8 @@ void MainTask(void * pvParameters)
 	ESCON * motor2 = new ESCON(2, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed);
 	ESCON * motor3 = new ESCON(3, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed);
 
-	/* Test info */
-	Debug::print("Booting...\n");
-
 	/******* APPLICATION LAYERS *******/
-	BalanceController * balanceController = new BalanceController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer);
+	BalanceController * balanceController = new BalanceController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer, mti200);
 	if (!balanceController) ERROR("Could not initialize balance controller");
 
 	/* Send CPU load every second */
@@ -151,7 +172,25 @@ void MainTask(void * pvParameters)
 		vTaskGetRunTimeStats(pcWriteBuffer);
 		char * endPtr = &pcWriteBuffer[strlen(pcWriteBuffer)];
 		*endPtr++ = '\n'; *endPtr++ = '\n'; *endPtr++ = 0;
-		lspcUSB->TransmitAsync(lspc::MessageTypesToPC::CPUload, (uint8_t *)pcWriteBuffer, strlen(pcWriteBuffer));
+
+		// Split into multiple packages and send
+		uint16_t txIdx = 0;
+		uint16_t remainingLength = strlen(pcWriteBuffer);
+		uint16_t txLength;
+
+		while (remainingLength > 0) {
+			txLength = remainingLength;
+			if (txLength > LSPC_MAXIMUM_PACKAGE_LENGTH) {
+				txLength = LSPC_MAXIMUM_PACKAGE_LENGTH;
+				while (pcWriteBuffer[txIdx+txLength] != '\n' && txLength > 0) txLength--; // find and include line-break (if possible)
+				if (txLength == 0) txLength = LSPC_MAXIMUM_PACKAGE_LENGTH;
+				else txLength++;
+			}
+			lspcUSB->TransmitAsync(lspc::MessageTypesToPC::CPUload, (uint8_t *)&pcWriteBuffer[txIdx], txLength);
+
+			txIdx += txLength;
+			remainingLength -= txLength;
+		}
 		osDelay(1000);
 	}
 
