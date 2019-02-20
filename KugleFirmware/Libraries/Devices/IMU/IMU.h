@@ -37,6 +37,12 @@ class IMU
 			float dq[4];
 		} Estimates_t;
 
+		typedef struct calibration_t {
+			bool calibrated = false;
+			float imu_calibration_matrix[9];
+			float gyro_bias[3];
+		};
+
 	public:
 		virtual ~IMU() {};
 
@@ -57,13 +63,8 @@ class IMU
 		void adjustImuMeasurement(float& gx, float& gy, float& gz, float& ax, float& ay, float& az, const float calibration_matrix[9], const float gyro_bias[3]);
 
 	private:
-		struct {
-			bool calibrated = false;
-			float imu_calibration_matrix[9];
-			float gyro_bias[3];
-		} calibration_;
-
 		EEPROM * eeprom_ = 0;
+		calibration_t calibration_;
 
 		const float reference_acc_vector_[3] = {0.0f, 0.0f, 9.82f};
 

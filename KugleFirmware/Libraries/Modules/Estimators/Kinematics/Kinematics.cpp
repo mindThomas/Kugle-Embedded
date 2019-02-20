@@ -161,11 +161,11 @@ void Kinematics::ForwardKinematics(const float dpsi[3], const float q[4], const 
 // Supports overwriting, hence it is OK for the output array, 'vel_2L', to point to the array as the input array, 'vel_ball'
 void Kinematics::ConvertBallTo2Lvelocity(const float vel_ball[2], const float q[4], const float dq[4], float vel_2L[2])
 {
-	_BallTo2Lvelocity(vel_ball, q, dq, _params.model.l, vel_2L);
+	_BallTo2Lvelocity(vel_ball, q, dq, _params.model.CoR, vel_2L);
 }
 
 // Supports overwriting, hence it is OK for the output array, 'vel_ball', to point to the array as the input array, 'vel_2L'
 void Kinematics::Convert2LtoBallVelocity(const float vel_2L[2], const float q[4], const float dq[4], float vel_ball[2])
 {
-	_Convert2LtoBallVelocity(vel_2L, q, dq, _params.model.l, vel_ball);
+	_Convert2LtoBallVelocity(vel_2L, q, dq, _params.model.CoR, vel_ball);
 }

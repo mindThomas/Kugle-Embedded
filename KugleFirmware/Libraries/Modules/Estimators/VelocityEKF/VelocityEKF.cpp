@@ -120,8 +120,9 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
 	      qEst, Cov_qEst, qDotEst,
 	      dt,
 	      _params.model.TicksPrRev,
-		  _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g,
+		  _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jw, _params.model.rw, _params.model.l, _params.model.g,
 		  COMest,
+		  _params.model.CoR,
 	      1E-6, // Var_COM
 	      10.0f, // eta_encoder
 	      X, P);

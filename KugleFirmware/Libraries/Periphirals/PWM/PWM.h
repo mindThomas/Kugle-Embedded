@@ -70,6 +70,7 @@ class PWM
 	private:
 		hardware_resource_t * _hRes;
 		pwm_channel_t _channel;
+		bool _complementaryOutput; // Channel xN ?
 		uint32_t _channelHAL;
 };
 	

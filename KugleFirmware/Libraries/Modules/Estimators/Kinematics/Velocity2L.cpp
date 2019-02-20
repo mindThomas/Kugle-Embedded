@@ -23,7 +23,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-void _BallTo2Lvelocity(const float vel_ball[2], const float q[4], const float dq[4], float l, float vel_2L[2])
+void _BallTo2Lvelocity(const float vel_ball[2], const float q[4], const float dq[4], float CoR, float vel_2L[2])
 {
 	// See "Simple offset estimator" in OneNote for derivation
 	// vel_2L = vel_ball + devec*(Phi(dq)*Gamma(q)' + Phi(q)*Gamma(dq)')*[0,0,0,2*l]'
@@ -46,12 +46,12 @@ void _BallTo2Lvelocity(const float vel_ball[2], const float q[4], const float dq
 	vel_2L[0] += vel_tmp[0];
 	vel_2L[1] += vel_tmp[1];*/
 
-	vel_2L[0] = vel_ball[0] + 2*l*(2*dq[0]*q[2] + 2*dq[2]*q[0] + 2*dq[1]*q[3] + 2*dq[3]*q[1]);
-    vel_2L[1] = vel_ball[1] - 2*l*(2*dq[0]*q[1] + 2*dq[1]*q[0] - 2*dq[2]*q[3] - 2*dq[3]*q[2]);
+	vel_2L[0] = vel_ball[0] + CoR*(2*dq[0]*q[2] + 2*dq[2]*q[0] + 2*dq[1]*q[3] + 2*dq[3]*q[1]);
+    vel_2L[1] = vel_ball[1] - CoR*(2*dq[0]*q[1] + 2*dq[1]*q[0] - 2*dq[2]*q[3] - 2*dq[3]*q[2]);
 }
 
-void _Convert2LtoBallVelocity(const float vel_2L[2], const float q[4], const float dq[4], const float l, float vel_ball[2])
+void _Convert2LtoBallVelocity(const float vel_2L[2], const float q[4], const float dq[4], const float CoR, float vel_ball[2])
 {
-	vel_ball[0] = vel_2L[0] - 2*l*(2*dq[0]*q[2] + 2*dq[2]*q[0] + 2*dq[1]*q[3] + 2*dq[3]*q[1]);
-	vel_ball[1] = vel_2L[1] + 2*l*(2*dq[0]*q[1] + 2*dq[1]*q[0] - 2*dq[2]*q[3] - 2*dq[3]*q[2]);
+	vel_ball[0] = vel_2L[0] - CoR*(2*dq[0]*q[2] + 2*dq[2]*q[0] + 2*dq[1]*q[3] + 2*dq[3]*q[1]);
+	vel_ball[1] = vel_2L[1] + CoR*(2*dq[0]*q[1] + 2*dq[1]*q[0] - 2*dq[2]*q[3] - 2*dq[3]*q[2]);
 }

@@ -39,7 +39,7 @@
 #include "ESCON.h"
 #include "PowerManagement.h"
 #include "Parameters.h"
-#include "HealthMonitor.h"
+#include "FrontPanel.h"
 #include "VelocityEKF.h"
 
 void TestBench(void * pvParameters);
