@@ -22,60 +22,36 @@
 #include "cmsis_os.h" // for processing task
 
 #include "Debug.h"
-#include "IO.h"
-#include "PWM.h"
 
-PowerManagement::PowerManagement(uint32_t powerManagementTaskPriority) : _powerManagementTaskHandle(0)
+PowerManagement::PowerManagement(IO& enable19V, IO& enable5V, Battery& bat1, Battery& bat2, PWM& powerLED, uint32_t powerManagementTaskPriority) : _powerManagementTaskHandle(0), _enable19V(enable19V), _enable5V(enable5V), _bat1(bat1), _bat2(bat2), _powerLED(powerLED)
 {
-	_enable19V = new IO(GPIOE, GPIO_PIN_4); // configure as output
-	_enable5V = new IO(GPIOC, GPIO_PIN_3); // configure as output
-	_bat1 = 0;
-	_bat2 = 0;
-	_powerButton = new IO(GPIOB, GPIO_PIN_6, IO::PULL_DOWN); // configure as input
-	_powerLED = new PWM(PWM::TIMER17, PWM::CH1, POWER_LED_PWM_FREQUENCY, POWER_LED_PWM_RANGE);
-
-	_powerButton->RegisterInterrupt(IO::TRIGGER_RISING, PowerManagement::PowerButtonInterrupt, this);
-
-	_ledMode = PULSING;
+	_ledMode = LEDMODE_PULSING;
 	_PulseValue = 0;
 	_PulseDirectionUp = true;
+
+	_powerMode = POWERMODE_OFF;
+	Enable(false, false); // start with everything turned off
+
 	xTaskCreate(PowerManagement::PowerManagementThread, (char *)"Power Management", POWER_MANAGEMENT_THREAD_STACK, (void*) this, powerManagementTaskPriority, &_powerManagementTaskHandle);
 }
 
 PowerManagement::~PowerManagement()
 {
-	if (_enable19V)
-		delete(_enable19V);
-	if (_enable5V)
-		delete(_enable5V);
-	if (_bat1)
-		delete(_bat1);
-	if (_bat2)
-		delete(_bat2);
-	if (_powerButton)
-		delete(_powerButton);
-	if (_powerLED)
-		delete(_powerLED);
-
 	if (_powerManagementTaskHandle)
 		vTaskDelete(_powerManagementTaskHandle); // stop task
 }
 
 void PowerManagement::Enable(bool enable19V, bool enable5V)
 {
-	if (_enable19V) {
-		if (enable19V)
-			_enable19V->Set(true);
-		else
-			_enable19V->Set(false);
-	}
+	if (enable19V)
+		_enable19V.Set(true);
+	else
+		_enable19V.Set(false);
 
-	if (_enable5V) {
-		if (enable5V)
-			_enable5V->Set(true);
-		else
-			_enable5V->Set(false);
-	}
+	if (enable5V)
+		_enable5V.Set(true);
+	else
+		_enable5V.Set(false);
 }
 
 void PowerManagement::SetLEDmode(LEDmode_t ledMode)
@@ -83,7 +59,7 @@ void PowerManagement::SetLEDmode(LEDmode_t ledMode)
 	LEDmode_t prevLedMode = _ledMode;
 	_ledMode = ledMode;
 
-	if (_ledMode == ON) {
+	/*if (_ledMode == ON) {
 		if (_powerLED)
 			_powerLED->SetRaw(POWER_LED_PWM_RANGE);
 	}
@@ -99,39 +75,96 @@ void PowerManagement::SetLEDmode(LEDmode_t ledMode)
 			_PulseValue = POWER_LED_PWM_RANGE;
 			_PulseDirectionUp = true; // up
 		}
-		vTaskResume(_powerManagementTaskHandle);
-	}
+		//vTaskResume(_powerManagementTaskHandle);
+	}*/
 }
 
+void PowerManagement::SetPowerMode(PowerManagement::PowerMode_t powerMode)
+{
+	_powerMode = powerMode;
+	if (powerMode == POWERMODE_OFF)
+		Enable(false, false);
+	else if (powerMode == POWERMODE_ALL_ON)
+		Enable(true, true);
+	else if (powerMode == POWERMODE_5V_ONLY)
+		Enable(false, true);
+}
+
+PowerManagement::PowerMode_t PowerManagement::GetPowerMode()
+{
+	return _powerMode;
+}
+
+#if 0
 void PowerManagement::PowerButtonInterrupt(void * params)
 {
-	//PowerManagement * pm = (PowerManagement *)params;
+	PowerManagement * pm = (PowerManagement *)params;
 
 }
+
+void PowerManagement::ResetButtonInterrupt(void * params)
+{
+	PowerManagement * pm = (PowerManagement *)params;
+
+}
+
+void PowerManagement::CalibrateButtonInterrupt(void * params)
+{
+	PowerManagement * pm = (PowerManagement *)params;
+
+}
+#endif
 
 void PowerManagement::PowerManagementThread(void * pvParameters)
 {
 	PowerManagement * pm = (PowerManagement *)pvParameters;
 
-	if (!pm->_powerLED) {
-		while (1) {
-			osDelay(10);
-		}
-	}
+	/* Consider to implement this as a high priority 'watchdog task' (referred to as a 'check' task in all the official demos) that monitors how the cycle counters of each task to ensure they are cycling as expected */
+	/* This task could possibly also poll for the real time stats - https://www.freertos.org/a00021.html#vTaskGetRunTimeStats */
 
 	while (1) {
-		if (pm->_ledMode != PULSING)
+		/*if (pm->_ledMode != PULSING)
 			vTaskSuspend(NULL); // suspend current thread - this could also be replaced by semaphore-based waiting (flagging)
+		*/
 
-		if (pm->_PulseDirectionUp && pm->_PulseValue < pm->POWER_LED_PWM_RANGE)
+		if (pm->_ledMode == PowerManagement::LEDMODE_PULSING) {
+			if (pm->_PulseDirectionUp && pm->_PulseValue < POWER_LED_PWM_RANGE)
+				pm->_PulseValue++;
+			else if (!pm->_PulseDirectionUp && pm->_PulseValue > 0)
+				pm->_PulseValue--;
+			else
+				pm->_PulseDirectionUp = !pm->_PulseDirectionUp;
+			pm->_powerLED.SetRaw(pm->_PulseValue);
+		}
+		else if (pm->_ledMode == PowerManagement::LEDMODE_BLINKING) {
 			pm->_PulseValue++;
-		else if (!pm->_PulseDirectionUp && pm->_PulseValue > 0)
-			pm->_PulseValue--;
-		else
-			pm->_PulseDirectionUp = !pm->_PulseDirectionUp;
+			if (pm->_PulseValue > POWER_LED_PWM_RANGE)
+				pm->_PulseValue = 0;
 
-		pm->_powerLED->SetRaw(pm->_PulseValue);
+			if (pm->_PulseValue > POWER_LED_PWM_RANGE/2)
+				pm->_powerLED.SetRaw(POWER_LED_PWM_RANGE);
+			else
+				pm->_powerLED.SetRaw(0);
+		}
+		else if (pm->_ledMode == PowerManagement::LEDMODE_BLINKING_FAST) {
+			pm->_PulseValue++;
+			if (pm->_PulseValue > POWER_LED_PWM_RANGE/2)
+				pm->_PulseValue = 0;
 
-		osDelay(10);
+			if (pm->_PulseValue > POWER_LED_PWM_RANGE/4)
+				pm->_powerLED.SetRaw(POWER_LED_PWM_RANGE);
+			else
+				pm->_powerLED.SetRaw(0);
+		}
+		else if (pm->_ledMode == PowerManagement::LEDMODE_ON) {
+			pm->_powerLED.SetRaw(POWER_LED_PWM_RANGE);
+			pm->_PulseValue = POWER_LED_PWM_RANGE;
+		}
+		else if (pm->_ledMode == PowerManagement::LEDMODE_OFF) {
+			pm->_powerLED.SetRaw(0);
+			pm->_PulseValue = 0;
+		}
+
+		osDelay(6);
 	}
 }

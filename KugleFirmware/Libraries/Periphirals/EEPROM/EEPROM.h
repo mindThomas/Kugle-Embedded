@@ -126,6 +126,8 @@ class EEPROM
 		EEPROM();
 		~EEPROM();
 
+		void Initialize(void);
+
 		void Write8(uint16_t address, uint8_t value);
 		void Write16(uint16_t address, uint16_t value);
 		void Write32(uint16_t address, uint32_t value);

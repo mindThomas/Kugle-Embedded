@@ -81,7 +81,7 @@
 									<listOptionValue builtIn="false" value="../Libraries/Applications/PathFollowingController"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/UserInterface/Joystick"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/UserInterface/FrontPanel"/>
+									<listOptionValue builtIn="false" value="../Libraries/Applications/FrontPanel"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/MATLABCoderInit"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/FirstOrderLPF"/>

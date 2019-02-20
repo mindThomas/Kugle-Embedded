@@ -48,6 +48,7 @@ class Parameters
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
 			bool StepTestEnabled = false;
 			bool SineTestEnabled = false;
+			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_QUATERNION_CONTROLLER;
 			/* Behavioural parameters end */
 		} behavioural;
 		
@@ -213,6 +214,9 @@ class Parameters
 			float COM_Y = 0;
 			float COM_Z = l;
 
+			// Center of rotation - used for velocity estimation
+			float CoR = 0.8720f;
+
 			// Body constants
 			float Mb = (12.892f + 1.844f);
 			float Jbx = 3.9096f;
@@ -256,13 +260,17 @@ class Parameters
 		Parameters(EEPROM * eeprom = 0, LSPC * com = 0);
 		~Parameters();
 
+		void AttachEEPROM(EEPROM * eeprom);
+		void AttachLSPC(LSPC * com);
+
 		void Refresh(void);
 		void LockForChange(void);
 		void UnlockAfterChange(void);
 
+		uint32_t getParameterSizeBytes();
+
 	private:
 		void LoadParametersFromEEPROM(EEPROM * eeprom = 0);
-		void AttachEEPROM(EEPROM * eeprom);
 		void StoreParameters(void); // stores to EEPROM
 		void LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, lspc::ParameterLookup::ValueType_t& valueType, uint8_t& arraySize);
 

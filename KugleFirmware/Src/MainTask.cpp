@@ -57,13 +57,12 @@
 #include "VelocityEKF.h"
 #include "Parameters.h"
 #include "PowerManagement.h"
-#include "FrontPanel.h"
 #include "Joystick.h"
 
 /* Include Application-layer libraries */
 #include "BalanceController.h"
 #include "Communication.h"
-#include "HealthMonitor.h"
+#include "FrontPanel.h"
 #include "PathFollowingController.h"
 
 /* Miscellaneous includes */
@@ -89,30 +88,44 @@ void MainTask(void * pvParameters)
 	 * Basically anything related to starting the system should happen in this thread and NOT in the main() function !!!
 	 */
 
+	/* Initialize global parameters */
+	Parameters& params = *(new Parameters);
+
+	/* Initialize power management */
+	IO * enable19V = new IO(GPIOE, GPIO_PIN_4); // configure as output
+	IO * enable5V = new IO(GPIOC, GPIO_PIN_3); // configure as output
+	Battery * battery1 = new Battery();
+	Battery * battery2 = new Battery();
+	PWM * powerLED = new PWM(PWM::TIMER17, PWM::CH1, POWER_LED_PWM_FREQUENCY, POWER_LED_PWM_RANGE);
+	PowerManagement * pm = new PowerManagement(*enable19V, *enable5V, *battery1, *battery2, *powerLED, POWER_MANAGEMENT_PRIORITY);
+
 	/* Initialize EEPROM */
 	EEPROM * eeprom = new EEPROM;
+	eeprom->EnableSection(eeprom->sections.imu_calibration, sizeof(IMU::calibration_t)); // enable IMU calibration section in EEPROM
+	eeprom->EnableSection(eeprom->sections.parameters, params.getParameterSizeBytes());
+	eeprom->Initialize();
+	params.AttachEEPROM(eeprom); // attach EEPROM to load and store parameters into EEPROM
 
 	/* Initialize MATLAB coder globals */
 	MATLABCoder_initialize();
-
-	/* Initialize power management */
-	PowerManagement * pm = new PowerManagement(POWER_MANAGEMENT_PRIORITY);
-	pm->Enable(true, true); // enable 19V and 5V power
 
 	/* Initialize communication */
 	USBCDC * usb = new USBCDC(USBCDC_TRANSMITTER_PRIORITY);
 	LSPC * lspcUSB = new LSPC(usb, LSPC_RECEIVER_PRIORITY, LSPC_TRANSMITTER_PRIORITY); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
 	Debug * dbg = new Debug(lspcUSB); // pair debug module with configured LSPC module to enable "Debug::print" functionality
+	params.AttachLSPC(lspcUSB); // attach USB object to allow modification of parameters over USB
 
 	/* Register general (system wide) LSPC callbacks */
 	lspcUSB->registerCallback(lspc::MessageTypesFromPC::Reboot, &Reboot_Callback);
 	lspcUSB->registerCallback(lspc::MessageTypesFromPC::EnterBootloader, &EnterBootloader_Callback);
 
-	/* Test info */
+	/* Debug boot info */
 	Debug::print("Booting...\n");
 
-	/* Initialize global parameters */
-	Parameters& params = *(new Parameters(eeprom, lspcUSB));
+	/* Initialize front panel periphirals (eg. quadrature knob, LCD and buttons */
+	IO * powerButton = new IO(GPIOB, GPIO_PIN_6, IO::PULL_DOWN); // configure as input
+	IO * resetButton = new IO(GPIOD, GPIO_PIN_15, IO::PULL_DOWN); // configure as input
+	IO * calibrateButton = new IO(GPIOD, GPIO_PIN_14, IO::PULL_DOWN); // configure as input
 
 	/* Prepare Xsens IMU always, since it is used for logging and comparison purposes */
 	UART * uart = new UART(UART::PORT_UART3, 460800, 100);
@@ -130,12 +143,12 @@ void MainTask(void * pvParameters)
 		if (!mti200)
 			ERROR("MTI200 selected but not available!");
 		imu = mti200; // use Xsens MTI200 in Balance controller
+		imu->AttachEEPROM(eeprom);
 	}
 	else {
 		// Prepare and configure MPU9250 IMU
 		SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
 		MPU9250 * mpu9250 = new MPU9250(spi);
-		imu->AttachEEPROM(eeprom);
 		if (mpu9250->Configure(MPU9250::ACCEL_RANGE_4G, MPU9250::GYRO_RANGE_2000DPS) != 0)
 			ERROR("MPU9250 selected but not available!");
 
@@ -151,6 +164,7 @@ void MainTask(void * pvParameters)
 		}
 		mpu9250->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
 		imu = mpu9250; // use MPU9250 in Balance controller
+		imu->AttachEEPROM(eeprom);
 	}
 
 	/* Initialize microseconds timer */
@@ -164,6 +178,10 @@ void MainTask(void * pvParameters)
 	/******* APPLICATION LAYERS *******/
 	BalanceController * balanceController = new BalanceController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer, mti200);
 	if (!balanceController) ERROR("Could not initialize balance controller");
+
+	FrontPanel * frontPanel = new FrontPanel(*pm, *balanceController, powerButton, resetButton, calibrateButton);
+	if (!frontPanel) ERROR("Could not initialize front panel");
+
 
 	/* Send CPU load every second */
 	char * pcWriteBuffer = (char *)pvPortMalloc(1024);

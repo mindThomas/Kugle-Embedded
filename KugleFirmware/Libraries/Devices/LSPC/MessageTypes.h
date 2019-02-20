@@ -144,6 +144,12 @@ namespace lspc
 			PATH_FOLLOWING,
 			UNKNOWN_MODE = 0xFF
 		} controllerMode_t;
+
+		typedef enum: uint8_t {
+			POWER_OFF = 0x00, // default
+			START_STOP_QUATERNION_CONTROLLER,
+			START_STOP_VELOCITY_CONTROLLER
+		} powerButtonMode_t;
 	}
 
 	namespace MessageTypesFromPC

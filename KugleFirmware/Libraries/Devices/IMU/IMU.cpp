@@ -60,7 +60,7 @@ void IMU::AttachEEPROM(EEPROM * eeprom)
 {
 	if (!eeprom) return;
 	eeprom_ = eeprom;
-	eeprom_->EnableSection(eeprom_->sections.imu_calibration, sizeof(calibration_)); // enable IMU calibration section in EEPROM
+	//eeprom_->EnableSection(eeprom_->sections.imu_calibration, sizeof(calibration_)); // enable IMU calibration section in EEPROM --> moved to MainTask since it has to be enabled before calling eeprom->Initialize()
 	LoadCalibrationFromEEPROM();
 }
 

@@ -313,6 +313,7 @@ void PWM::ConfigureTimerGPIO()
 			return;
 
 		HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+		_complementaryOutput = false;
 	}
 	else if(_hRes->timer == TIMER8)
 	{
@@ -333,6 +334,7 @@ void PWM::ConfigureTimerGPIO()
 			return;
 
 		HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+		_complementaryOutput = false;
 	}
 	else if(_hRes->timer == TIMER15)
 	{
@@ -343,6 +345,7 @@ void PWM::ConfigureTimerGPIO()
 		__HAL_RCC_GPIOE_CLK_ENABLE();
 	    GPIO_InitStruct.Pin = GPIO_PIN_5;
 	    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+	    _complementaryOutput = false;
 	}
 	else if(_hRes->timer == TIMER17)
 	{
@@ -353,6 +356,7 @@ void PWM::ConfigureTimerGPIO()
 		__HAL_RCC_GPIOB_CLK_ENABLE();
 	    GPIO_InitStruct.Pin = GPIO_PIN_7;
 	    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+	    _complementaryOutput = true;
 	}
 }
 
@@ -390,13 +394,21 @@ void PWM::ConfigureTimerChannel()
 	}
 
 	// Start channel
-	if (HAL_TIM_PWM_Start(&_hRes->handle, _channelHAL) != HAL_OK)
-	{
-		_hRes = 0;
-		ERROR("Could not start PWM channel");
-		return;
+	if (!_complementaryOutput) {
+		if (HAL_TIM_PWM_Start(&_hRes->handle, _channelHAL) != HAL_OK)
+		{
+			_hRes = 0;
+			ERROR("Could not start PWM channel");
+			return;
+		}
+	} else {
+		if (HAL_TIMEx_PWMN_Start(&_hRes->handle, _channelHAL) != HAL_OK)
+		{
+			_hRes = 0;
+			ERROR("Could not start PWM channel");
+			return;
+		}
 	}
-
 	_hRes->configuredChannels |= _channel;
 }
 
@@ -413,7 +425,10 @@ void PWM::Set(float value)
 void PWM::SetRaw(uint16_t value)
 {
 	if (!_hRes) return;
-	if (value > _hRes->maxValue) value =_hRes->maxValue;
+	if (value > _hRes->maxValue) value = _hRes->maxValue;
 
-	__HAL_TIM_SET_COMPARE(&_hRes->handle, _channelHAL, value);
+	if (!_complementaryOutput)
+		__HAL_TIM_SET_COMPARE(&_hRes->handle, _channelHAL, value);
+	else
+		__HAL_TIM_SET_COMPARE(&_hRes->handle, _channelHAL, _hRes->maxValue-value);
 }

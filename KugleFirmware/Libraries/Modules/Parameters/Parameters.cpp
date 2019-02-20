@@ -52,13 +52,7 @@ Parameters::Parameters(EEPROM * eeprom, LSPC * com) : eeprom_(0), com_(0), readS
 		}
 
 		if (com) {
-			paramsGlobal->com_ = com;
-
-			/* Register message type callbacks */
-			paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::GetParameter, &GetParameter_Callback, (void *)paramsGlobal);
-			paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::SetParameter, &SetParameter_Callback, (void *)paramsGlobal);
-			paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::StoreParameters, &StoreParameters_Callback, (void *)paramsGlobal);
-			paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::DumpParameters, &DumpParameters_Callback, (void *)paramsGlobal);
+			AttachLSPC(com);
 		}
 	}
 
@@ -95,9 +89,9 @@ Parameters::~Parameters()
 /* This function attaches an EEPROM to the global object and loads the content */
 void Parameters::AttachEEPROM(EEPROM * eeprom)
 {
-	if (!eeprom) return;
+	if (!eeprom || !paramsGlobal || paramsGlobal->eeprom_) return;
 	paramsGlobal->eeprom_ = eeprom;
-	paramsGlobal->eeprom_->EnableSection(paramsGlobal->eeprom_->sections.parameters, PARAMETERS_LENGTH);
+	//paramsGlobal->eeprom_->EnableSection(paramsGlobal->eeprom_->sections.parameters, PARAMETERS_LENGTH);
 
 	if (paramsGlobal->ForceDefaultParameters) {  // store default parameters into EEPROM, since forced default is enabled
 		paramsGlobal->StoreParameters(); // Initialize EEPROM with default values
@@ -111,6 +105,18 @@ void Parameters::AttachEEPROM(EEPROM * eeprom)
 			paramsGlobal->StoreParameters(); // Initialize EEPROM with default values
 		}
 	}
+}
+
+void Parameters::AttachLSPC(LSPC * com)
+{
+	if (!com || !paramsGlobal || paramsGlobal->com_) return;
+	paramsGlobal->com_ = com;
+
+	/* Register message type callbacks */
+	paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::GetParameter, &GetParameter_Callback, (void *)paramsGlobal);
+	paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::SetParameter, &SetParameter_Callback, (void *)paramsGlobal);
+	paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::StoreParameters, &StoreParameters_Callback, (void *)paramsGlobal);
+	paramsGlobal->com_->registerCallback(lspc::MessageTypesFromPC::DumpParameters, &DumpParameters_Callback, (void *)paramsGlobal);
 }
 
 /* Get the latest parameters from the global/master object */
@@ -129,13 +135,20 @@ void Parameters::Refresh(void)
 	}
 }
 
+uint32_t Parameters::getParameterSizeBytes()
+{
+	if (!paramsGlobal) return 0;
+	return PARAMETERS_LENGTH;
+}
+
 void Parameters::LockForChange(void)
 {
 	if (!paramsGlobal) return;
 	xSemaphoreTake( paramsGlobal->writeSemaphore_, ( TickType_t ) portMAX_DELAY);
 	xSemaphoreTake( paramsGlobal->readSemaphore_, ( TickType_t ) portMAX_DELAY);
 	memcpy((uint8_t *)&ForceDefaultParameters, (uint8_t *)&paramsGlobal->ForceDefaultParameters, PARAMETERS_LENGTH); // load latest parameters into current object
-	changeCounter_++;
+	paramsGlobal->changeCounter_++;
+	changeCounter_ = paramsGlobal->changeCounter_;
 }
 
 void Parameters::UnlockAfterChange(void)

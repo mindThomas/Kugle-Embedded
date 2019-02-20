@@ -37,19 +37,9 @@ EEPROM::EEPROM()
 		return;
 	}
 
-	HAL_FLASH_Unlock();
-
     //uint16_t * sectionsEnum = (uint16_t *)&sections.internal;
     //EnableSection(sections.internal, sectionsEnum[1]-sectionsEnum[0]); // initialize EEPROM library section for reset state detection - sectionsEnum[1] gives the address of the next element after the internal
     EnableSection(sections.internal, sizeof(internal_state_t)); // initialize EEPROM library section for reset state detection
-    if (CheckForAssignedStructureChange()) {
-    	Format();
-    	Init();
-    	InitializeInternalState();
-    	WasFormattedAtBoot_ = true;
-    } else {
-    	WasFormattedAtBoot_ = false;
-    }
 }
 
 EEPROM::~EEPROM()
@@ -98,6 +88,74 @@ void EEPROM::InitializeInternalState(void)
 	WriteData(sections.internal, (uint8_t *)&internalState, sizeof(internalState));
 }
 
+
+bool EEPROM::EnableSection(uint16_t address, uint16_t sectionSize)
+{
+	bool SectionAlreadyInUse = false;
+
+	if ((address % 2) != 0) return false; // address not aligned - section start addresses has to be aligned
+
+	xSemaphoreTake( resourceSemaphore_, ( TickType_t ) portMAX_DELAY); // take hardware resource
+
+	// sectionSize is given in bytes
+	uint16_t virtAddress = address / 2;
+	uint16_t sectionSize16 = sectionSize / 2 + (sectionSize % 2);
+
+	// OBS. This function should have a check of whether the section is occupied already
+	int16_t i;
+	for (i = 0; i < sectionSize16; i++) {
+		if (IsSectionInUse(virtAddress+i)) {
+			SectionAlreadyInUse = true;
+			break;
+		}
+		virtAddrTable_->push_back((uint16_t)(virtAddress+i));
+	}
+	if (SectionAlreadyInUse) { // we need to remove recently inserted (now occupied) addresses
+		while (i > 0) {
+			virtAddrTable_->pop_back();
+			i--;
+		}
+	}
+
+	/*if (!SectionAlreadyInUse) {
+		HAL_FLASH_Unlock();
+		Init(); // initialize (or reinitialize) EEPROM to include this newly added section
+		HAL_FLASH_Lock();
+	}*/
+
+	xSemaphoreGive( resourceSemaphore_ ); // give hardware resource back
+
+	return SectionAlreadyInUse;
+}
+
+bool EEPROM::IsSectionInUse(uint16_t address)
+{
+	uint16_t * table = virtAddrTable_->data();
+	for (size_t i = 0; i < virtAddrTable_->size(); i++)
+		if (table[i] == address)
+			return true; // section is already in use
+
+	return false; // section not in use
+}
+
+/* Call this after enabling all necessary sections */
+void EEPROM::Initialize(void)
+{
+	HAL_FLASH_Unlock();
+	Init();
+
+    if (CheckForAssignedStructureChange()) {
+    	Format();
+    	Init();
+    	InitializeInternalState();
+    	WasFormattedAtBoot_ = true;
+    } else {
+    	WasFormattedAtBoot_ = false;
+    }
+
+    HAL_FLASH_Lock();
+}
+
 bool EEPROM::WasFormattedAtBoot(void)
 {
 	return WasFormattedAtBoot_;
@@ -106,6 +164,8 @@ bool EEPROM::WasFormattedAtBoot(void)
 void EEPROM::Write8(uint16_t address, uint8_t value)
 {
 	xSemaphoreTake( resourceSemaphore_, ( TickType_t ) portMAX_DELAY); // take hardware resource
+
+	HAL_FLASH_Unlock();
 
 	uint16_t virtAddr = address / 2;
 	bool LSB = ((address % 2) == 0); // little endian format, so LSB byte is at address
@@ -121,12 +181,16 @@ void EEPROM::Write8(uint16_t address, uint8_t value)
 		WriteVariable(virtAddr, tmp);
 	}
 
+	HAL_FLASH_Lock();
+
 	xSemaphoreGive( resourceSemaphore_ ); // give hardware resource back
 }
 
 void EEPROM::Write16(uint16_t address, uint16_t value)
 {
 	xSemaphoreTake( resourceSemaphore_, ( TickType_t ) portMAX_DELAY); // take hardware resource
+
+	HAL_FLASH_Unlock();
 
 	bool aligned = ((address % 2) == 0);
 
@@ -151,12 +215,16 @@ void EEPROM::Write16(uint16_t address, uint16_t value)
 		}
 	}
 
+	HAL_FLASH_Lock();
+
 	xSemaphoreGive( resourceSemaphore_ ); // give hardware resource back
 }
 
 void EEPROM::Write32(uint16_t address, uint32_t value)
 {
 	xSemaphoreTake( resourceSemaphore_, ( TickType_t ) portMAX_DELAY); // take hardware resource
+
+	HAL_FLASH_Unlock();
 
 	bool aligned = ((address % 2) == 0);
 
@@ -188,6 +256,8 @@ void EEPROM::Write32(uint16_t address, uint32_t value)
 			}
 		}
 	}
+
+	HAL_FLASH_Lock();
 
 	xSemaphoreGive( resourceSemaphore_ ); // give hardware resource back
 }
@@ -278,6 +348,8 @@ EEPROM::errorCode_t EEPROM::WriteData(uint16_t address, uint8_t * data, uint16_t
 
 	xSemaphoreTake( resourceSemaphore_, ( TickType_t ) portMAX_DELAY); // take hardware resource
 
+	HAL_FLASH_Unlock();
+
 	uint16_t virtAddress = address / 2;
 	uint16_t idx = 0;
 	while (idx < dataLength) {
@@ -286,6 +358,8 @@ EEPROM::errorCode_t EEPROM::WriteData(uint16_t address, uint8_t * data, uint16_t
 		virtAddress++;
 		idx += 2;
 	}
+
+	HAL_FLASH_Lock();
 
 	xSemaphoreGive( resourceSemaphore_ ); // give hardware resource back
 
@@ -314,51 +388,6 @@ EEPROM::errorCode_t EEPROM::ReadData(uint16_t address, uint8_t * data, uint16_t 
 	xSemaphoreGive( resourceSemaphore_ ); // give hardware resource back
 
 	return status;
-}
-
-bool EEPROM::EnableSection(uint16_t address, uint16_t sectionSize)
-{
-	bool SectionAlreadyInUse = false;
-
-	xSemaphoreTake( resourceSemaphore_, ( TickType_t ) portMAX_DELAY); // take hardware resource
-
-	// sectionSize is given in bytes
-	uint16_t virtAddress = address / 2;
-	uint16_t sectionSize16 = sectionSize / 2;
-
-	// OBS. This function should have a check of whether the section is occupied already
-	int16_t i;
-	for (i = 0; i < sectionSize16; i++) {
-		if (IsSectionInUse(virtAddress+i)) {
-			SectionAlreadyInUse = true;
-			break;
-		}
-		virtAddrTable_->push_back((uint16_t)(virtAddress+i));
-	}
-	if (SectionAlreadyInUse) { // we need to remove recently inserted (now occupied) addresses
-		while (i > 0) {
-			virtAddrTable_->pop_back();
-			i--;
-		}
-	}
-
-	xSemaphoreGive( resourceSemaphore_ ); // give hardware resource back
-
-	if (!SectionAlreadyInUse) {
-		Init(); // initialize (or reinitialize) EEPROM to include this newly added section
-	}
-
-	return SectionAlreadyInUse;
-}
-
-bool EEPROM::IsSectionInUse(uint16_t address)
-{
-	uint16_t * table = virtAddrTable_->data();
-	for (size_t i = 0; i < virtAddrTable_->size(); i++)
-		if (table[i] == address)
-			return true; // section is already in use
-
-	return false; // section not in use
 }
 
 /**

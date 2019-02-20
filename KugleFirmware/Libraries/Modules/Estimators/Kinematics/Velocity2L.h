@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-void _BallTo2Lvelocity(const float vel_ball[2], const float q[4], const float dq[4], float l, float vel_2L[2]);
-void _Convert2LtoBallVelocity(const float vel_2L[2], const float q[4], const float dq[4], const float l, float vel_ball[2]);
+void _BallTo2Lvelocity(const float vel_ball[2], const float q[4], const float dq[4], float CoR, float vel_2L[2]);
+void _Convert2LtoBallVelocity(const float vel_2L[2], const float q[4], const float dq[4], const float CoR, float vel_ball[2]);
 
 #endif // VELOCITY2L_H

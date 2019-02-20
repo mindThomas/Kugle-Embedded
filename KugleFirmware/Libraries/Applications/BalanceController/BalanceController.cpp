@@ -948,6 +948,22 @@ void BalanceController::SendControllerInfo(const lspc::ParameterTypes::controlle
 	com.TransmitAsync(lspc::MessageTypesToPC::ControllerInfo, (uint8_t *)&msg, sizeof(msg));
 }
 
+void BalanceController::CalibrateIMU()
+{
+	bool restartAfterCalibration = false;
+	if (isRunning_) {
+		Stop();
+		restartAfterCalibration = true;
+	}
+
+	imu.Calibrate(true);
+
+	if (restartAfterCalibration) {
+		/*Debug::print("Restarting controller in 5 seconds...\n");
+		osDelay(5000);*/
+		Start();
+	}
+}
 
 void BalanceController::CalibrateIMUCallback(void * param, const std::vector<uint8_t>& payload)
 {
@@ -978,24 +994,11 @@ void BalanceController::CalibrateIMUCallback(void * param, const std::vector<uin
 		return;
 	}
 
-	bool restartAfterCalibration = false;
-	if (balanceController->isRunning_) {
-		balanceController->Stop();
-		restartAfterCalibration = true;
-	}
-
 	/* Send acknowledge message back to PC */
 	msgAck.acknowledged = true;
 	balanceController->com.TransmitAsync(lspc::MessageTypesToPC::CalibrateIMUAck, (uint8_t *)&msgAck, sizeof(msgAck));
 
-	balanceController->imu.Calibrate(true);
-
-	if (restartAfterCalibration) {
-		Debug::print("Restarting controller in 5 seconds...\n");
-		osDelay(5000);
-
-		balanceController->Start();
-	}
+	balanceController->CalibrateIMU();
 }
 
 
