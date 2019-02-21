@@ -109,18 +109,35 @@ MTI200::~MTI200()
 
 bool MTI200::Configure()
 {
-	if (!sendCommand(XMID_GotoConfig)) return false;
-	if (!sendCommand(XMID_Reset)) return false;
-	if (waitForWakeup(2000))
+	int tries = 3; // try 3 times to go into config - if no response, we might already be in config
+	while (tries-- > 0) if (sendCommand(XMID_GotoConfig)) break;
+
+	if (tries <= 0) { // if we did not get any config response, check if it was because we were already in config mode
+		tries = 3;
+		while (tries-- > 0) if (sendCommand(XMID_ReqDid)) break;
+	} else {
+		tries = 3;
+	}
+
+	/*while (tries-- > 0) if (sendCommand(XMID_Reset)) break;
+	if (waitForWakeup(10000))
 	{
 		sendWakeupAck();
 	}
-	if (!sendCommand(XMID_GotoConfig)) return false;
-	if (!configureMotionTracker()) {
+	while (tries-- > 0) if (sendCommand(XMID_GotoConfig)) break;*/
+
+	uint32_t deviceId = readDeviceId();
+	deviceId = readDeviceId();
+	deviceId = readDeviceId();
+	deviceId = readDeviceId();
+
+	while (tries-- > 0) if (configureMotionTracker()) break;
+	while (tries-- > 0) if (sendCommand(XMID_GotoMeasurement)) break;
+
+	if (tries <= 0) {
 		Debug::print("Failed configuring MTI200 IMU\n");
 		return false;
 	}
-	if (!sendCommand(XMID_GotoMeasurement)) return false;
 	return true;
 }
 
@@ -434,11 +451,11 @@ bool MTI200::configureMotionTracker(void)
             OutputConfiguration conf[] = {
                 {XDI_PacketCounter, 65535},
                 {XDI_SampleTimeFine, 65535},
-                {XDI_Quaternion, 400},
-				{XDI_DeltaQ, 400},
-				{XDI_Acceleration, 400},
-				{XDI_RateOfTurn, 400},
-				{XDI_MagneticField, 400},
+                {XDI_Quaternion, 200},
+				//{XDI_DeltaQ, 400},
+				{XDI_Acceleration, 200},
+				{XDI_RateOfTurn, 200},
+				//{XDI_MagneticField, 400},
                 {XDI_StatusWord, 65535}
             };
             return setOutputConfiguration(conf,

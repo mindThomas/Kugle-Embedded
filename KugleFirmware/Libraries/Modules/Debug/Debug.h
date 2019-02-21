@@ -56,6 +56,7 @@ class Debug
 		static void print(const char * msg);
 		static void printf( const char *msgFmt, ... );
 		static void Error(const char * type, const char * functionName, const char * msg);
+		static void Pulse();
 
 	private:
 		static void PackageGeneratorThread(void * pvParameters);
@@ -64,6 +65,7 @@ class Debug
 		void * com_; // LSPC object pointer
 		SemaphoreHandle_t mutex_;
 		TaskHandle_t _TaskHandle;
+		void * debugPulsePin_;
 
 		char messageBuffer_[MAX_DEBUG_TEXT_LENGTH];
 		uint16_t currentBufferLocation_;
@@ -77,6 +79,8 @@ class Debug
 #else  // for C usage
 
 void Error_Handler(void);
+void Debug_print(const char * msg);
+void Debug_Pulse();
 
 #endif
 	

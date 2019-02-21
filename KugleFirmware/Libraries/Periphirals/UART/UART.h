@@ -27,6 +27,9 @@
 
 class UART
 {
+	private:
+		const int CALLBACK_THREAD_POP_BUFFER_SIZE = 200;
+
 	public:
 		typedef enum port_t {
 			PORT_UNDEFINED = 0,
@@ -87,6 +90,7 @@ class UART
 		void BufferPush(uint8_t byte);
 		uint8_t BufferPop();
 		uint32_t BufferContentSize();
+		uint32_t BufferPopMax(uint8_t * buffer, uint32_t bufferSize);
 		uint8_t * BufferPopN(uint32_t numberOfBytesToPush);
 
 	private:

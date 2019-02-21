@@ -20,11 +20,14 @@
 #include "Debug.h"
 #include "cmsis_os.h"
 #include "LSPC.hpp"
- 
+#include "IO.h"
+
 Debug * Debug::debugHandle = 0;
 
 // Necessary to export for compiler such that the Error_Handler function can be called by C code
 extern "C" __EXPORT void Error_Handler(void);
+extern "C" __EXPORT void Debug_print(const char * msg);
+extern "C" __EXPORT void Debug_Pulse();
 
 Debug::Debug(void * com) : com_(com)
 {
@@ -45,6 +48,9 @@ Debug::Debug(void * com) : com_(com)
 	}
 	vQueueAddToRegistry(mutex_, "Debug mutex");
 	xSemaphoreGive( mutex_ ); // give the semaphore the first time
+
+	debugPulsePin_ = new IO(GPIOE, GPIO_PIN_6);
+	((IO*)debugPulsePin_)->Set(false);
 
 	currentBufferLocation_ = 0;
 	memset(messageBuffer_, 0, MAX_DEBUG_TEXT_LENGTH);
@@ -190,6 +196,16 @@ void Debug::Error(const char * type, const char * functionName, const char * msg
 	}
 }
 
+void Debug::Pulse()
+{
+	if (!debugHandle) return;
+	if (!debugHandle->debugPulsePin_) return;
+
+	((IO*)debugHandle->debugPulsePin_)->High();
+	osDelay(50);
+	((IO*)debugHandle->debugPulsePin_)->Low();
+}
+
 /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
@@ -197,4 +213,14 @@ void Debug::Error(const char * type, const char * functionName, const char * msg
 void Error_Handler(void)
 {
 	Debug::Error("ERROR: ", "Error_Handler", "Global ");
+}
+
+void Debug_print(const char * msg)
+{
+	Debug::print(msg);
+}
+
+void Debug_Pulse()
+{
+	Debug::Pulse();
 }

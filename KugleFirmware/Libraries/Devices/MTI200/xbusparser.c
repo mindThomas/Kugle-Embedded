@@ -20,6 +20,8 @@
 #include "xbusutility.h"
 #include <stdlib.h>
 #include <string.h>
+#include "FreeRTOS.h"
+#include "Debug.h"
 
 /*! \brief XbusParser states. */
 enum XbusParserState
@@ -69,7 +71,7 @@ size_t XbusParser_mem(void)
  */
 struct XbusParser* XbusParser_create(struct XbusParserCallback const* callback)
 {
-	void* mem = malloc(XbusParser_mem());
+	void* mem = pvPortMalloc(XbusParser_mem());
 	if (mem)
 	{
 		return XbusParser_init(mem, callback);
@@ -82,7 +84,7 @@ struct XbusParser* XbusParser_create(struct XbusParserCallback const* callback)
  */
 void XbusParser_destroy(struct XbusParser* parser)
 {
-	free(parser);
+	vPortFree(parser);
 }
 
 /*!

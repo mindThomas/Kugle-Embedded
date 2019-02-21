@@ -417,6 +417,9 @@ void UART::CallbackThread(void * pvParameters)
 {
 	UART * uart = (UART *)pvParameters;
 
+	uint8_t * popBuffer = (uint8_t *)pvPortMalloc(uart->CALLBACK_THREAD_POP_BUFFER_SIZE);
+	if (!popBuffer) ERROR("Could not create pop-buffer for UART Callback thread");
+
 	while (1) {
 		vTaskSuspend(NULL); // suspend current thread - this could also be replaced by semaphore-based waiting (flagging)
 
@@ -426,13 +429,9 @@ void UART::CallbackThread(void * pvParameters)
 			} else { // buffer enabled, hence process buffer content
 				while (uart->Available()) {
 					if (uart->_callbackChunkLength == 0) { // call callback with available chunks
-						uint32_t dataAvailable = uart->BufferContentSize();
-						if (dataAvailable > 0) {
-							uint8_t * chunkBuffer = uart->BufferPopN(dataAvailable);
-							if (chunkBuffer) {
-								uart->_RXcallback(uart->_RXcallbackParameter, chunkBuffer, dataAvailable);
-								vPortFree(chunkBuffer);
-							}
+						uint32_t dataPopped = uart->BufferPopMax(popBuffer, uart->CALLBACK_THREAD_POP_BUFFER_SIZE);
+						if (dataPopped) {
+							uart->_RXcallback(uart->_RXcallbackParameter, popBuffer, dataPopped);
 						}
 					}
 					else if (uart->_callbackChunkLength == 1) { // call callback with only 1 byte
@@ -735,6 +734,20 @@ uint32_t UART::BufferContentSize()
 	uint32_t length = (_bufferWriteIdx - _bufferReadIdx) % _bufferLength;
 
 	return length;
+}
+
+// Pop as many bytes as possible
+uint32_t UART::BufferPopMax(uint8_t * buffer, uint32_t bufferSize)
+{
+	uint32_t poppedBytes = 0;
+	if (!buffer) return 0;
+
+	while (Available() && poppedBytes < bufferSize) {
+		buffer[poppedBytes] = BufferPop();
+		poppedBytes++;
+	}
+
+	return poppedBytes;
 }
 
 uint8_t * UART::BufferPopN(uint32_t numberOfBytesToPop)
