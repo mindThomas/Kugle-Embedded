@@ -287,13 +287,13 @@ void UART::RegisterRXcallback(void (*callback)UART_CALLBACK_PARAMS, void * param
 
 	switch (_port) {
 		case PORT_UART3:
-			xTaskCreate(UART::CallbackThread, (char *)"UART3 callback", 256, (void*) this, UART_RECEIVER_PRIORITY, &_callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART3 callback", 512, (void*) this, UART_RECEIVER_PRIORITY, &_callbackTaskHandle);
 			break;
 		case PORT_UART4:
-			xTaskCreate(UART::CallbackThread, (char *)"UART4 callback", 256, (void*) this, UART_RECEIVER_PRIORITY, &_callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART4 callback", 512, (void*) this, UART_RECEIVER_PRIORITY, &_callbackTaskHandle);
 			break;
 		case PORT_UART7:
-			xTaskCreate(UART::CallbackThread, (char *)"UART7 callback", 256, (void*) this, UART_RECEIVER_PRIORITY, &_callbackTaskHandle);
+			xTaskCreate(UART::CallbackThread, (char *)"UART7 callback", 512, (void*) this, UART_RECEIVER_PRIORITY, &_callbackTaskHandle);
 			break;
 		default:
 			break;

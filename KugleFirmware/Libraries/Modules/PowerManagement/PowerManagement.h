@@ -34,7 +34,7 @@
 class PowerManagement
 {
 	private:
-		const uint32_t POWER_MANAGEMENT_THREAD_STACK = 128;
+		const uint32_t POWER_MANAGEMENT_THREAD_STACK = 256;
 
 	public:
 		typedef enum LEDmode_t {

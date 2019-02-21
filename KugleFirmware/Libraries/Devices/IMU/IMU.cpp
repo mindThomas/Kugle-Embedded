@@ -43,9 +43,11 @@ void MPU9250_Sampling(void const * argument)
 }
 #endif
 
-void IMU::CorrectMeasurement(Measurement_t& measurement)
+void IMU::CorrectMeasurement(Measurement_t& measurement, bool correctGyroBias, bool correctAlignment)
 {
-	if (calibration_.calibrated) {
+	if (!calibration_.calibrated) return;
+
+	if (correctGyroBias && correctAlignment) { // correct with both orientation/alignment and gyroscope bias
 		adjustImuMeasurement(measurement.Gyroscope[0],
 							 measurement.Gyroscope[1],
 							 measurement.Gyroscope[2],
@@ -53,6 +55,21 @@ void IMU::CorrectMeasurement(Measurement_t& measurement)
 							 measurement.Accelerometer[1],
 							 measurement.Accelerometer[2],
 							 calibration_.imu_calibration_matrix, calibration_.gyro_bias);
+	}
+	else if (!correctGyroBias && correctAlignment) { // correct only sensor orientation/alignment
+		const float zero_bias[3] = { 0, 0, 0 };
+		adjustImuMeasurement(measurement.Gyroscope[0],
+							 measurement.Gyroscope[1],
+							 measurement.Gyroscope[2],
+							 measurement.Accelerometer[0],
+							 measurement.Accelerometer[1],
+							 measurement.Accelerometer[2],
+							 calibration_.imu_calibration_matrix, zero_bias);
+	}
+	else if (correctGyroBias && !correctAlignment) { // correct only gyroscope with calibrated gyroscope bias
+		measurement.Gyroscope[0] -= calibration_.gyro_bias[0];
+		measurement.Gyroscope[1] -= calibration_.gyro_bias[1];
+		measurement.Gyroscope[2] -= calibration_.gyro_bias[2];
 	}
 }
 

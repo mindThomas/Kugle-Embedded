@@ -307,7 +307,7 @@ __attribute__((optimize("O0")))
 		imu.Get(imuRaw);
 	    /* Adjust the measurements according to the calibration */
 		imuCorrected = imuRaw;
-		imu.CorrectMeasurement(imuCorrected);
+		//imu.CorrectMeasurement(imuCorrected, !params.estimator.UseXsensIMU); // do not correct gyroscope bias if Xsens IMU is used (since this is corrected internally by the Xsens Kalman filter)
 
 		imuFiltered = imuCorrected;
 		if (params.estimator.EnableSoftwareLPFfilters && !params.estimator.UseXsensIMU) {

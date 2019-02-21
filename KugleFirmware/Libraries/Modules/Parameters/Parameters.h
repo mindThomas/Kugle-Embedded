@@ -44,7 +44,7 @@ class Parameters
 
 		struct behavioural_t {
 			/* Behavioural parameters */
-			bool IndependentHeading = true;
+			bool IndependentHeading = false;
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
 			bool StepTestEnabled = false;
 			bool SineTestEnabled = false;
@@ -130,7 +130,7 @@ class Parameters
 			float SampleRate = 200;
 			
 			bool UseXsensIMU = false;
-			bool ConfigureXsensIMUatBoot = false;
+			bool ConfigureXsensIMUatBoot = true;
 			bool UseXsensEstimates = false; // should the orientation estimates computed by the Xsens IMU be used or should the calibrated sensor values be used
 
 			#define EnableSensorLPFfilters_ 	false
@@ -142,13 +142,13 @@ class Parameters
 			bool UseMadgwick = false;
 			bool EstimateBias = true;
 			bool Use2Lvelocity = true;
-			bool UseVelocityEstimator = false;
-			bool EnableVelocityLPF = true;
+			bool UseVelocityEstimator = true;
+			bool EnableVelocityLPF = true; // Velocity LPF is only used if Velocity Estimator is disabled
 			float VelocityLPFcoeffs_a[3] = {1.000000000000000, -1.870860377550659, 0.878777573775756};	// 20 Hz LPF
 			float VelocityLPFcoeffs_b[3] = {0.011353393934590, -0.014789591644084, 0.011353393934590};	// Created using:  [num, den] = cheby2(2,40,20/(Fs/2))
 			bool UseCOMestimateInVelocityEstimator = false;
 			bool EstimateCOM = false;
-			float EstimateCOMminVelocity = 0.05; // minimum velocity (checked against estimate) to run COM estimator
+			float EstimateCOMminVelocity = 0*0.05; // minimum velocity (checked against estimate) to run COM estimator
 			float MaxCOMDeviation = 0.01; // maximum tolerated COM (XY) deviation estimated by COM estimator (given in meters)
 
 			float MadgwickBeta = 0.02; // 0.02  accelerometer influence magnitude on qDot - the smaller the less accelerometer correction
@@ -180,7 +180,7 @@ class Parameters
 			#endif
 
 			float sigma2_bias = 1E-6;
-			float sigma2_omega = 1E-6;
+			float sigma2_omega = 1E-5;
 			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
 
 			// X_QEKF = {q0, q1, q2, q3,   dq0, dq1, dq2, dq3,   gyro_bias_x, gyro_bias_y}
@@ -218,7 +218,7 @@ class Parameters
 			float CoR = 0.8720f;
 
 			// Body constants
-			float Mb = (12.892f + 1.844f);
+			float Mb = ( 4.31f + 1.844f);
 			float Jbx = 3.9096f;
 			float Jby = 3.9212f;
 			float Jbz = 0.1004f;

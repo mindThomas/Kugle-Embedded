@@ -51,7 +51,7 @@ class IMU
 		virtual void GetEstimates(Estimates_t& estimates) {}; // if supported, eg. by Xsens IMU
 
 		void Calibrate(bool storeInEEPROM = true);
-		void CorrectMeasurement(Measurement_t& measurement);
+		void CorrectMeasurement(Measurement_t& measurement, bool correctGyroBias = true, bool correctAlignment = true);
 
 		void AttachEEPROM(EEPROM * eeprom);
 

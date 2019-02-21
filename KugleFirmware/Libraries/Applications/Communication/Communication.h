@@ -25,7 +25,7 @@
 class Communication
 {
 	private:
-		const int THREAD_STACK_SIZE = 128;
+		const int THREAD_STACK_SIZE = 256;
 		const uint32_t THREAD_PRIORITY = osPriorityNormal;
 
 	public:

@@ -57,6 +57,8 @@ extern void Quaternion_Phi(const float q[4], const float p[4], float result[4]);
 extern void Quaternion_devecPhi(const float q[4], const float p[4], float result[3]); // result = V * q o p = V*Phi(q)*p
 extern void Quaternion_PhiT(const float q[4], const float p[4], float result[4]); // result = q* o p = Phi(q)^T*p
 extern void Quaternion_devecPhiT(const float q[4], const float p[4], float result[3]); // result = V * q* o p = V*Phi(q)^T*p
+extern void Quaternion_mat_Phi(const float q[4], float mat[4*4]);
+extern void Quaternion_mat_PhiVec(const float q[4], float mat[4*3]);
 extern void Quaternion_mat_PhiT(const float q[4], float mat[4*4]);
 extern void Quaternion_mat_devecPhiT(const float q[4], float mat[3*4]);
 extern void Quaternion_Gamma(const float p[4], const float q[4], float result[4]); // result = q o p = Gamma(p)*q

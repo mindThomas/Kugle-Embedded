@@ -202,7 +202,7 @@ void QEKF::GetQuaternionCovariance(float Cov_q[4*4])
 {
     for (int m = 0; m < 4; m++) {
       for (int n = 0; n < 4; n++) {
-        Cov_q[4*m + n] = P[11*m + n];
+        Cov_q[4*m + n] = P[10*m + n];
       }
     }
 }
@@ -213,9 +213,47 @@ void QEKF::GetQuaternionCovariance(float Cov_q[4*4])
  */
 void QEKF::GetQuaternionDerivativeCovariance(float Cov_dq[4*4])
 {
-    for (int m = 0; m < 4; m++) {
+    /*for (int m = 0; m < 4; m++) {
       for (int n = 0; n < 4; n++) {
-        Cov_dq[4*m + n] = P[11*m + n + (11*4 + 4)];
+        Cov_dq[4*m + n] = P[10*m + n + (10*4 + 4)];
+      }
+    }*/
+
+	// OBS. The covariance of the quaternion derivative estimate is not stored in the estimator covariance, since it is not part of the state vector
+	// Hence we need to transform the covariance of the angular velocity estimate into a covariance of the quaternion derivative estimate
+
+	/* Cov_dq = (1/2 * Phi(q) * vec) * Cov_omega * (1/2 * Phi(q) * vec)' */
+	/* Cov_dq = T(q) * Cov_omega * T(q)' */
+	float Cov_omega[3*3]; arm_matrix_instance_f32 Cov_omega_; arm_mat_init_f32(&Cov_omega_, 3, 3, Cov_omega);
+	GetAngularVelocityCovariance(Cov_omega);
+
+	// Compute transformation matrix, T(q)
+	float T_q[4*3]; arm_matrix_instance_f32 T_q_; arm_mat_init_f32(&T_q_, 4, 3, T_q);
+	Quaternion_mat_PhiVec(&X[0], T_q);
+	arm_scale_f32(T_q, 0.5f, T_q, 4*3);
+
+	// Compute transpose, T(q)'
+	float T_q_T[3*4]; arm_matrix_instance_f32 T_q_T_; arm_mat_init_f32(&T_q_T_, 3, 4, T_q_T);
+	arm_mat_trans_f32(&T_q_, &T_q_T_);
+
+	// Compute right part of transformation   -->   tmp = Cov_omega * T(q)'
+	float tmp[3*4]; arm_matrix_instance_f32 tmp_; arm_mat_init_f32(&tmp_, 3, 4, tmp);
+	arm_mat_mult_f32(&Cov_omega_, &T_q_T_, &tmp_);
+
+	// Compute output   -->  Cov_dq = T(q) * tmp
+	arm_matrix_instance_f32 Cov_dq_; arm_mat_init_f32(&Cov_dq_, 4, 4, Cov_dq);
+	arm_mat_mult_f32(&T_q_, &tmp_, &Cov_dq_);
+}
+
+/**
+ * @brief 	Get covariance matrix of estimated angular velocity
+ * @param	Cov_omega[3*3]		Output: angular velocity estimate covariance
+ */
+void QEKF::GetAngularVelocityCovariance(float Cov_omega[3*3])
+{
+    for (int m = 0; m < 3; m++) {
+      for (int n = 0; n < 3; n++) {
+    	  Cov_omega[3*m + n] = P[10*m + n + (10*4 + 4)];
       }
     }
 }

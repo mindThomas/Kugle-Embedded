@@ -38,7 +38,7 @@
 class BalanceController
 {
 	private:
-		const int THREAD_STACK_SIZE = 1500; // notice that this much stack is apparently necessary to avoid issues
+		const int THREAD_STACK_SIZE = 2000; // notice that this much stack is apparently necessary to avoid issues
 		const uint32_t THREAD_PRIORITY = BALANCE_CONTROLLER_PRIORITY;
 
 	public:

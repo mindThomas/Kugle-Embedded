@@ -284,10 +284,13 @@ void DisableHardware(void)
 	__HAL_RCC_SPI5_CLK_DISABLE();
 }
 
+volatile signed char * StackOverflowTaskName;
 void vApplicationStackOverflowHook( TaskHandle_t xTask, signed char *pcTaskName )
 {
     //Debug::printf("stack overflow in task id %lu, name: %s n", (uint32t)xTask, pcTaskName);
 	// pxCurrentTCB contains a pointer to the currently running task
+
+	StackOverflowTaskName = pcTaskName;
 
 	DisableHardware();
     for( ;; );
