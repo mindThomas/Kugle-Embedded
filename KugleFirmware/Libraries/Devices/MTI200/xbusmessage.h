@@ -29,7 +29,7 @@ extern "C" {
 /*! \brief Xbus message IDs. */
 enum XsMessageId
 {
-	XMID_Undefined			= 0x00,
+	XMID_Undefined			= 0xFF,
 	XMID_Wakeup             = 0x3E,
 	XMID_WakeupAck          = 0x3F,
 	XMID_ReqDid             = 0x00,
