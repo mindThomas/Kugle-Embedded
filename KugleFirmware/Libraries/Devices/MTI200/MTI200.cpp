@@ -452,12 +452,12 @@ bool MTI200::configureMotionTracker(void)
                 {XDI_PacketCounter, 65535},
                 {XDI_SampleTimeFine, 65535},
                 {XDI_Quaternion, 200},
-				//{XDI_DeltaQ, 400},
 				{XDI_Acceleration, 200},
 				{XDI_RateOfTurn, 200},
-				//{XDI_MagneticField, 400},
+				//{XDI_MagneticField, 200},
                 {XDI_StatusWord, 65535}
             };
+
             return setOutputConfiguration(conf,
                     sizeof(conf) / sizeof(OutputConfiguration));
         }
@@ -577,47 +577,62 @@ XbusMessage MTI200::GetMessage(uint32_t timeout)
 void MTI200::parseMTData2Message(XbusMessage const* message)
 {
 	LastMeasurement_t tmp;
-	memset(&tmp, 0, sizeof(LastMeasurement_t));
 
     if (!message)  return;
 
-    if (!XbusMessage_getDataItem(&tmp.PackageCounter, XDI_PacketCounter, message)) return;
+    xSemaphoreTake( _dataSemaphore, ( TickType_t ) portMAX_DELAY ); // take data semaphore to update data
+
+    if (XbusMessage_getDataItem(&tmp.PackageCounter, XDI_PacketCounter, message)) {
+    	LastMeasurement.PackageCounter = tmp.PackageCounter;
+    }
 
     uint32_t sampleTimeFine = 0;
-    if (!XbusMessage_getDataItem(&sampleTimeFine, XDI_SampleTimeFine, message)) return;
+    if (XbusMessage_getDataItem(&sampleTimeFine, XDI_SampleTimeFine, message)) {
+    	float time = (float)sampleTimeFine / 10000.0f;
+    	if (sampleTimeFine > 0)
+    		LastMeasurement.dt = time - LastMeasurement.Time;
+    	LastMeasurement.Time = time;
+    }
 
-	float time = (float)sampleTimeFine / 10000.0f;
-	if (sampleTimeFine > 0)
-		tmp.dt = time - LastMeasurement.Time;
-	tmp.Time = time;
+    /* Note that measurements and estimates has to be rotated 180 degrees due to the mount/orientation of the Xsens IMU */
+    if (XbusMessage_getDataItem(tmp.Quaternion, XDI_Quaternion, message)) {
+    	memcpy(LastMeasurement.Quaternion, tmp.Quaternion, sizeof(tmp.Quaternion));
+        LastMeasurement.Quaternion[1] = -LastMeasurement.Quaternion[1];
+        LastMeasurement.Quaternion[2] = -LastMeasurement.Quaternion[2];
+    }
 
-    if (!XbusMessage_getDataItem(tmp.Quaternion, XDI_Quaternion, message)) return;
+    if (XbusMessage_getDataItem(tmp.DeltaQ, XDI_DeltaQ, message)) {
+    	memcpy(LastMeasurement.DeltaQ, tmp.DeltaQ, sizeof(tmp.DeltaQ));
+        LastMeasurement.DeltaQ[1] = -LastMeasurement.DeltaQ[1];
+        LastMeasurement.DeltaQ[2] = -LastMeasurement.DeltaQ[2];
+    }
 
-    if (!XbusMessage_getDataItem(tmp.DeltaQ, XDI_DeltaQ, message)) return;
+    if (XbusMessage_getDataItem(tmp.Accelerometer, XDI_Acceleration, message)) {
+    	memcpy(LastMeasurement.Accelerometer, tmp.Accelerometer, sizeof(tmp.Accelerometer));
+        LastMeasurement.Accelerometer[0] = -LastMeasurement.Accelerometer[0];
+        LastMeasurement.Accelerometer[1] = -LastMeasurement.Accelerometer[1];
+    }
 
-    if (!XbusMessage_getDataItem(tmp.Accelerometer, XDI_Acceleration, message)) return;
+    if (XbusMessage_getDataItem(tmp.Gyroscope, XDI_RateOfTurn, message)) {
+    	memcpy(LastMeasurement.Gyroscope, tmp.Gyroscope, sizeof(tmp.Gyroscope));
+        LastMeasurement.Gyroscope[0] = -LastMeasurement.Gyroscope[0];
+        LastMeasurement.Gyroscope[1] = -LastMeasurement.Gyroscope[1];
+    }
 
-    if (!XbusMessage_getDataItem(tmp.Gyroscope, XDI_RateOfTurn, message)) return;
+    if (XbusMessage_getDataItem(tmp.Magnetometer, XDI_MagneticField, message)) {
+    	memcpy(LastMeasurement.Magnetometer, tmp.Magnetometer, sizeof(tmp.Magnetometer));
+        LastMeasurement.Magnetometer[0] = -LastMeasurement.Magnetometer[0];
+        LastMeasurement.Magnetometer[1] = -LastMeasurement.Magnetometer[1];
+    }
 
-    if (!XbusMessage_getDataItem(tmp.Magnetometer, XDI_MagneticField, message)) return;
-
-    if (!XbusMessage_getDataItem(&tmp.Status, XDI_StatusWord, message)) return;
+    if (XbusMessage_getDataItem(&tmp.Status, XDI_StatusWord, message)) {
+    	LastMeasurement.Status = tmp.Status;
+    }
 
     /* Successfully read all data - now overwrite LastMeasurement */
-    xSemaphoreTake( _dataSemaphore, ( TickType_t ) portMAX_DELAY ); // take data semaphore to update data
-    memcpy(&LastMeasurement, &tmp, sizeof(LastMeasurement_t));
+    /*xSemaphoreTake( _dataSemaphore, ( TickType_t ) portMAX_DELAY ); // take data semaphore to update data
+    memcpy(&LastMeasurement, &tmp, sizeof(LastMeasurement_t));*/
 
-    /* Rotate the measurements and estimates 180 degrees due to the mount/orientation of the Xsens IMU */
-    LastMeasurement.Quaternion[1] = -LastMeasurement.Quaternion[1];
-    LastMeasurement.Quaternion[2] = -LastMeasurement.Quaternion[2];
-    LastMeasurement.DeltaQ[1] = -LastMeasurement.DeltaQ[1];
-    LastMeasurement.DeltaQ[2] = -LastMeasurement.DeltaQ[2];
-    LastMeasurement.Accelerometer[0] = -LastMeasurement.Accelerometer[0];
-    LastMeasurement.Accelerometer[1] = -LastMeasurement.Accelerometer[1];
-    LastMeasurement.Gyroscope[0] = -LastMeasurement.Gyroscope[0];
-    LastMeasurement.Gyroscope[1] = -LastMeasurement.Gyroscope[1];
-    LastMeasurement.Magnetometer[0] = -LastMeasurement.Magnetometer[0];
-    LastMeasurement.Magnetometer[1] = -LastMeasurement.Magnetometer[1];
     xSemaphoreGive( _dataSemaphore ); // give semaphore back
 }
 
@@ -627,7 +642,7 @@ MTI200::LastMeasurement_t MTI200::GetLastMeasurement()
 	memset(&tmp, 0, sizeof(LastMeasurement_t));
 	tmp.Quaternion[0] = 1.0; // as a safety measure if the semaphore can not be taken
 
-	xSemaphoreTake( _dataSemaphore, ( TickType_t ) 1 ); // take data semaphore to read data
+	xSemaphoreTake( _dataSemaphore, ( TickType_t ) 3 ); // take data semaphore to read data
 	tmp = LastMeasurement; // copy data
 	xSemaphoreGive( _dataSemaphore ); // give semaphore back
 
@@ -636,7 +651,7 @@ MTI200::LastMeasurement_t MTI200::GetLastMeasurement()
 
 void MTI200::GetEstimates(Estimates_t& estimates)
 {
-	xSemaphoreTake( _dataSemaphore, ( TickType_t ) 1 ); // take data semaphore to read data
+	xSemaphoreTake( _dataSemaphore, ( TickType_t ) 3 ); // take data semaphore to read data
 
 	memcpy(estimates.q, LastMeasurement.Quaternion, sizeof(LastMeasurement.Quaternion));
 	//memcpy(estimates.dq, LastMeasurement.DeltaQ, sizeof(LastMeasurement.Quaternion));

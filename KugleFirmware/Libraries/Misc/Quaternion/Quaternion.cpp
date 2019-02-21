@@ -99,13 +99,41 @@ void Quaternion_devecPhiT(const float q[4], const float p[4], float result[3])
     result[2] = -q[3]*p[0] + q[2]*p[1] - q[1]*p[2] + q[0]*p[3];
 }
 
+/* mat = Phi(q) */
+void Quaternion_mat_Phi(const float q[4], float mat[4*4])
+{
+	/*Phi^T = @(q)[q(0) q(1) q(2) q(3);     % for q o p = Phi(q) * p
+				  -q(1) q(0)  q(3) -q(2);
+				  -q(2) -q(3)  q(0)  q(1);
+				  -q(3) q(2) -q(1)  q(0)];
+	*/
+    mat[0]  = q[0];   mat[1]  = -q[1];   mat[2]  = -q[2];   mat[3]  = -q[3];
+    mat[4]  = q[1];  mat[5]  = q[0];   mat[6]  = -q[3];  mat[7]  = q[2];
+    mat[8]  = q[2];  mat[9]  = q[3];   mat[10] = q[0];   mat[11] = -q[1];
+    mat[12] = q[3];  mat[13] = -q[2];  mat[14] = q[1];   mat[15] = q[0];
+}
+
+/* mat = Phi(q) * Λ  */
+void Quaternion_mat_PhiVec(const float q[4], float mat[4*3])
+{
+	/*Phi^T = @(q)[q(0) q(1) q(2) q(3);     % for q o p = Phi(q) * p
+				  -q(1) q(0)  q(3) -q(2);
+				  -q(2) -q(3)  q(0)  q(1);
+				  -q(3) q(2) -q(1)  q(0)];
+	*/
+    mat[0]  = -q[1];   mat[1]  = -q[2];   mat[2]  = -q[3];
+    mat[3]  = q[0];   mat[4]  = -q[3];  mat[5]  = q[2];
+    mat[6]  = q[3];   mat[7] = q[0];   mat[8] = -q[1];
+    mat[9] = -q[2];  mat[10] = q[1];   mat[11] = q[0];
+}
+
 /* mat = Phi(q)^T */
 void Quaternion_mat_PhiT(const float q[4], float mat[4*4])
 {
 	/*Phi^T = @(q)[q(0) q(1) q(2) q(3);     % for q o p = Phi(q) * p
-							 -q(1) q(0)  q(3) -q(2);
-							 -q(2) -q(3)  q(0)  q(1);
-							 -q(3) q(2) -q(1)  q(0)];
+				  -q(1) q(0)  q(3) -q(2);
+				  -q(2) -q(3)  q(0)  q(1);
+				  -q(3) q(2) -q(1)  q(0)];
 	*/
     mat[0]  = q[0];   mat[1]  = q[1];   mat[2]  = q[2];   mat[3]  = q[3];
     mat[4]  = -q[1];  mat[5]  = q[0];   mat[6]  = q[3];  mat[7]  = -q[2];

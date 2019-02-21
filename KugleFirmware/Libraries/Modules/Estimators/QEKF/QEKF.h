@@ -43,6 +43,7 @@ class QEKF
 		void GetGyroBias(float bias[3]);
 		void GetQuaternionCovariance(float Cov_q[4*4]);
 		void GetQuaternionDerivativeCovariance(float Cov_dq[4*4]);
+		void GetAngularVelocityCovariance(float Cov_omega[3*3]);
 
 		bool UnitTest(void);
 

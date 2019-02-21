@@ -115,6 +115,7 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
       10.0f, // eta_qQEKF_velocity
       0.0f, // eta_dqQEKF_encoder
       X, P);*/
+
 	VelocityEstimator2(X_prev, P_prev,
 	      EncoderDiffMeas,
 	      qEst, Cov_qEst, qDotEst,
