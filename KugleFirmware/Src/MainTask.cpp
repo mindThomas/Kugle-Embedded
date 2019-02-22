@@ -128,10 +128,10 @@ void MainTask(void * pvParameters)
 	IO * calibrateButton = new IO(GPIOD, GPIO_PIN_14, IO::PULL_DOWN); // configure as input
 
 	/* Prepare Xsens IMU always, since it is used for logging and comparison purposes */
-	UART * uart = new UART(UART::PORT_UART3, 230400, 500);
+	UART * uart = new UART(UART::PORT_UART3, 460800, 500);
 	MTI200 * mti200 = new MTI200(uart);
 	if (params.estimator.ConfigureXsensIMUatBoot) {
-		if (!mti200->Configure()) { // configuration failed, so do not use/pass on to balance controller
+		if (!mti200->Configure(2*params.estimator.SampleRate)) { // configuration failed, so do not use/pass on to balance controller
 			delete(mti200);
 			mti200 = 0;
 		}
