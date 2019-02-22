@@ -31,7 +31,7 @@ extern "C" __EXPORT void USART3_IRQHandler(void);
 extern "C" __EXPORT void UART4_IRQHandler(void);
 extern "C" __EXPORT void UART7_IRQHandler(void);
 
-UART::UART(port_t port, uint32_t baud, uint32_t bufferLength) : _port(port), _baud(baud), _bufferLength(bufferLength), _bufferWriteIdx(0), _bufferReadIdx(0), _callbackTaskHandle(0), _resourceSemaphore(0), _transmitByteFinished(0), _RXdataAvailable(0), _RXcallback(0), _RXcallbackParameter(0)
+UART::UART(port_t port, uint32_t baud, uint32_t bufferLength) : _port(port), _baud(baud), BaudRate(baud), _bufferLength(bufferLength), _bufferWriteIdx(0), _bufferReadIdx(0), _callbackTaskHandle(0), _resourceSemaphore(0), _transmitByteFinished(0), _RXdataAvailable(0), _RXcallback(0), _RXcallbackParameter(0)
 {
 	if (_bufferLength > 0)
 		_buffer = (uint8_t *)pvPortMalloc(_bufferLength);

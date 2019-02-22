@@ -57,7 +57,7 @@ class MTI200 : public IMU
 		void Get(Measurement_t& measurement);
 		void GetEstimates(Estimates_t& estimates);
 
-		bool Configure();
+		bool Configure(uint32_t SampleRate);
 		LastMeasurement_t GetLastMeasurement();
 
 	private:
@@ -83,7 +83,7 @@ class MTI200 : public IMU
 		bool sendCommand(XsMessageId cmdId);
 		uint32_t readDeviceId(void);
 		bool setOutputConfiguration(OutputConfiguration const* conf, uint8_t elements);
-		bool configureMotionTracker(void);
+		bool configureMotionTracker(uint32_t SampleRate);
 
 		bool waitForWakeup(uint32_t timeout);
 		void sendWakeupAck(void);

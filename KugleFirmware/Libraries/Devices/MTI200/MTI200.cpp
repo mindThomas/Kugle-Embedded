@@ -22,6 +22,7 @@
 #include "Debug.h"
 #include "cmsis_os.h"
 #include "Quaternion.h"
+#include <algorithm>
 
 MTI200::MTI200(UART * uart) : _uart(uart)
 {
@@ -107,7 +108,7 @@ MTI200::~MTI200()
 	}
 }
 
-bool MTI200::Configure()
+bool MTI200::Configure(uint32_t SampleRate)
 {
 	int tries = 3; // try 3 times to go into config - if no response, we might already be in config
 	while (tries-- > 0) if (sendCommand(XMID_GotoConfig)) break;
@@ -126,12 +127,7 @@ bool MTI200::Configure()
 	}
 	while (tries-- > 0) if (sendCommand(XMID_GotoConfig)) break;*/
 
-	uint32_t deviceId = readDeviceId();
-	deviceId = readDeviceId();
-	deviceId = readDeviceId();
-	deviceId = readDeviceId();
-
-	while (tries-- > 0) if (configureMotionTracker()) break;
+	while (tries-- > 0) if (configureMotionTracker(SampleRate)) break;
 	while (tries-- > 0) if (sendCommand(XMID_GotoMeasurement)) break;
 
 	if (tries <= 0) {
@@ -423,7 +419,7 @@ bool MTI200::setOutputConfiguration(OutputConfiguration const* conf, uint8_t ele
  * data.
  * MTi-2 and MTi-3 devices have an onboard filter so can send quaternions.
  */
-bool MTI200::configureMotionTracker(void)
+bool MTI200::configureMotionTracker(uint32_t SampleRate)
 {
     uint32_t deviceId = readDeviceId();
 
@@ -434,33 +430,24 @@ bool MTI200::configureMotionTracker(void)
         DeviceFunction function = XsDeviceId_getFunction(deviceId);
         Debug::printf("Device is an MTi-%d: %s.\r\n", function, XsDeviceId_functionDescription(function));
 
-        if (function == DF_IMU)
-        {
-            OutputConfiguration conf[] = {
-                {XDI_PacketCounter, 65535},
-                {XDI_SampleTimeFine, 65535},
-                {XDI_Acceleration, 100},
-                {XDI_RateOfTurn, 100},
-                {XDI_MagneticField, 100}
-            };
-            return setOutputConfiguration(conf,
-                    sizeof(conf) / sizeof(OutputConfiguration));
+        if (function == DF_IMU) {
+        	Debug::print("Detected MTI device do not support estimate output!\n");
+        	return 0;
         }
-        else
-        {
-            OutputConfiguration conf[] = {
-                {XDI_PacketCounter, 65535},
-                {XDI_SampleTimeFine, 65535},
-                {XDI_Quaternion, 200},
-				{XDI_Acceleration, 200},
-				{XDI_RateOfTurn, 200},
-				//{XDI_MagneticField, 200},
-                {XDI_StatusWord, 65535}
-            };
 
-            return setOutputConfiguration(conf,
-                    sizeof(conf) / sizeof(OutputConfiguration));
-        }
+		if ((968 * SampleRate) > _uart->BaudRate) Debug::print("Note: MTI sample rate might be too high to ensure consistent sampling without data loss\n");
+		OutputConfiguration conf[] = {
+			{XDI_PacketCounter, 65535}, // 65535 == fastest rate possible
+			{XDI_SampleTimeFine, 65535},
+			{XDI_Quaternion, SampleRate},
+			{XDI_Acceleration, SampleRate},
+			{XDI_RateOfTurn, SampleRate},
+			{XDI_MagneticField, std::min<uint32_t>(SampleRate, 100)},
+			{XDI_StatusWord, 65535}
+		};
+
+		return setOutputConfiguration(conf,
+				sizeof(conf) / sizeof(OutputConfiguration));
     }
 
     return false;

@@ -44,7 +44,7 @@ enum XsMessageId
 	XMID_OutputConfig       = 0xC1,
 	XMID_Reset              = 0x40,
 	XMID_ResetAck           = 0x41,
-	XMID_Error              = 0x42,
+	XMID_Error              = 0x42
 };
 
 /*! \brief Xbus data message type IDs. */
@@ -59,7 +59,7 @@ enum XsDataIdentifier
 	XDI_DeltaQ         = 0x8030, // estimated quaternion derivative
 	XDI_RawAccGyrMagTemp = 0xA010, // raw sensors
 	XDI_MagneticField  = 0xC020,
-	XDI_StatusWord     = 0xE020,
+	XDI_StatusWord     = 0xE020
 };
 
 /*!

@@ -31,6 +31,9 @@ class UART
 		const int CALLBACK_THREAD_POP_BUFFER_SIZE = 200;
 
 	public:
+		const uint32_t BaudRate;
+
+	public:
 		typedef enum port_t {
 			PORT_UNDEFINED = 0,
 			PORT_UART3,
