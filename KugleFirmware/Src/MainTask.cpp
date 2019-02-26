@@ -64,6 +64,7 @@
 #include "Communication.h"
 #include "FrontPanel.h"
 #include "PathFollowingController.h"
+#include "ApplicationTemplate.h"
 
 /* Miscellaneous includes */
 #include "MATLABCoderInit.h"

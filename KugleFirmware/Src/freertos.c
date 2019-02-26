@@ -103,7 +103,13 @@ unsigned long getRunTimeCounterValue(void)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-     
+
+/* Arduino-similar function to get milli seconds count based on FreeRTOS ticks, hence only in FreeRTOS tick resolution */
+uint32_t millis()
+{
+	 return (1000 * xTaskGetTickCount()) / configTICK_RATE_HZ;
+}
+
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

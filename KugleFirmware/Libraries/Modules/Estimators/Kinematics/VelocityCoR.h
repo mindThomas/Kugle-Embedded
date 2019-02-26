@@ -17,13 +17,13 @@
  * ------------------------------------------
  */
 
-#ifndef VELOCITY2L_H
-#define VELOCITY2L_H
+#ifndef VELOCITYCOR_H
+#define VELOCITYCOR_H
 
 #include <stddef.h>
 #include <stdlib.h>
 
-void _BallTo2Lvelocity(const float vel_ball[2], const float q[4], const float dq[4], float CoR, float vel_2L[2]);
-void _Convert2LtoBallVelocity(const float vel_2L[2], const float q[4], const float dq[4], const float CoR, float vel_ball[2]);
+void _BallToCoRvelocity(const float vel_ball[2], const float q[4], const float dq[4], float CoR, float vel_CoR[2]);
+void _ConvertCoRtoBallVelocity(const float vel_CoR[2], const float q[4], const float dq[4], const float CoR, float vel_ball[2]);
 
-#endif // VELOCITY2L_H
+#endif // VELOCITYCOR_H

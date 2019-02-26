@@ -25,6 +25,7 @@
 #include <string.h> // for memcpy
  
 #include "Quaternion.h"
+#include "MathLib.h" // for matrix symmetrization
 #include "arm_math.h"
 
 QEKF::QEKF(Parameters& params, Timer * microsTimer) : _params(params), _microsTimer(microsTimer)
@@ -107,7 +108,10 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
  */
 void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float dt)
 {
-	Step(accelerometer, gyroscope, 0, false, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
+	if (_params.estimator.UseXsensIMU) // use MTI covariance
+		Step(accelerometer, gyroscope, 0, false, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mti, _params.estimator.cov_gyro_mti, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
+	else
+		Step(accelerometer, gyroscope, 0, false, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
 }
 
 /**
@@ -125,7 +129,7 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
  * @param   g                  Input: gravity constant [m/s^2]
  * @param	dt    			   Input: time passed since last estimate
  */
-void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool UseHeadingForCorrection, const bool EstimateBias, const bool EstimateYawBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float sigma2_omega, const float sigma2_heading, const float sigma2_bias, const float g, const float dt)
+void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool UseHeadingForCorrection, const bool EstimateBias, const bool EstimateYawBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float GyroscopeTrustFactor, const float sigma2_omega, const float sigma2_heading, const float sigma2_bias, const float g, const float dt)
 {
 	if (dt == 0) return; // no time has passed
 
@@ -141,9 +145,11 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const fl
 		 dt,
 		 EstimateBias, EstimateYawBias,
 		 true,  // normalize accelerometer = true
-		 cov_gyro, cov_acc, sigma2_omega, sigma2_heading, sigma2_bias,
+		 cov_gyro, cov_acc,  GyroscopeTrustFactor, sigma2_omega, sigma2_heading, sigma2_bias,
 		 g,
 		 X, P);
+
+	Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));
 
     if (CreateQdotFromDifference) {
       X[4] = (X[0] - X_prev[0]) / dt; // dq[0]
@@ -243,6 +249,8 @@ void QEKF::GetQuaternionDerivativeCovariance(float Cov_dq[4*4])
 	// Compute output   -->  Cov_dq = T(q) * tmp
 	arm_matrix_instance_f32 Cov_dq_; arm_mat_init_f32(&Cov_dq_, 4, 4, Cov_dq);
 	arm_mat_mult_f32(&T_q_, &tmp_, &Cov_dq_);
+
+	Math_SymmetrizeSquareMatrix(Cov_dq, 4);
 }
 
 /**
@@ -254,6 +262,15 @@ void QEKF::GetAngularVelocityCovariance(float Cov_omega[3*3])
     for (int m = 0; m < 3; m++) {
       for (int n = 0; n < 3; n++) {
     	  Cov_omega[3*m + n] = P[10*m + n + (10*4 + 4)];
+      }
+    }
+}
+
+void QEKF::GetBiasCovariance(float Cov_bias[3*3])
+{
+    for (int m = 0; m < 3; m++) {
+      for (int n = 0; n < 3; n++) {
+    	  Cov_bias[3*m + n] = P[10*m + n + (10*7 + 7)];
       }
     }
 }
@@ -272,6 +289,7 @@ bool QEKF::UnitTest(void)
 	const float sigma2_bias = 1E-11;
 	const float sigma2_omega = 1E-4;
 	const float sigma2_heading = powf(deg2rad(1) / 3.0f, 2);
+	const float GyroscopeTrustFactor = 1.0;
 	const bool EstimateBias = true;
 	const bool EstimateYawBias = true;
 	const bool CreateQdotFromDifference = false;
@@ -287,8 +305,8 @@ bool QEKF::UnitTest(void)
 
 	const float dt = 1.0 / 200.0; // 400 Hz
 
-	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, sigma2_omega, sigma2_heading, sigma2_bias, g, dt);
-	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, sigma2_omega, sigma2_heading, sigma2_bias, g, dt);
+	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, GyroscopeTrustFactor, sigma2_omega, sigma2_heading, sigma2_bias, g, dt);
+	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, GyroscopeTrustFactor, sigma2_omega, sigma2_heading, sigma2_bias, g, dt);
 
 	float q[4];
 	GetQuaternion(q);

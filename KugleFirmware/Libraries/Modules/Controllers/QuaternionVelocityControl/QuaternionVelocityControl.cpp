@@ -157,7 +157,15 @@ void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const 
 	// Add heading to quaternion reference = q_heading o q_tilt
 	Quaternion_Phi(q_heading, q_tilt_withintegral, q_ref_out);
 
-	/*Serial.printf("%2.5f, %2.5f, ", Velocity_Heading[0], Velocity_Heading[1]);
-	Serial.printf("%2.5f, %2.5f, %2.5f, %2.5f, ", q_tilt_integral[0], q_tilt_integral[1], q_tilt_integral[2], q_tilt_integral[3]);
-	Serial.printf("%2.5f, %2.5f, %2.5f, %2.5f\n", q_ref_out[0], q_ref_out[1], q_ref_out[2], q_ref_out[3]);*/
+	/*Debug::printf("%2.5f, %2.5f, ", Velocity_Heading[0], Velocity_Heading[1]);
+	Debug::printf("%2.5f, %2.5f, %2.5f, %2.5f, ", q_tilt_integral[0], q_tilt_integral[1], q_tilt_integral[2], q_tilt_integral[3]);
+	Debug::printf("%2.5f, %2.5f, %2.5f, %2.5f\n", q_ref_out[0], q_ref_out[1], q_ref_out[2], q_ref_out[3]);*/
+}
+
+void QuaternionVelocityControl::GetIntegral(float q_integral[4])
+{
+	q_integral[0] = q_tilt_integral[0];
+	q_integral[1] = q_tilt_integral[1];
+	q_integral[2] = q_tilt_integral[2];
+	q_integral[3] = q_tilt_integral[3];
 }

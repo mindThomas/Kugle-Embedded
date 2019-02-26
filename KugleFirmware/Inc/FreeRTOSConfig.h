@@ -95,6 +95,7 @@
 /* USER CODE BEGIN 0 */   	      
     extern void configureTimerForRunTimeStats(void);
     extern unsigned long getRunTimeCounterValue(void);  
+    extern uint32_t millis();
 /* USER CODE END 0 */       
 #endif
 

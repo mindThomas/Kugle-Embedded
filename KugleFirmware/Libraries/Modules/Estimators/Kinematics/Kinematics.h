@@ -43,8 +43,8 @@ class Kinematics
 		void EstimateMotorVelocity(const int32_t encoderTicks[3], const float dt);
 		void ForwardKinematics(const float q[4], const float dq[4], float xy_velocity[2]);
 		void ForwardKinematics(const float dpsi[3], const float q[4], const float dq[4], float xy_velocity[2]);
-		void ConvertBallTo2Lvelocity(const float vel_ball[2], const float q[4], const float dq[4], float vel_2L[2]);
-		void Convert2LtoBallVelocity(const float vel_2L[2], const float q[4], const float dq[4], float vel_ball[2]);
+		void ConvertBallToCoRvelocity(const float vel_ball[2], const float q[4], const float dq[4], float vel_CoR[2]);
+		void ConvertCoRtoBallVelocity(const float vel_CoR[2], const float q[4], const float dq[4], float vel_ball[2]);
 		
 	private:
 		Parameters& _params;

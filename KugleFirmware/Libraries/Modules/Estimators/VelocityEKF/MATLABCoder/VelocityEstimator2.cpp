@@ -5,7 +5,7 @@
 // File: VelocityEstimator2.cpp
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 19-Feb-2019 12:31:44
+// C/C++ source code generated on  : 25-Feb-2019 19:14:04
 //
 
 // Include Files
@@ -19,7 +19,7 @@
 // Function Definitions
 
 //
-// function [X_out, P_out] = VelocityEstimator2(X, P_prev, EncoderDiffMeas, qQEKF, Cov_qQEKF, qdotQEKF, SamplePeriod, TicksPrRev, Jk,Mk,rk,Mb,Jw,rw,l,g,COM,CoR,  Var_COM, eta_encoder)
+// function [X_out, P_out] = VelocityEstimator2(X, P_prev, EncoderDiffMeas, qQEKF, Cov_qQEKF, qdotQEKF, SamplePeriod, TicksPrRev, Jk,Mk,rk,Mb,Jw,rw,l,g,COM,CoR,  Var_COM, eta_encoder, UseTiltForPrediction, EstimateVelocityAtCoR)
 // for q o p = Phi(q) * p
 // Arguments    : const float X[2]
 //                const float P_prev[4]
@@ -41,6 +41,8 @@
 //                float CoR
 //                float Var_COM
 //                float eta_encoder
+//                boolean_T UseTiltForPrediction
+//                boolean_T EstimateVelocityAtCoR
 //                float X_out[2]
 //                float P_out[4]
 // Return Type  : void
@@ -49,11 +51,12 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   EncoderDiffMeas[3], const float qQEKF[4], const float Cov_qQEKF[16], const
   float qdotQEKF[4], float SamplePeriod, float TicksPrRev, float Jk, float Mk,
   float rk, float Mb, float Jw, float rw, float l, float g, const float COM[3],
-  float CoR, float Var_COM, float eta_encoder, float X_out[2], float P_out[4])
+  float CoR, float Var_COM, float eta_encoder, boolean_T UseTiltForPrediction,
+  boolean_T EstimateVelocityAtCoR, float X_out[2], float P_out[4])
 {
   float y;
-  float b_y;
   float a21;
+  float maxval;
   int rtemp;
   float fv0[3];
   int k;
@@ -90,38 +93,41 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
     0.353553385F, 0.0F };
 
   float b_dAcceleration_dqB[8];
-  float maxval;
+  float dx_apriori;
+  float dy_apriori;
   float acceleration[2];
   int r1;
   float b_Cov_qQEKF[8];
   static const signed char iv4[4] = { 1, 0, 0, 1 };
 
+  float dx_ball_apriori;
+  float dy_ball_apriori;
   float P_apriori[4];
-  float b_qQEKF[16];
-  float b_qdotQEKF[16];
-  float c_qdotQEKF[16];
-  float c_qQEKF[16];
-  float d_qQEKF[16];
-  float d_qdotQEKF[16];
-  float e_qQEKF[12];
-  float vel_2L_to_ball_correction[3];
   float a;
+  float b_qQEKF[16];
   double H[6];
+  float b_qdotQEKF[16];
+  float c_qQEKF[16];
   float b_a[12];
-  float f_qQEKF[12];
+  float c_qdotQEKF[16];
+  float d_qQEKF[12];
+  float e_qQEKF[12];
+  float f_qQEKF[16];
+  float d_qdotQEKF[16];
   static const signed char iv5[4] = { 0, 0, 1, 0 };
 
+  float vel_2L_to_ball_correction[3];
   static const signed char iv6[4] = { 0, -1, 0, 0 };
 
   float K[6];
   int r2;
   int r3;
   float S[9];
-  float c_y[6];
+  float b_y[6];
   static const float fv6[9] = { 0.5F, 0.0F, 0.0F, 0.0F, 0.5F, 0.0F, 0.0F, 0.0F,
     0.5F };
 
-  float b_X[2];
+  float b_dx_apriori[2];
   signed char I[4];
 
   // 'VelocityEstimator2:3' Phi = @(q)[q(1) -q(2) -q(3) -q(4);     % for q o p = Phi(q) * p 
@@ -153,10 +159,10 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   y = rk / rw;
 
   // 'VelocityEstimator2:31' W2 = rk/rw * e2' * R_gamma' * devec * Gamma(vec * R_alpha_gamma*e2); 
-  b_y = rk / rw;
+  a21 = rk / rw;
 
   // 'VelocityEstimator2:32' W3 = rk/rw * e3' * R_gamma' * devec * Gamma(vec * R_alpha_gamma*e3); 
-  a21 = rk / rw;
+  maxval = rk / rw;
 
   // 'VelocityEstimator2:33' W = [W1;W2;W3];
   for (rtemp = 0; rtemp < 3; rtemp++) {
@@ -176,7 +182,7 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   for (rtemp = 0; rtemp < 3; rtemp++) {
     fv0[rtemp] = 0.0F;
     for (k = 0; k < 3; k++) {
-      fv0[rtemp] += fv1[rtemp + 3 * k] * (b_y * (float)iv2[k]);
+      fv0[rtemp] += fv1[rtemp + 3 * k] * (a21 * (float)iv2[k]);
     }
   }
 
@@ -190,7 +196,7 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   for (rtemp = 0; rtemp < 3; rtemp++) {
     fv0[rtemp] = 0.0F;
     for (k = 0; k < 3; k++) {
-      fv0[rtemp] += fv1[rtemp + 3 * k] * (a21 * (float)iv3[k]);
+      fv0[rtemp] += fv1[rtemp + 3 * k] * (maxval * (float)iv3[k]);
     }
   }
 
@@ -238,8 +244,8 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
 
   // 'VelocityEstimator2:50' cov_COM = Var_COM * eye(2);
   // 'VelocityEstimator2:51' cov_velocity = dt^2 * dAcceleration_dqB * Cov_qQEKF * dAcceleration_dqB' + dt^2 * dAcceleration_dCOM * cov_COM * dAcceleration_dCOM'; 
-  a21 = SamplePeriod * SamplePeriod;
   maxval = SamplePeriod * SamplePeriod;
+  a21 = SamplePeriod * SamplePeriod;
 
   //  Setup covariance matrices
   // 'VelocityEstimator2:54' Q = cov_velocity;
@@ -248,19 +254,32 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   //     %% Prediction step
   // 'VelocityEstimator2:61' X_apriori = zeros(2,1);
   //  Propagate the velocity based on shape-accelerated model for acceleration	
-  // 'VelocityEstimator2:64' acceleration = SteadyStateAcceleration(xCOM,yCOM,l,Jk,Jw,Mb,Mk,dx,dy,g,qQEKF(1),qQEKF(2),qQEKF(3),qQEKF(4),rk,rw); 
+  // 'VelocityEstimator2:64' dx_apriori = dx;
+  dx_apriori = X[0];
+
+  // 'VelocityEstimator2:65' dy_apriori = dy;
+  dy_apriori = X[1];
+
+  // 'VelocityEstimator2:67' acceleration = SteadyStateAcceleration(xCOM,yCOM,l,Jk,Jw,Mb,Mk,dx,dy,g,qQEKF(1),qQEKF(2),qQEKF(3),qQEKF(4),rk,rw); 
   SteadyStateAcceleration(COM[0], COM[1], l, Jk, Jw, Mb, Mk, X[0], X[1], g,
     qQEKF[0], qQEKF[1], qQEKF[2], qQEKF[3], rk, rw, acceleration);
 
-  // 'VelocityEstimator2:65' dx_apriori = dx + dt * acceleration(1);
-  // 'VelocityEstimator2:66' dy_apriori = dy + dt * acceleration(2);
+  // 'VelocityEstimator2:68' if (UseTiltForPrediction)
+  if (UseTiltForPrediction) {
+    // 'VelocityEstimator2:69' dx_apriori = dx_apriori + dt * acceleration(1);
+    dx_apriori = X[0] + SamplePeriod * acceleration[0];
+
+    // 'VelocityEstimator2:70' dy_apriori = dy_apriori + dt * acceleration(2);
+    dy_apriori = X[1] + SamplePeriod * acceleration[1];
+  }
+
   //  Determine model Jacobian (F)
-  // 'VelocityEstimator2:69' F_prev = eye(2);
+  // 'VelocityEstimator2:74' F_prev = eye(2);
   //  Set apriori state
-  // 'VelocityEstimator2:72' X_apriori = [dx_apriori
-  // 'VelocityEstimator2:73' 				 dy_apriori];
+  // 'VelocityEstimator2:77' X_apriori = [dx_apriori
+  // 'VelocityEstimator2:78' 				 dy_apriori];
   //  Calculate apriori covariance of estimate error
-  // 'VelocityEstimator2:76' P_apriori = F_prev * P_prev * F_prev' + Q;
+  // 'VelocityEstimator2:81' P_apriori = F_prev * P_prev * F_prev' + Q;
   for (rtemp = 0; rtemp < 2; rtemp++) {
     for (k = 0; k < 2; k++) {
       b_P_prev[rtemp + (k << 1)] = 0.0F;
@@ -275,7 +294,7 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
     for (k = 0; k < 2; k++) {
       b_Cov_qQEKF[rtemp + (k << 2)] = 0.0F;
       for (r1 = 0; r1 < 4; r1++) {
-        b_Cov_qQEKF[rtemp + (k << 2)] += Cov_qQEKF[rtemp + (r1 << 2)] * (a21 *
+        b_Cov_qQEKF[rtemp + (k << 2)] += Cov_qQEKF[rtemp + (r1 << 2)] * (maxval *
           b_dAcceleration_dqB[r1 + (k << 2)]);
       }
     }
@@ -286,7 +305,7 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
       b_Var_COM[rtemp + (k << 1)] = 0.0F;
       for (r1 = 0; r1 < 2; r1++) {
         b_Var_COM[rtemp + (k << 1)] += Var_COM * (float)iv4[rtemp + (r1 << 1)] *
-          (maxval * b_dAcceleration_dCOM[r1 + (k << 1)]);
+          (a21 * b_dAcceleration_dCOM[r1 + (k << 1)]);
       }
 
       dAcceleration_dqB[rtemp + (k << 1)] = 0.0F;
@@ -313,133 +332,146 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   }
 
   //     %% Update/correction step
-  // 'VelocityEstimator2:79' z = [EncoderDiffMeas];
+  // 'VelocityEstimator2:84' z = [EncoderDiffMeas];
   //  Encoder Measurement model
-  // 'VelocityEstimator2:82' vel_2L_to_ball_correction = devec * (Phi(qdotQEKF)*Gamma(qQEKF)' + Phi(qQEKF)*Gamma(qdotQEKF)') * [0,0,0,CoR]'; 
-  dAcceleration_dqB[0] = 0.0F;
-  dAcceleration_dqB[1] = 0.0F;
-  dAcceleration_dqB[2] = 0.0F;
-  dAcceleration_dqB[3] = CoR;
-  b_qQEKF[0] = qQEKF[0];
-  b_qQEKF[4] = -qQEKF[1];
-  b_qQEKF[8] = -qQEKF[2];
-  b_qQEKF[12] = -qQEKF[3];
-  b_qQEKF[1] = qQEKF[1];
-  b_qQEKF[5] = qQEKF[0];
-  b_qQEKF[9] = qQEKF[3];
-  b_qQEKF[13] = -qQEKF[2];
-  b_qQEKF[2] = qQEKF[2];
-  b_qQEKF[6] = -qQEKF[3];
-  b_qQEKF[10] = qQEKF[0];
-  b_qQEKF[14] = qQEKF[1];
-  b_qQEKF[3] = qQEKF[3];
-  b_qQEKF[7] = qQEKF[2];
-  b_qQEKF[11] = -qQEKF[1];
-  b_qQEKF[15] = qQEKF[0];
-  b_qdotQEKF[0] = qdotQEKF[0];
-  b_qdotQEKF[1] = -qdotQEKF[1];
-  b_qdotQEKF[2] = -qdotQEKF[2];
-  b_qdotQEKF[3] = -qdotQEKF[3];
-  b_qdotQEKF[4] = qdotQEKF[1];
-  b_qdotQEKF[5] = qdotQEKF[0];
-  b_qdotQEKF[6] = -qdotQEKF[3];
-  b_qdotQEKF[7] = qdotQEKF[2];
-  b_qdotQEKF[8] = qdotQEKF[2];
-  b_qdotQEKF[9] = qdotQEKF[3];
-  b_qdotQEKF[10] = qdotQEKF[0];
-  b_qdotQEKF[11] = -qdotQEKF[1];
-  b_qdotQEKF[12] = qdotQEKF[3];
-  b_qdotQEKF[13] = -qdotQEKF[2];
-  b_qdotQEKF[14] = qdotQEKF[1];
-  b_qdotQEKF[15] = qdotQEKF[0];
-  c_qdotQEKF[0] = qdotQEKF[0];
-  c_qdotQEKF[4] = -qdotQEKF[1];
-  c_qdotQEKF[8] = -qdotQEKF[2];
-  c_qdotQEKF[12] = -qdotQEKF[3];
-  c_qdotQEKF[1] = qdotQEKF[1];
-  c_qdotQEKF[5] = qdotQEKF[0];
-  c_qdotQEKF[9] = qdotQEKF[3];
-  c_qdotQEKF[13] = -qdotQEKF[2];
-  c_qdotQEKF[2] = qdotQEKF[2];
-  c_qdotQEKF[6] = -qdotQEKF[3];
-  c_qdotQEKF[10] = qdotQEKF[0];
-  c_qdotQEKF[14] = qdotQEKF[1];
-  c_qdotQEKF[3] = qdotQEKF[3];
-  c_qdotQEKF[7] = qdotQEKF[2];
-  c_qdotQEKF[11] = -qdotQEKF[1];
-  c_qdotQEKF[15] = qdotQEKF[0];
-  c_qQEKF[0] = qQEKF[0];
-  c_qQEKF[1] = -qQEKF[1];
-  c_qQEKF[2] = -qQEKF[2];
-  c_qQEKF[3] = -qQEKF[3];
-  c_qQEKF[4] = qQEKF[1];
-  c_qQEKF[5] = qQEKF[0];
-  c_qQEKF[6] = -qQEKF[3];
-  c_qQEKF[7] = qQEKF[2];
-  c_qQEKF[8] = qQEKF[2];
-  c_qQEKF[9] = qQEKF[3];
-  c_qQEKF[10] = qQEKF[0];
-  c_qQEKF[11] = -qQEKF[1];
-  c_qQEKF[12] = qQEKF[3];
-  c_qQEKF[13] = -qQEKF[2];
-  c_qQEKF[14] = qQEKF[1];
-  c_qQEKF[15] = qQEKF[0];
-  for (rtemp = 0; rtemp < 4; rtemp++) {
-    for (k = 0; k < 4; k++) {
-      d_qQEKF[rtemp + (k << 2)] = 0.0F;
-      d_qdotQEKF[rtemp + (k << 2)] = 0.0F;
-      for (r1 = 0; r1 < 4; r1++) {
-        d_qQEKF[rtemp + (k << 2)] += b_qQEKF[rtemp + (r1 << 2)] * b_qdotQEKF[r1
-          + (k << 2)];
-        d_qdotQEKF[rtemp + (k << 2)] += c_qdotQEKF[rtemp + (r1 << 2)] *
-          c_qQEKF[r1 + (k << 2)];
+  // 'VelocityEstimator2:87' dx_ball_apriori = dx_apriori;
+  dx_ball_apriori = dx_apriori;
+
+  // 'VelocityEstimator2:88' dy_ball_apriori = dy_apriori;
+  dy_ball_apriori = dy_apriori;
+
+  // 'VelocityEstimator2:90' if (EstimateVelocityAtCoR)
+  if (EstimateVelocityAtCoR) {
+    // 'VelocityEstimator2:91' vel_2L_to_ball_correction = devec * (Phi(qdotQEKF)*Gamma(qQEKF)' + Phi(qQEKF)*Gamma(qdotQEKF)') * [0,0,0,CoR]'; 
+    dAcceleration_dqB[0] = 0.0F;
+    dAcceleration_dqB[1] = 0.0F;
+    dAcceleration_dqB[2] = 0.0F;
+    dAcceleration_dqB[3] = CoR;
+    b_qQEKF[0] = qQEKF[0];
+    b_qQEKF[4] = -qQEKF[1];
+    b_qQEKF[8] = -qQEKF[2];
+    b_qQEKF[12] = -qQEKF[3];
+    b_qQEKF[1] = qQEKF[1];
+    b_qQEKF[5] = qQEKF[0];
+    b_qQEKF[9] = qQEKF[3];
+    b_qQEKF[13] = -qQEKF[2];
+    b_qQEKF[2] = qQEKF[2];
+    b_qQEKF[6] = -qQEKF[3];
+    b_qQEKF[10] = qQEKF[0];
+    b_qQEKF[14] = qQEKF[1];
+    b_qQEKF[3] = qQEKF[3];
+    b_qQEKF[7] = qQEKF[2];
+    b_qQEKF[11] = -qQEKF[1];
+    b_qQEKF[15] = qQEKF[0];
+    b_qdotQEKF[0] = qdotQEKF[0];
+    b_qdotQEKF[1] = -qdotQEKF[1];
+    b_qdotQEKF[2] = -qdotQEKF[2];
+    b_qdotQEKF[3] = -qdotQEKF[3];
+    b_qdotQEKF[4] = qdotQEKF[1];
+    b_qdotQEKF[5] = qdotQEKF[0];
+    b_qdotQEKF[6] = -qdotQEKF[3];
+    b_qdotQEKF[7] = qdotQEKF[2];
+    b_qdotQEKF[8] = qdotQEKF[2];
+    b_qdotQEKF[9] = qdotQEKF[3];
+    b_qdotQEKF[10] = qdotQEKF[0];
+    b_qdotQEKF[11] = -qdotQEKF[1];
+    b_qdotQEKF[12] = qdotQEKF[3];
+    b_qdotQEKF[13] = -qdotQEKF[2];
+    b_qdotQEKF[14] = qdotQEKF[1];
+    b_qdotQEKF[15] = qdotQEKF[0];
+    c_qdotQEKF[0] = qdotQEKF[0];
+    c_qdotQEKF[4] = -qdotQEKF[1];
+    c_qdotQEKF[8] = -qdotQEKF[2];
+    c_qdotQEKF[12] = -qdotQEKF[3];
+    c_qdotQEKF[1] = qdotQEKF[1];
+    c_qdotQEKF[5] = qdotQEKF[0];
+    c_qdotQEKF[9] = qdotQEKF[3];
+    c_qdotQEKF[13] = -qdotQEKF[2];
+    c_qdotQEKF[2] = qdotQEKF[2];
+    c_qdotQEKF[6] = -qdotQEKF[3];
+    c_qdotQEKF[10] = qdotQEKF[0];
+    c_qdotQEKF[14] = qdotQEKF[1];
+    c_qdotQEKF[3] = qdotQEKF[3];
+    c_qdotQEKF[7] = qdotQEKF[2];
+    c_qdotQEKF[11] = -qdotQEKF[1];
+    c_qdotQEKF[15] = qdotQEKF[0];
+    c_qQEKF[0] = qQEKF[0];
+    c_qQEKF[1] = -qQEKF[1];
+    c_qQEKF[2] = -qQEKF[2];
+    c_qQEKF[3] = -qQEKF[3];
+    c_qQEKF[4] = qQEKF[1];
+    c_qQEKF[5] = qQEKF[0];
+    c_qQEKF[6] = -qQEKF[3];
+    c_qQEKF[7] = qQEKF[2];
+    c_qQEKF[8] = qQEKF[2];
+    c_qQEKF[9] = qQEKF[3];
+    c_qQEKF[10] = qQEKF[0];
+    c_qQEKF[11] = -qQEKF[1];
+    c_qQEKF[12] = qQEKF[3];
+    c_qQEKF[13] = -qQEKF[2];
+    c_qQEKF[14] = qQEKF[1];
+    c_qQEKF[15] = qQEKF[0];
+    for (rtemp = 0; rtemp < 4; rtemp++) {
+      for (k = 0; k < 4; k++) {
+        f_qQEKF[rtemp + (k << 2)] = 0.0F;
+        d_qdotQEKF[rtemp + (k << 2)] = 0.0F;
+        for (r1 = 0; r1 < 4; r1++) {
+          f_qQEKF[rtemp + (k << 2)] += b_qQEKF[rtemp + (r1 << 2)] *
+            b_qdotQEKF[r1 + (k << 2)];
+          d_qdotQEKF[rtemp + (k << 2)] += c_qdotQEKF[rtemp + (r1 << 2)] *
+            c_qQEKF[r1 + (k << 2)];
+        }
       }
     }
-  }
 
-  for (rtemp = 0; rtemp < 4; rtemp++) {
-    for (k = 0; k < 4; k++) {
-      b_qQEKF[k + (rtemp << 2)] = d_qQEKF[k + (rtemp << 2)] + d_qdotQEKF[k +
-        (rtemp << 2)];
-    }
-  }
-
-  for (rtemp = 0; rtemp < 4; rtemp++) {
-    for (k = 0; k < 3; k++) {
-      e_qQEKF[rtemp + (k << 2)] = 0.0F;
-      for (r1 = 0; r1 < 4; r1++) {
-        e_qQEKF[rtemp + (k << 2)] += b_qQEKF[rtemp + (r1 << 2)] * (float)iv1[r1
-          + (k << 2)];
+    for (rtemp = 0; rtemp < 4; rtemp++) {
+      for (k = 0; k < 4; k++) {
+        b_qQEKF[k + (rtemp << 2)] = f_qQEKF[k + (rtemp << 2)] + d_qdotQEKF[k +
+          (rtemp << 2)];
       }
     }
-  }
 
-  for (rtemp = 0; rtemp < 3; rtemp++) {
-    fv0[rtemp] = 0.0F;
-    for (k = 0; k < 4; k++) {
-      fv0[rtemp] += dAcceleration_dqB[k] * e_qQEKF[k + (rtemp << 2)];
+    for (rtemp = 0; rtemp < 4; rtemp++) {
+      for (k = 0; k < 3; k++) {
+        d_qQEKF[rtemp + (k << 2)] = 0.0F;
+        for (r1 = 0; r1 < 4; r1++) {
+          d_qQEKF[rtemp + (k << 2)] += b_qQEKF[rtemp + (r1 << 2)] * (float)
+            iv1[r1 + (k << 2)];
+        }
+      }
     }
 
-    vel_2L_to_ball_correction[rtemp] = fv0[rtemp];
+    for (rtemp = 0; rtemp < 3; rtemp++) {
+      fv0[rtemp] = 0.0F;
+      for (k = 0; k < 4; k++) {
+        fv0[rtemp] += dAcceleration_dqB[k] * d_qQEKF[k + (rtemp << 2)];
+      }
+
+      vel_2L_to_ball_correction[rtemp] = fv0[rtemp];
+    }
+
+    // 'VelocityEstimator2:92' dx_ball_apriori = dx_ball_apriori - vel_2L_to_ball_correction(1); 
+    dx_ball_apriori = dx_apriori - vel_2L_to_ball_correction[0];
+
+    // 'VelocityEstimator2:93' dy_ball_apriori = dy_ball_apriori - vel_2L_to_ball_correction(2); 
+    dy_ball_apriori = dy_apriori - vel_2L_to_ball_correction[1];
   }
 
-  // 'VelocityEstimator2:83' dx_ball_apriori = dx - vel_2L_to_ball_correction(1); 
-  // 'VelocityEstimator2:84' dy_ball_apriori = dy - vel_2L_to_ball_correction(2); 
-  // 'VelocityEstimator2:86' dpsi_apriori = W * (1/rk * Phi(qQEKF)' * Gamma(qQEKF) * [0;-dy_ball_apriori;dx_ball_apriori;0] - 2*Phi(qQEKF)'*qdotQEKF); 
+  // 'VelocityEstimator2:96' dpsi_apriori = W * (1/rk * Phi(qQEKF)' * Gamma(qQEKF) * [0;-dy_ball_apriori;dx_ball_apriori;0] - 2*Phi(qQEKF)'*qdotQEKF); 
   y = 1.0F / rk;
 
   //  InverseKinematics(qdotQEKF(1),qdotQEKF(2),qdotQEKF(3),qdotQEKF(4),dx_ball_apriori,dy_ball_apriori,qQEKF(1),qQEKF(2),qQEKF(3),qQEKF(4),rk,rw); 
-  // 'VelocityEstimator2:87' z_encoder_hat = TicksPrRev/(2*pi) * dt * dpsi_apriori; 
+  // 'VelocityEstimator2:97' z_encoder_hat = TicksPrRev/(2*pi) * dt * dpsi_apriori; 
   a = TicksPrRev / 6.28318548F * SamplePeriod;
 
-  // 'VelocityEstimator2:88' z_hat = z_encoder_hat;
+  // 'VelocityEstimator2:98' z_hat = z_encoder_hat;
   //  Measurement Jacobian	
-  // 'VelocityEstimator2:91' H = zeros(3,2);
+  // 'VelocityEstimator2:101' H = zeros(3,2);
   for (rtemp = 0; rtemp < 6; rtemp++) {
     H[rtemp] = 0.0;
   }
 
-  // 'VelocityEstimator2:92' H(1:3,1) = TicksPrRev/(2*pi) * dt * W * 1/rk * Phi(qQEKF)' * Gamma(qQEKF) * [0;0;1;0]; 
+  // 'VelocityEstimator2:102' H(1:3,1) = TicksPrRev/(2*pi) * dt * W * 1/rk * Phi(qQEKF)' * Gamma(qQEKF) * [0;0;1;0]; 
   maxval = TicksPrRev / 6.28318548F * SamplePeriod;
   b_qQEKF[0] = qQEKF[0];
   b_qQEKF[4] = -qQEKF[1];
@@ -481,9 +513,9 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   c_qQEKF[15] = qQEKF[0];
   for (rtemp = 0; rtemp < 4; rtemp++) {
     for (k = 0; k < 3; k++) {
-      e_qQEKF[rtemp + (k << 2)] = 0.0F;
+      d_qQEKF[rtemp + (k << 2)] = 0.0F;
       for (r1 = 0; r1 < 4; r1++) {
-        e_qQEKF[rtemp + (k << 2)] += b_qQEKF[rtemp + (r1 << 2)] * b_a[r1 + (k <<
+        d_qQEKF[rtemp + (k << 2)] += b_qQEKF[rtemp + (r1 << 2)] * b_a[r1 + (k <<
           2)];
       }
     }
@@ -491,16 +523,16 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
 
   for (rtemp = 0; rtemp < 4; rtemp++) {
     for (k = 0; k < 3; k++) {
-      f_qQEKF[rtemp + (k << 2)] = 0.0F;
+      e_qQEKF[rtemp + (k << 2)] = 0.0F;
       for (r1 = 0; r1 < 4; r1++) {
-        f_qQEKF[rtemp + (k << 2)] += c_qQEKF[rtemp + (r1 << 2)] * e_qQEKF[r1 +
+        e_qQEKF[rtemp + (k << 2)] += c_qQEKF[rtemp + (r1 << 2)] * d_qQEKF[r1 +
           (k << 2)];
       }
     }
   }
 
   //  d encoder_meas  /  d dx_2L
-  // 'VelocityEstimator2:93' H(1:3,2) = TicksPrRev/(2*pi) * dt * W * 1/rk * Phi(qQEKF)' * Gamma(qQEKF) * [0;-1;0;0]; 
+  // 'VelocityEstimator2:103' H(1:3,2) = TicksPrRev/(2*pi) * dt * W * 1/rk * Phi(qQEKF)' * Gamma(qQEKF) * [0;-1;0;0]; 
   maxval = TicksPrRev / 6.28318548F * SamplePeriod;
   b_qQEKF[0] = qQEKF[0];
   b_qQEKF[4] = -qQEKF[1];
@@ -522,7 +554,7 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
     fv0[rtemp] = 0.0F;
     for (k = 0; k < 4; k++) {
       b_a[k + (rtemp << 2)] = maxval * W[k + (rtemp << 2)] / rk;
-      fv0[rtemp] += (float)iv5[k] * f_qQEKF[k + (rtemp << 2)];
+      fv0[rtemp] += (float)iv5[k] * e_qQEKF[k + (rtemp << 2)];
     }
 
     H[rtemp << 1] = fv0[rtemp];
@@ -546,9 +578,9 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   c_qQEKF[15] = qQEKF[0];
   for (rtemp = 0; rtemp < 4; rtemp++) {
     for (k = 0; k < 3; k++) {
-      e_qQEKF[rtemp + (k << 2)] = 0.0F;
+      d_qQEKF[rtemp + (k << 2)] = 0.0F;
       for (r1 = 0; r1 < 4; r1++) {
-        e_qQEKF[rtemp + (k << 2)] += b_qQEKF[rtemp + (r1 << 2)] * b_a[r1 + (k <<
+        d_qQEKF[rtemp + (k << 2)] += b_qQEKF[rtemp + (r1 << 2)] * b_a[r1 + (k <<
           2)];
       }
     }
@@ -556,9 +588,9 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
 
   for (rtemp = 0; rtemp < 4; rtemp++) {
     for (k = 0; k < 3; k++) {
-      f_qQEKF[rtemp + (k << 2)] = 0.0F;
+      e_qQEKF[rtemp + (k << 2)] = 0.0F;
       for (r1 = 0; r1 < 4; r1++) {
-        f_qQEKF[rtemp + (k << 2)] += c_qQEKF[rtemp + (r1 << 2)] * e_qQEKF[r1 +
+        e_qQEKF[rtemp + (k << 2)] += c_qQEKF[rtemp + (r1 << 2)] * d_qQEKF[r1 +
           (k << 2)];
       }
     }
@@ -567,7 +599,7 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   for (rtemp = 0; rtemp < 3; rtemp++) {
     fv0[rtemp] = 0.0F;
     for (k = 0; k < 4; k++) {
-      fv0[rtemp] += (float)iv6[k] * f_qQEKF[k + (rtemp << 2)];
+      fv0[rtemp] += (float)iv6[k] * e_qQEKF[k + (rtemp << 2)];
     }
 
     H[1 + (rtemp << 1)] = fv0[rtemp];
@@ -578,12 +610,12 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   // dEncoder_dqQEKF = OffsetEstimator_dEncoders2L_dq(qdotQEKF(1),qdotQEKF(2),qdotQEKF(3),qdotQEKF(4),dt,dx_2L_apriori,dy_2L_apriori,l,1,TicksPrRev,qQEKF(1),qQEKF(2),qQEKF(3),qQEKF(4),rk,rw); 
   // R_encoder = 4*cov_quantization + ...
   //             dEncoder_dqQEKF * Cov_qQEKF * dEncoder_dqQEKF';% + ((n_gear*n_ticksRev)/(2*pi)*dt)^2 * W * vec * cov_omega * devec * W'; 
-  // 'VelocityEstimator2:99' R_encoder = eta_encoder * 4*cov_quantization;
-  b_y = eta_encoder * 4.0F;
+  // 'VelocityEstimator2:109' R_encoder = eta_encoder * 4*cov_quantization;
+  a21 = eta_encoder * 4.0F;
 
-  // 'VelocityEstimator2:100' R = R_encoder;
+  // 'VelocityEstimator2:110' R = R_encoder;
   //  Calculate Kalman gain
-  // 'VelocityEstimator2:103' S = H * P_apriori * H' + R;
+  // 'VelocityEstimator2:113' S = H * P_apriori * H' + R;
   for (rtemp = 0; rtemp < 2; rtemp++) {
     for (k = 0; k < 3; k++) {
       K[rtemp + (k << 1)] = 0.0F;
@@ -595,7 +627,7 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   }
 
   // K = P_apriori * H' * inv(S);
-  // 'VelocityEstimator2:105' K = P_apriori * H' / S;
+  // 'VelocityEstimator2:115' K = P_apriori * H' / S;
   for (rtemp = 0; rtemp < 3; rtemp++) {
     for (k = 0; k < 3; k++) {
       maxval = 0.0F;
@@ -603,13 +635,13 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
         maxval += (float)H[r1 + (rtemp << 1)] * K[r1 + (k << 1)];
       }
 
-      S[rtemp + 3 * k] = maxval + b_y * fv6[rtemp + 3 * k];
+      S[rtemp + 3 * k] = maxval + a21 * fv6[rtemp + 3 * k];
     }
 
     for (k = 0; k < 2; k++) {
-      c_y[rtemp + 3 * k] = 0.0F;
+      b_y[rtemp + 3 * k] = 0.0F;
       for (r1 = 0; r1 < 2; r1++) {
-        c_y[rtemp + 3 * k] += (float)H[r1 + (rtemp << 1)] * P_apriori[r1 + (k <<
+        b_y[rtemp + 3 * k] += (float)H[r1 + (rtemp << 1)] * P_apriori[r1 + (k <<
           1)];
       }
     }
@@ -647,9 +679,9 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   S[1 + 3 * r3] /= S[1 + 3 * r2];
   S[2 + 3 * r3] -= S[1 + 3 * r3] * S[2 + 3 * r2];
   for (k = 0; k < 2; k++) {
-    K[r1 + 3 * k] = c_y[3 * k] / S[3 * r1];
-    K[r2 + 3 * k] = c_y[1 + 3 * k] - K[r1 + 3 * k] * S[1 + 3 * r1];
-    K[r3 + 3 * k] = c_y[2 + 3 * k] - K[r1 + 3 * k] * S[2 + 3 * r1];
+    K[r1 + 3 * k] = b_y[3 * k] / S[3 * r1];
+    K[r2 + 3 * k] = b_y[1 + 3 * k] - K[r1 + 3 * k] * S[1 + 3 * r1];
+    K[r3 + 3 * k] = b_y[2 + 3 * k] - K[r1 + 3 * k] * S[2 + 3 * r1];
     K[r2 + 3 * k] /= S[1 + 3 * r2];
     K[r3 + 3 * k] -= K[r2 + 3 * k] * S[2 + 3 * r2];
     K[r3 + 3 * k] /= S[2 + 3 * r3];
@@ -659,10 +691,10 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   }
 
   //  Correct using innovation
-  // 'VelocityEstimator2:108' X_aposteriori = X_apriori + K * (z - z_hat);
+  // 'VelocityEstimator2:118' X_aposteriori = X_apriori + K * (z - z_hat);
   dAcceleration_dqB[0] = 0.0F;
-  dAcceleration_dqB[1] = -(X[1] - vel_2L_to_ball_correction[1]);
-  dAcceleration_dqB[2] = X[0] - vel_2L_to_ball_correction[0];
+  dAcceleration_dqB[1] = -dy_ball_apriori;
+  dAcceleration_dqB[2] = dx_ball_apriori;
   dAcceleration_dqB[3] = 0.0F;
   b_qQEKF[0] = qQEKF[0];
   b_qQEKF[1] = -qQEKF[1];
@@ -743,18 +775,18 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
     vel_2L_to_ball_correction[rtemp] = EncoderDiffMeas[rtemp] - a * fv0[rtemp];
   }
 
-  b_X[0] = X[0] + SamplePeriod * acceleration[0];
-  b_X[1] = X[1] + SamplePeriod * acceleration[1];
+  b_dx_apriori[0] = dx_apriori;
+  b_dx_apriori[1] = dy_apriori;
   for (rtemp = 0; rtemp < 2; rtemp++) {
     acceleration[rtemp] = 0.0F;
     for (k = 0; k < 3; k++) {
       acceleration[rtemp] += vel_2L_to_ball_correction[k] * K[k + 3 * rtemp];
     }
 
-    X_out[rtemp] = b_X[rtemp] + acceleration[rtemp];
+    X_out[rtemp] = b_dx_apriori[rtemp] + acceleration[rtemp];
   }
 
-  // 'VelocityEstimator2:109' P_aposteriori = (eye(2) - K*H) * P_apriori;
+  // 'VelocityEstimator2:119' P_aposteriori = (eye(2) - K*H) * P_apriori;
   for (rtemp = 0; rtemp < 4; rtemp++) {
     I[rtemp] = 0;
   }
@@ -786,8 +818,8 @@ __attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const 
   }
 
   //     %% Send output to Simulink
-  // 'VelocityEstimator2:112' X_out = X_aposteriori;
-  // 'VelocityEstimator2:113' P_out = P_aposteriori;
+  // 'VelocityEstimator2:122' X_out = X_aposteriori;
+  // 'VelocityEstimator2:123' P_out = P_aposteriori;
 }
 
 //

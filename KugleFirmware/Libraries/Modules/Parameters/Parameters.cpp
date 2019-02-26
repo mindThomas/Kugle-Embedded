@@ -403,7 +403,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::EnableSoftwareLPFfilters: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSoftwareLPFfilters; return;
 			case lspc::ParameterLookup::CreateQdotFromQDifference: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.CreateQdotFromQDifference; return;
 			case lspc::ParameterLookup::UseMadgwick: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseMadgwick; return;
-			case lspc::ParameterLookup::Use2Lvelocity: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.Use2Lvelocity; return;
+			case lspc::ParameterLookup::UseCoRvelocity: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseCoRvelocity; return;
 			case lspc::ParameterLookup::UseVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseVelocityEstimator; return;
 			case lspc::ParameterLookup::EstimateCOM: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
 			case lspc::ParameterLookup::EstimateBias: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateBias; return;

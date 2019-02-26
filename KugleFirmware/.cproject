@@ -75,7 +75,7 @@
 									<listOptionValue builtIn="false" value="../Libraries/Devices/Battery"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/MathLib"/>
 									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Watchdog"/>
-									<listOptionValue builtIn="false" value="../Libraries/Applications/HealthMonitor"/>
+									<listOptionValue builtIn="false" value="../Libraries/Applications/ApplicationTemplate"/>
 									<listOptionValue builtIn="false" value="../Libraries/Applications/BalanceController"/>
 									<listOptionValue builtIn="false" value="../Libraries/Applications/Communication"/>
 									<listOptionValue builtIn="false" value="../Libraries/Applications/PathFollowingController"/>

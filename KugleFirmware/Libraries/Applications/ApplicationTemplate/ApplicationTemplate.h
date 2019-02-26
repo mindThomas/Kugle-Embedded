@@ -17,48 +17,29 @@
  * ------------------------------------------
  */
  
-#ifndef APPLICATION_FRONTPANEL_H
-#define APPLICATION_FRONTPANEL_H
+#ifndef APPLICATION_TEMPLATE_H
+#define APPLICATION_TEMPLATE_H
 
 #include "cmsis_os.h"
 #include "Priorities.h"
 #include "Parameters.h"
-#include "PowerManagement.h"
-#include "BalanceController.h"
-#include "IO.h"
 
-class FrontPanel
+class ApplicationTemplate
 {
 	private:
-		const int THREAD_STACK_SIZE = 512;
-		const uint32_t THREAD_PRIORITY = FRONT_PANEL_PRIORITY;
-		const float DEBOUNCE_TIME = 0.08; // 80 ms
-
-		typedef struct button_t {
-			IO * btn;
-			void (*callback)(void * params);
-			void * callbackParams;
-			bool prevState;
-			float debounceTime; // can also be used as hold time
-			uint32_t debounceEndTime;
-		};
+		const int THREAD_STACK_SIZE = 256; // depending on the resource usage in the main loop (Thread function) you might want to increase this STACK_SIZE value
+		const uint32_t THREAD_PRIORITY = APPLICATION_TEMPLATE_PRIORITY; // modify the task priorities in "Priorities.h"
 
 	public:
-		FrontPanel(PowerManagement& pm_, BalanceController& bc_, IO * powerButton_, IO * resetButton_, IO * calibrateButton_);
-		~FrontPanel();
+		ApplicationTemplate();
+		~ApplicationTemplate();
 
 		int Start();
 		int Stop(uint32_t timeout = 1000);
 		int Restart(uint32_t timeout = 1000);
 
 	private:
-		void ButtonHandler(button_t& button);
-
-	private:
 		static void Thread(void * pvParameters);
-		static void PowerButtonPressed(void * params);
-		static void ResetButtonPressed(void * params);
-		static void CalibrateButtonPressed(void * params);
 
 	private:
 		TaskHandle_t _TaskHandle;
@@ -67,12 +48,6 @@ class FrontPanel
 
 		Parameters * _params;
 
-		PowerManagement& powerManagement;
-		BalanceController& balanceController;
-
-		button_t powerButton;
-		button_t resetButton;
-		button_t calibrateButton;
 };
 	
 	

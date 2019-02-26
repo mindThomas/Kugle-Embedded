@@ -21,6 +21,7 @@
 #define APPLICATION_BALANCECONTROLLER_H
 
 #include "cmsis_os.h"
+#include "Priorities.h"
 #include "Parameters.h"
 #include "LSPC.hpp"
 #include "ESCON.h"
@@ -56,7 +57,7 @@ class BalanceController
 		int Stop(uint32_t timeout = 1000);
 		int Restart(uint32_t timeout = 1000);
 
-		void CalibrateIMU(void);
+		void CalibrateIMU(bool calibrateAccelerometer = false);
 
 	private:
 		void ReferenceGeneration(Parameters& params);

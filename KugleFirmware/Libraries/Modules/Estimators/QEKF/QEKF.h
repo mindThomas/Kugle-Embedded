@@ -36,7 +36,7 @@ class QEKF
 		void Step(const float accelerometer[3], const float gyroscope[3]);
 		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias);
 		void Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float dt);
-		void Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool UseHeadingForCorrection, const bool EstimateBias, const bool EstimateYawBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float sigma2_omega, const float sigma2_heading, const float sigma2_bias, const float g, const float dt);
+		void Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool UseHeadingForCorrection, const bool EstimateBias, const bool EstimateYawBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float GyroscopeTrustFactor, const float sigma2_omega, const float sigma2_heading, const float sigma2_bias, const float g, const float dt);
 
 		void GetQuaternion(float q[4]);
 		void GetQuaternionDerivative(float dq[4]);
@@ -44,6 +44,7 @@ class QEKF
 		void GetQuaternionCovariance(float Cov_q[4*4]);
 		void GetQuaternionDerivativeCovariance(float Cov_dq[4*4]);
 		void GetAngularVelocityCovariance(float Cov_omega[3*3]);
+		void GetBiasCovariance(float Cov_bias[3*3]);
 
 		bool UnitTest(void);
 
