@@ -370,7 +370,7 @@ uint8_t CDC_Transmit_FS_ThreadBlocking(uint8_t* Buf, uint16_t Len)
   if (!Connected) return USBD_FAIL; // not ready
 
   if (USB_TX_FinishedSemaphore) {
-	  if( xSemaphoreTake( USB_TX_FinishedSemaphore, 20 ) != pdTRUE ) // wait max 20 ms on a TX, otherwise something is wrong
+	  if( xSemaphoreTake( USB_TX_FinishedSemaphore, 100 ) != pdTRUE ) // wait max 20 ms on a TX, otherwise something is wrong
 		  return USBD_BUSY;
   }
   USBD_CDC_SetTxBuffer(hUsbDeviceFS, Buf, Len);

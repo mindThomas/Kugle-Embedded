@@ -166,6 +166,9 @@ void MainTask(void * pvParameters)
 		imu = mpu9250; // use MPU9250 in Balance controller
 		imu->AttachEEPROM(eeprom);
 	}
+	if (!imu->isCalibrated()) {
+		imu->SetCalibration(params.sensor.default_accelerometer_bias, params.sensor.default_accelerometer_scale, params.sensor.default_gyroscope_bias, params.sensor.default_calibration_matrix);
+	}
 
 	/* Initialize microseconds timer */
 	Timer * microsTimer = new Timer(Timer::TIMER6, 1000000); // create a 1 MHz counting timer used for micros() timing
