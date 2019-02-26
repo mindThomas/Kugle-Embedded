@@ -5,7 +5,7 @@
 // File: COMEstimator.cpp
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 19-Nov-2018 13:54:24
+// C/C++ source code generated on  : 25-Feb-2019 11:02:50
 //
 
 // Include Files
@@ -19,7 +19,7 @@
 // Function Definitions
 
 //
-// function [X_out, P_out] = COMEstimator(X, P_prev, qQEKF, Cov_qQEKF, qdotQEKF, Velocity, VelocityDiff, Cov_Velocity_meas, SamplePeriod, Jk,Mk,rk,Mb,Jbx,Jby,Jbz,Jw,rw,Bvk,Bvm,Bvb,l,g)
+// function [X_out, P_out] = COMEstimator(X, P_prev, qQEKF, Cov_qQEKF, qdotQEKF, Velocity, VelocityDiff, Cov_Velocity_meas, SamplePeriod, Jk,Mk,rk,Mb,Jw,rw,l,g,CoR)
 // for q o p = Phi(q) * p
 // Arguments    : const float X[2]
 //                const float P_prev[4]
@@ -34,26 +34,21 @@
 //                float Mk
 //                float rk
 //                float Mb
-//                float Jbx
-//                float Jby
-//                float Jbz
 //                float Jw
 //                float rw
-//                float Bvk
-//                float Bvm
-//                float Bvb
 //                float l
 //                float g
+//                float CoR
 //                float X_out[2]
 //                float P_out[4]
 // Return Type  : void
 //
-__attribute__((optimize("O3"))) void COMEstimator(const float X[2], const float P_prev[4], const float
-  qQEKF[4], const float Cov_qQEKF[16], const float qdotQEKF[4], const float
-  Velocity[2], const float VelocityDiff[2], const float Cov_Velocity_meas[4],
-  float SamplePeriod, float Jk, float Mk, float rk, float Mb, float Jbx, float
-  Jby, float Jbz, float Jw, float rw, float Bvk, float Bvm, float Bvb, float l,
-  float g, float X_out[2], float P_out[4])
+__attribute__((optimize("O3"))) void COMEstimator(const float X[2], const float P_prev[4], const float qQEKF[4],
+                  const float Cov_qQEKF[16], const float qdotQEKF[4], const
+                  float Velocity[2], const float VelocityDiff[2], const float
+                  Cov_Velocity_meas[4], float SamplePeriod, float Jk, float Mk,
+                  float rk, float Mb, float Jw, float rw, float l, float g,
+                  float CoR, float X_out[2], float P_out[4])
 {
   float b_P_prev[4];
   float b_qQEKF[16];
@@ -107,11 +102,11 @@ __attribute__((optimize("O3"))) void COMEstimator(const float X[2], const float 
   //  Split state vector, X[k-1], into individual variables
   // 'COMEstimator:22' xCOM = X(1);
   // 'COMEstimator:23' yCOM = X(2);
-  // 'COMEstimator:25' vel_2L_to_ball_correction = devec * (Phi(qdotQEKF)*Gamma(qQEKF)' + Phi(qQEKF)*Gamma(qdotQEKF)') * [0,0,0,2*l]'; 
+  // 'COMEstimator:25' vel_2L_to_ball_correction = devec * (Phi(qdotQEKF)*Gamma(qQEKF)' + Phi(qQEKF)*Gamma(qdotQEKF)') * [0,0,0,CoR]'; 
   b_P_prev[0] = 0.0F;
   b_P_prev[1] = 0.0F;
   b_P_prev[2] = 0.0F;
-  b_P_prev[3] = 2.0F * l;
+  b_P_prev[3] = CoR;
   b_qQEKF[0] = qQEKF[0];
   b_qQEKF[4] = -qQEKF[1];
   b_qQEKF[8] = -qQEKF[2];
@@ -219,6 +214,7 @@ __attribute__((optimize("O3"))) void COMEstimator(const float X[2], const float 
   // 'COMEstimator:27' dy_ball = dy_2L - vel_2L_to_ball_correction(2);
   //  Process covariances
   // 'COMEstimator:30' cov_COM = zeros(2);
+  //  1e-18 * eye(2)
   //  Setup covariance matrices
   // 'COMEstimator:33' Q = cov_COM;
   //     %% Prediction step

@@ -34,5 +34,6 @@
 #define ROUND_UP_2DEC(x)   (ceilf(x * 100) / 100)     /* Result: 37.78 */
 
 float Math_Round(float num, unsigned int dec);
+void Math_SymmetrizeSquareMatrix(float * mat, unsigned int rows);
 
 #endif

@@ -5,7 +5,7 @@
 // File: QEKF_WithAllCorrections.h
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 13-Feb-2019 17:37:28
+// C/C++ source code generated on  : 22-Feb-2019 19:54:01
 //
 #ifndef QEKF_H
 #define QEKF_H
@@ -22,8 +22,8 @@ extern void _QEKF(const float X[10], const float P_prev[100],
   boolean_T UseHeadingForCorrection, float SamplePeriod, boolean_T
   BiasEstimationEnabled, boolean_T YawBiasEstimationEnabled, boolean_T
   NormalizeAccelerometer, const float cov_gyro[9], const float cov_acc[9], float
-  sigma2_omega, float sigma2_heading, float sigma2_bias, float g, float X_out[10],
-  float P_out[100]);
+  GyroscopeTrustFactor, float sigma2_omega, float sigma2_heading, float
+  sigma2_bias, float g, float X_out[10], float P_out[100]);
 
 #endif
 

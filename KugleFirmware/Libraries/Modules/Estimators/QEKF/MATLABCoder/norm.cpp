@@ -5,14 +5,14 @@
 // File: norm.cpp
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 13-Feb-2019 17:37:28
+// C/C++ source code generated on  : 22-Feb-2019 19:54:01
 //
 
 // Include Files
 #include <math.h>
 #include "mw_cmsis.h"
 #include "rt_nonfinite.h"
-#include "QEKF_coder.h"
+#include "QEKF.h"
 #include "norm.h"
 
 // Function Definitions
@@ -21,37 +21,7 @@
 // Arguments    : const float x[4]
 // Return Type  : float
 //
-float b_norm(const float x[4])
-{
-  float y;
-  float scale;
-  int k;
-  float f1;
-  float absxk;
-  float t;
-  y = 0.0F;
-  scale = 1.29246971E-26F;
-  for (k = 0; k < 4; k++) {
-    absxk = (float)fabs((double)x[k]);
-    if (absxk > scale) {
-      t = scale / absxk;
-      y = 1.0F + y * t * t;
-      scale = absxk;
-    } else {
-      t = absxk / scale;
-      y += t * t;
-    }
-  }
-
-  mw_arm_sqrt_f32(y, &f1);
-  return scale * f1;
-}
-
-//
-// Arguments    : const float x[3]
-// Return Type  : float
-//
-float norm(const float x[3])
+float norm(const float x[4])
 {
   float y;
   float scale;
@@ -61,7 +31,7 @@ float norm(const float x[3])
   float t;
   y = 0.0F;
   scale = 1.29246971E-26F;
-  for (k = 0; k < 3; k++) {
+  for (k = 0; k < 4; k++) {
     absxk = (float)fabs((double)x[k]);
     if (absxk > scale) {
       t = scale / absxk;

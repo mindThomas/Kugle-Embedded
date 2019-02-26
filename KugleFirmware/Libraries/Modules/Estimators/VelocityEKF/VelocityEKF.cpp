@@ -23,6 +23,8 @@
 #include "VelocityEstimator_initialize.h"
 #include <string.h> // for memcpy
 
+#include "MathLib.h" // for matrix symmetrization
+
 VelocityEKF::VelocityEKF(Parameters& params, Timer * microsTimer) : _params(params), _microsTimer(microsTimer)
 {
 	Reset();
@@ -68,7 +70,7 @@ void VelocityEKF::Reset(const int32_t encoderTicks[3])
  * @param	qDotEst[4]       	Input: estimated quaternion derivative
  * @param	COMest[3]       	Input: estimated center of mass (COM)
  */
-void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3])
+void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3], const bool EstimateCoRvelocity)
 {
 	float dt;
 
@@ -76,7 +78,7 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
 	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	Step(encoderTicks, qEst, Cov_qEst, qDotEst, COMest, dt);
+	Step(encoderTicks, _params.estimator.UseTiltForPrediction, qEst, Cov_qEst, qDotEst, _params.estimator.UseCOMestimateInVelocityEstimator, COMest, _params.estimator.Var_COM, _params.estimator.eta_encoder, EstimateCoRvelocity, dt);
 }
 
 /**
@@ -88,7 +90,7 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
  * @param	COMest[3]       	Input: estimated center of mass (COM)
  * @param	dt    			   	Input: time passed since last estimate
  */
-void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3], const float dt)
+void VelocityEKF::Step(const int32_t encoderTicks[3], const bool UseTiltForPrediction, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const bool UseCOMest, const float COMest[3], const float Var_COM, const float eta_encoder, const bool EstimateCoRvelocity, const float dt)
 {
 	if (dt == 0) return; // no time has passed
 
@@ -116,17 +118,25 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
       0.0f, // eta_dqQEKF_encoder
       X, P);*/
 
+	float COM[3] = { _params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z };
+	if (UseCOMest) {
+		memcpy(COM, COMest, sizeof(COM));
+	}
+
 	VelocityEstimator2(X_prev, P_prev,
 	      EncoderDiffMeas,
-	      qEst, Cov_qEst, qDotEst,
+		  qEst, Cov_qEst, qDotEst,
 	      dt,
 	      _params.model.TicksPrRev,
 		  _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jw, _params.model.rw, _params.model.l, _params.model.g,
-		  COMest,
+		  COM,
 		  _params.model.CoR,
-	      1E-6, // Var_COM
-	      10.0f, // eta_encoder
+	      Var_COM,
+	      eta_encoder,
+		  UseTiltForPrediction, EstimateCoRvelocity,
 	      X, P);
+
+	Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));
 
     _prevEncoderTicks[0] = encoderTicks[0];
     _prevEncoderTicks[1] = encoderTicks[1];

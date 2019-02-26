@@ -23,6 +23,8 @@
 #include <string.h> // for memcpy
 #include <cmath> // for fmin, fmax
 
+#include "MathLib.h" // for matrix symmetrization
+
 COMEKF::COMEKF(Parameters& params, Timer * microsTimer) : _params(params), _microsTimer(microsTimer)
 {
 	Reset();
@@ -80,17 +82,20 @@ void COMEKF::Step(const float dxyEst[2], const float Cov_dxy[2*2], const float q
 	float P_prev[2*2];
 	memcpy(P_prev, P, sizeof(P_prev));
 
-	float VelocityDiff[3] = {
-		(float)(dxyEst[0] - _prevVelocity[0]),
-		(float)(dxyEst[1] - _prevVelocity[1])
+	float VelocityDiff[2] = {
+		dxyEst[0] - _prevVelocity[0],
+		dxyEst[1] - _prevVelocity[1]
 	};
 
     COMEstimator(X_prev, P_prev,
       qEst, Cov_qEst, qDotEst,
       dxyEst, VelocityDiff, Cov_dxy,
       dt,
-      _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g,
+      _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jw, _params.model.rw, _params.model.l, _params.model.g,
+	  _params.model.CoR,
       X, P);
+
+    Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));
 
     _prevVelocity[0] = dxyEst[0];
     _prevVelocity[1] = dxyEst[1];
@@ -108,7 +113,7 @@ void COMEKF::GetCOM(float COM[3])
 {
 	COM[0] = X[0];
 	COM[1] = X[1];
-	COM[2] = _params.model.l;
+	COM[2] = sqrtf(_params.model.l*_params.model.l - COM[0]*COM[0] - COM[1]*COM[1]);
 }
 
 /**

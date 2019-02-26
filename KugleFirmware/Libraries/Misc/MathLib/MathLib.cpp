@@ -20,14 +20,32 @@
 #include "MathLib.h"
 #include <math.h>
 #include <stdlib.h>
+#include <string.h> // for memcpy
+#include "FreeRTOS.h" // for malloc and free
 
 float Math_Round(float num, unsigned int dec)
 {
 	//float power = powf(10, dec);
 	long long power = 1;
-	for (int i = 0; i < dec; i++) {
+	for (unsigned int i = 0; i < dec; i++) {
 		power *= 10;
 	}
 
 	return roundf(num * power) / power;
+}
+
+void Math_SymmetrizeSquareMatrix(float * mat, unsigned int rows)
+{
+	float * in = (float *)pvPortMalloc(sizeof(float) * rows * rows);
+	if (!in) return;
+
+	memcpy(in, mat, sizeof(float) * rows * rows);
+
+    for (unsigned int i = 0; i < rows; i++) {
+		for (unsigned int j = 0; j < rows; j++) {
+			mat[rows*i + j] = (in[rows*i + j] + in[rows*j + i]) / 2.0;
+		}
+    }
+
+	vPortFree(in);
 }

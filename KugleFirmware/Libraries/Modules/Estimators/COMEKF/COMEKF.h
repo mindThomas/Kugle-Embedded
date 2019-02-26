@@ -42,7 +42,7 @@ class COMEKF
 		Timer * _microsTimer;
 		uint32_t _prevTimerValue;
 
-		int32_t _prevVelocity[2];
+		float _prevVelocity[2];
 
 		/* State estimate */
 		float X[2];   // state estimates = { COM_X, COM_Y }

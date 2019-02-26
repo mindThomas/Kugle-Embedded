@@ -122,6 +122,7 @@ void BalanceController::Thread(void * pvParameters)
 	BalanceController * balanceController = (BalanceController *)pvParameters;
 	TickType_t xLastWakeTime;
 	uint32_t prevTimerValue; // used for measuring dt
+	float timestamp;
 	balanceController->isRunning_ = true;
 
 	/* Load initialized objects */
@@ -169,10 +170,14 @@ void BalanceController::Thread(void * pvParameters)
 
 	/* Estimate covariance variables */
 	float Cov_q[4*4];
+	float Cov_dq[4*4];
+	float Cov_bias[3*3];
 	float Cov_dxy[2*2];
+	float Cov_COM[2*2];
 
 	/* Temporary variables */
 	float dxy_kinematics_old[2];
+	float q_tilt_integral[4]; // for logging of velocity controller
 
 	/* Control output variables */
 	float Torque[3];
@@ -203,7 +208,7 @@ void BalanceController::Thread(void * pvParameters)
 
 	/* Reset estimators */
 	imu.Get(imuCorrected);
-	imu.CorrectMeasurement(imuCorrected);
+	imu.CorrectMeasurement(imuCorrected, true, true);
 	EncoderTicks[0] = motor1.GetEncoderRaw();
 	EncoderTicks[1] = motor2.GetEncoderRaw();
 	EncoderTicks[2] = motor3.GetEncoderRaw();
@@ -266,6 +271,10 @@ void BalanceController::Thread(void * pvParameters)
 	/* Reset temporary variables */
 	dxy_kinematics_old[0] = 0;
 	dxy_kinematics_old[1] = 0;
+	q_tilt_integral[0] = 1;
+	q_tilt_integral[1] = 0;
+	q_tilt_integral[2] = 0;
+	q_tilt_integral[3] = 0;
 	S[0] = 0;
 	S[1] = 0;
 	S[2] = 0;
@@ -302,12 +311,13 @@ __attribute__((optimize("O0")))
 		uint32_t timerPrev = HAL_tic();
 		float dt = microsTimer.GetDeltaTime(prevTimerValue);
 		prevTimerValue = microsTimer.Get();
+		timestamp = microsTimer.GetTime();
 
 		/* Get measurements (sample) */
 		imu.Get(imuRaw);
 	    /* Adjust the measurements according to the calibration */
 		imuCorrected = imuRaw;
-		//imu.CorrectMeasurement(imuCorrected, !params.estimator.UseXsensIMU); // do not correct gyroscope bias if Xsens IMU is used (since this is corrected internally by the Xsens Kalman filter)
+		imu.CorrectMeasurement(imuCorrected, !params.estimator.UseXsensIMU, !params.estimator.UseXsensIMU, !params.estimator.UseXsensIMU); // do not correct gyroscope bias if Xsens IMU is used (since this is corrected internally by the Xsens Kalman filter)
 
 		imuFiltered = imuCorrected;
 		if (params.estimator.EnableSoftwareLPFfilters && !params.estimator.UseXsensIMU) {
@@ -353,6 +363,8 @@ __attribute__((optimize("O0")))
 			qEKF.GetQuaternionDerivative(balanceController->dq);
 			qEKF.GetGyroBias(balanceController->GyroBias);
 			qEKF.GetQuaternionCovariance(Cov_q);
+			qEKF.GetQuaternionDerivativeCovariance(Cov_dq);
+			qEKF.GetBiasCovariance(Cov_bias);
 		}
 
 		/* Quaternion derivative LPF filtering */
@@ -405,8 +417,8 @@ __attribute__((optimize("O0")))
 
 	    /* If enabled, re-use the kinematics-based estimate as the velocity estimate for the controller */
 	    if (!params.estimator.UseVelocityEstimator) {
-			if (params.estimator.Use2Lvelocity) {
-				kinematics.ConvertBallTo2Lvelocity(dxy_kinematics, balanceController->q, balanceController->dq, balanceController->dxy);            // put 2L velocity into dxy
+			if (params.estimator.UseCoRvelocity) {
+				kinematics.ConvertBallToCoRvelocity(dxy_kinematics, balanceController->q, balanceController->dq, balanceController->dxy);            // put CoR velocity into dxy
 			} else {
 				// put ball velocity into dxy
 				balanceController->dxy[0] = dxy_kinematics[0];
@@ -421,21 +433,16 @@ __attribute__((optimize("O0")))
 
 	    /* Velocity estimation using velocity EKF */
 	    if (params.estimator.UseVelocityEstimator) {
-	    	velocityEKF.Step(EncoderTicks, balanceController->q, Cov_q, balanceController->dq, balanceController->COM); // velocity estimator estimates 2L velocity
+			velocityEKF.Step(EncoderTicks, balanceController->q, Cov_q, balanceController->dq, balanceController->COM, params.estimator.UseCoRvelocity); // velocity estimator can estimate either CoR velocity or ball velocity
 	    	velocityEKF.GetVelocity(balanceController->dxy);
 	    	velocityEKF.GetVelocityCovariance(Cov_dxy);
-
-	    	// OBS. dxy was in the original design supposed to be ball velocity, but the velocity estimator estimates the 2L velocity which gives indirect "stabilization"
-	    	// In the Sliding Mode controller this velocity is (only) used to calculated "feedforward" torque to counteract friction
-	        /*if (!params.estimator.Use2Lvelocity) { // however if the 2L velocity is not desired, it is here converted back to ball velocity
-	        	kinematics.Convert2LtoBallVelocity(balanceController->dxy, balanceController->q, balanceController->dq, balanceController->dxy);
-	        }*/
 	    }
 
 	    /* Center of Mass estimation */
 	    if (params.estimator.EstimateCOM && params.estimator.UseVelocityEstimator) { // can only estimate COM if velocity is also estimated (due to need of velocity estimate covariance)
 	    	comEKF.Step(balanceController->dxy, Cov_dxy, balanceController->q, Cov_q, balanceController->dq);
 	    	comEKF.GetCOM(balanceController->COM);
+	    	comEKF.GetCOMCovariance(Cov_COM);
 	    }
 
 		/* Send State Estimates message */
@@ -513,6 +520,7 @@ __attribute__((optimize("O0")))
 			}
 
 			velocityController.Step(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, true, balanceController->headingReference, balanceController->q_ref);
+			velocityController.GetIntegral(q_tilt_integral);
 	    }
 
 	    /* Compute control output based on references */
@@ -652,6 +660,9 @@ __attribute__((optimize("O0")))
 	    	balanceController->omega_ref_body[2] = 0;
 	    	balanceController->headingReference = 0; // consider to replace this with current heading (based on estimate of stabilized QEKF filter)
 	    	balanceController->ReferenceGenerationStep = 0; // only used if test reference generation is enabled
+
+	    	/* Reset controllers with internal states */
+	    	velocityController.Reset();
 	    }
 
 		/* Measure compute time */
@@ -669,23 +680,17 @@ __attribute__((optimize("O0")))
 			balanceController->mti->GetEstimates(MTIest);
 		}
 
-		/* Send IMU Log (test package) for MATH dump */
-		float mathDumpArray[] = {microsTimer.GetTime(),
-								 imuCorrected.Accelerometer[0],
-								 imuCorrected.Accelerometer[1],
-								 imuCorrected.Accelerometer[2],
-								 imuCorrected.Gyroscope[0],
-								 imuCorrected.Gyroscope[1],
-								 imuCorrected.Gyroscope[2],
-								 imuCorrected.Magnetometer[0],
-								 imuCorrected.Magnetometer[1],
-								 imuCorrected.Magnetometer[2],
-								 EncoderAngle[0],
-								 EncoderAngle[1],
-								 EncoderAngle[2],
-								 TorqueDelivered[0],
-								 TorqueDelivered[1],
-								 TorqueDelivered[2],
+		/* Send mixed data for logging through MathDump channel */
+		float mathDumpArray[] = {timestamp,
+								 imuFiltered.Accelerometer[0],
+								 imuFiltered.Accelerometer[1],
+								 imuFiltered.Accelerometer[2],
+								 imuFiltered.Gyroscope[0],
+								 imuFiltered.Gyroscope[1],
+								 imuFiltered.Gyroscope[2],
+								 imuFiltered.Magnetometer[0],
+								 imuFiltered.Magnetometer[1],
+								 imuFiltered.Magnetometer[2],
 								 balanceController->xy[0],
 								 balanceController->xy[1],
 								 balanceController->q[0],
@@ -710,6 +715,7 @@ __attribute__((optimize("O0")))
 								 Torque[0],
 								 Torque[1],
 								 Torque[2],
+								 dt_compute,
 								 balanceController->q_ref[0],
 								 balanceController->q_ref[1],
 								 balanceController->q_ref[2],
@@ -717,22 +723,65 @@ __attribute__((optimize("O0")))
 								 balanceController->omega_ref_body[0],
 								 balanceController->omega_ref_body[1],
 								 balanceController->omega_ref_body[2],
-								 MTIest.q[0],
-								 MTIest.q[1],
-								 MTIest.q[2],
-								 MTIest.q[3],
-								 MTIest.dq[0],
-								 MTIest.dq[1],
-								 MTIest.dq[2],
-								 MTIest.dq[3],
-								 MTImeas.Accelerometer[0],
-								 MTImeas.Accelerometer[1],
-								 MTImeas.Accelerometer[2],
-								 MTImeas.Gyroscope[0],
-								 MTImeas.Gyroscope[1],
-								 MTImeas.Gyroscope[2]
+								 q_tilt_integral[0],
+								 q_tilt_integral[1],
+								 q_tilt_integral[2],
+								 q_tilt_integral[3]
 							};
 		com.TransmitAsync(lspc::MessageTypesToPC::MathDump, (uint8_t *)&mathDumpArray, sizeof(mathDumpArray));
+
+		/* Sensor dump */
+		float sensorDumpArray[] = { timestamp,
+									imuRaw.Accelerometer[0],
+									imuRaw.Accelerometer[1],
+									imuRaw.Accelerometer[2],
+									imuRaw.Gyroscope[0],
+									imuRaw.Gyroscope[1],
+									imuRaw.Gyroscope[2],
+									imuRaw.Magnetometer[0],
+									imuRaw.Magnetometer[1],
+									imuRaw.Magnetometer[2],
+									EncoderAngle[0],
+									EncoderAngle[1],
+									EncoderAngle[2],
+									TorqueDelivered[0],
+									TorqueDelivered[1],
+									TorqueDelivered[2],
+									MTIest.q[0],
+									MTIest.q[1],
+									MTIest.q[2],
+									MTIest.q[3],
+									MTIest.dq[0],
+									MTIest.dq[1],
+									MTIest.dq[2],
+									MTIest.dq[3],
+									MTImeas.Accelerometer[0],
+									MTImeas.Accelerometer[1],
+									MTImeas.Accelerometer[2],
+									MTImeas.Gyroscope[0],
+									MTImeas.Gyroscope[1],
+									MTImeas.Gyroscope[2],
+									MTImeas.Magnetometer[0],
+									MTImeas.Magnetometer[1],
+									MTImeas.Magnetometer[2]
+								};
+		com.TransmitAsync(lspc::MessageTypesToPC::SensorDump, (uint8_t *)&sensorDumpArray, sizeof(sensorDumpArray));
+
+		/* Covariance dump */
+		float covarianceDumpArray[1 +
+								  sizeof(Cov_q)/sizeof(float) +
+								  sizeof(Cov_dq)/sizeof(float) +
+								  sizeof(Cov_bias)/sizeof(float) +
+								  sizeof(Cov_dxy)/sizeof(float) +
+								  sizeof(Cov_COM)/sizeof(float)];
+		covarianceDumpArray[0] = timestamp;
+		uint8_t * writePtr = (uint8_t *)&covarianceDumpArray[1];
+		memcpy(writePtr, Cov_q, sizeof(Cov_q)); writePtr += sizeof(Cov_q);
+		memcpy(writePtr, Cov_dq, sizeof(Cov_dq)); writePtr += sizeof(Cov_dq);
+		memcpy(writePtr, Cov_bias, sizeof(Cov_bias)); writePtr += sizeof(Cov_bias);
+		memcpy(writePtr, Cov_dxy, sizeof(Cov_dxy)); writePtr += sizeof(Cov_dxy);
+		memcpy(writePtr, Cov_COM, sizeof(Cov_COM)); writePtr += sizeof(Cov_COM);
+		com.TransmitAsync(lspc::MessageTypesToPC::CovarianceDump, (uint8_t *)&covarianceDumpArray, sizeof(covarianceDumpArray));
 	}
 	/* End of control loop */
 
@@ -776,7 +825,7 @@ void BalanceController::StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEK
 		/* Get measurements (sample) */
 		imu.Get(imuMeas);
 	    /* Adjust the measurements according to the calibration */
-		imu.CorrectMeasurement(imuMeas);
+		imu.CorrectMeasurement(imuMeas, !params.estimator.UseXsensIMU, !params.estimator.UseXsensIMU, !params.estimator.UseXsensIMU); // do not correct gyroscope bias if Xsens IMU is used (since this is corrected internally by the Xsens Kalman filter)
 
 		// Compute attitude estimate
 		if (params.estimator.UseMadgwick) {
@@ -911,11 +960,18 @@ void BalanceController::SendRawSensors(Parameters& params, const IMU::Measuremen
 	imu_msg.accelerometer.x = imuMeas.Accelerometer[0];
 	imu_msg.accelerometer.y = imuMeas.Accelerometer[1];
 	imu_msg.accelerometer.z = imuMeas.Accelerometer[2];
-	memcpy(imu_msg.accelerometer.cov, params.estimator.cov_acc_mpu, sizeof(params.estimator.cov_acc_mpu));
+
+	if (params.estimator.UseXsensIMU) {
+		memcpy(imu_msg.accelerometer.cov, params.estimator.cov_acc_mti, sizeof(params.estimator.cov_acc_mti));
+		memcpy(imu_msg.gyroscope.cov, params.estimator.cov_gyro_mti, sizeof(params.estimator.cov_gyro_mti));
+	} else {
+		memcpy(imu_msg.accelerometer.cov, params.estimator.cov_acc_mpu, sizeof(params.estimator.cov_acc_mpu));
+		memcpy(imu_msg.gyroscope.cov, params.estimator.cov_gyro_mpu, sizeof(params.estimator.cov_gyro_mpu));
+	}
 	imu_msg.gyroscope.x = imuMeas.Gyroscope[0];
 	imu_msg.gyroscope.y = imuMeas.Gyroscope[1];
 	imu_msg.gyroscope.z = imuMeas.Gyroscope[2];
-	memcpy(imu_msg.gyroscope.cov, params.estimator.cov_gyro_mpu, sizeof(params.estimator.cov_gyro_mpu));
+
 	/* ToDo: Fix when Magnetometer measurements are working */
 	imu_msg.magnetometer.x = 0;//imuMeas.Magnetometer[0];
 	imu_msg.magnetometer.y = 0;//imuMeas.Magnetometer[1];
@@ -948,7 +1004,7 @@ void BalanceController::SendControllerInfo(const lspc::ParameterTypes::controlle
 	com.TransmitAsync(lspc::MessageTypesToPC::ControllerInfo, (uint8_t *)&msg, sizeof(msg));
 }
 
-void BalanceController::CalibrateIMU()
+void BalanceController::CalibrateIMU(bool calibrateAccelerometer)
 {
 	bool restartAfterCalibration = false;
 	if (isRunning_) {
@@ -956,7 +1012,11 @@ void BalanceController::CalibrateIMU()
 		restartAfterCalibration = true;
 	}
 
-	imu.Calibrate(true);
+	if (calibrateAccelerometer)
+		imu.CalibrateAccelerometer(true);
+	else
+		imu.Calibrate(true); // calibrate only gyro bias and alignment
+
 
 	if (restartAfterCalibration) {
 		/*Debug::print("Restarting controller in 5 seconds...\n");
@@ -998,7 +1058,7 @@ void BalanceController::CalibrateIMUCallback(void * param, const std::vector<uin
 	msgAck.acknowledged = true;
 	balanceController->com.TransmitAsync(lspc::MessageTypesToPC::CalibrateIMUAck, (uint8_t *)&msgAck, sizeof(msgAck));
 
-	balanceController->CalibrateIMU();
+	balanceController->CalibrateIMU(msg.calibrate_accelerometer);
 }
 
 

@@ -38,6 +38,8 @@ class QuaternionVelocityControl
 		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, float q_ref_out[4]);
 		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float dt, float q_ref_out[4]);
 
+		void GetIntegral(float q_integral[4]);
+
 	private:
 		Parameters& _params;
 		Timer * _microsTimer;

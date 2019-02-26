@@ -5,7 +5,7 @@
 // File: eye.cpp
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 13-Feb-2019 17:37:28
+// C/C++ source code generated on  : 22-Feb-2019 19:54:01
 //
 
 // Include Files
@@ -20,12 +20,25 @@
 // Arguments    : double I[100]
 // Return Type  : void
 //
-void eye(double I[100])
+void b_eye(double I[100])
 {
   int k;
   memset(&I[0], 0, 100U * sizeof(double));
   for (k = 0; k < 10; k++) {
     I[k + 10 * k] = 1.0;
+  }
+}
+
+//
+// Arguments    : double I[16]
+// Return Type  : void
+//
+void eye(double I[16])
+{
+  int k;
+  memset(&I[0], 0, sizeof(double) << 4);
+  for (k = 0; k < 4; k++) {
+    I[k + (k << 2)] = 1.0;
   }
 }
 
