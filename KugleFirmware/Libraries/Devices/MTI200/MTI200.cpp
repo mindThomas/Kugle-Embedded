@@ -440,6 +440,7 @@ bool MTI200::configureMotionTracker(uint32_t SampleRate)
 			{XDI_PacketCounter, 65535}, // 65535 == fastest rate possible
 			{XDI_SampleTimeFine, 65535},
 			{XDI_Quaternion, SampleRate},
+			//{XDI_DeltaQ, SampleRate}, // no need to include the DeltaQ, since this is just generated from the RateOfTurn and corresponds to the movement over a period of 1/(400 Hz)
 			{XDI_Acceleration, SampleRate},
 			{XDI_RateOfTurn, SampleRate},
 			{XDI_MagneticField, std::min<uint32_t>(SampleRate, 100)},

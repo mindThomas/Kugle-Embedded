@@ -12,7 +12,7 @@
 
 #define LSPC_MAX_ASYNCHRONOUS_PACKAGE_SIZE			100  // bytes
 #define LSPC_MAXIMUM_PACKAGE_LENGTH					250
-#define LSPC_ASYNCHRONOUS_QUEUE_LENGTH				30   // maximum 30 asynchronous packages in queue
+#define LSPC_ASYNCHRONOUS_QUEUE_LENGTH				100   // maximum 100 asynchronous packages in queue
 #define LSPC_RX_PROCESSING_THREAD_STACK_SIZE		1024
 #define LSPC_TX_TRANSMITTER_THREAD_STACK_SIZE		512
 
@@ -87,7 +87,9 @@ public:
   {
 	  LSPC_Async_Package_t package;
 	  if (payloadLength > LSPC_MAXIMUM_PACKAGE_LENGTH) return; // payload size is too big
-	  if (uxQueueSpacesAvailable(_TXqueue) == 0) return; // no space in queue
+	  if (uxQueueSpacesAvailable(_TXqueue) == 0) {
+		  return; // no space in queue
+	  }
 
 	  package.type = type;
 	  package.payloadPtr = new std::vector<uint8_t>(payloadLength);

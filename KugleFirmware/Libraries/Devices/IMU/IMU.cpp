@@ -43,33 +43,31 @@ void MPU9250_Sampling(void const * argument)
 }
 #endif
 
-void IMU::CorrectMeasurement(Measurement_t& measurement, bool correctGyroBias, bool correctAlignment)
+void IMU::CorrectMeasurement(Measurement_t& measurement, bool correctAccelerometerBias, bool correctAccelerometerScale, bool correctGyroBias, bool correctAlignment)
 {
-	if (!calibration_.calibrated) return;
-
-	if (correctGyroBias && correctAlignment) { // correct with both orientation/alignment and gyroscope bias
-		adjustImuMeasurement(measurement.Gyroscope[0],
-							 measurement.Gyroscope[1],
-							 measurement.Gyroscope[2],
-							 measurement.Accelerometer[0],
-							 measurement.Accelerometer[1],
-							 measurement.Accelerometer[2],
-							 calibration_.imu_calibration_matrix, calibration_.gyro_bias);
+	if (correctAccelerometerBias && calibration_.acc_bias_valid) {
+		measurement.Accelerometer[0] -= calibration_.acc_bias[0];
+		measurement.Accelerometer[1] -= calibration_.acc_bias[1];
+		measurement.Accelerometer[2] -= calibration_.acc_bias[2];
 	}
-	else if (!correctGyroBias && correctAlignment) { // correct only sensor orientation/alignment
-		const float zero_bias[3] = { 0, 0, 0 };
-		adjustImuMeasurement(measurement.Gyroscope[0],
-							 measurement.Gyroscope[1],
-							 measurement.Gyroscope[2],
-							 measurement.Accelerometer[0],
-							 measurement.Accelerometer[1],
-							 measurement.Accelerometer[2],
-							 calibration_.imu_calibration_matrix, zero_bias);
+	if (correctAccelerometerScale && calibration_.acc_scale_valid) {
+		measurement.Accelerometer[0] *= calibration_.acc_scale[0];
+		measurement.Accelerometer[1] *= calibration_.acc_scale[1];
+		measurement.Accelerometer[2] *= calibration_.acc_scale[2];
 	}
-	else if (correctGyroBias && !correctAlignment) { // correct only gyroscope with calibrated gyroscope bias
+	if (correctGyroBias && calibration_.gyro_bias_valid) {
 		measurement.Gyroscope[0] -= calibration_.gyro_bias[0];
 		measurement.Gyroscope[1] -= calibration_.gyro_bias[1];
 		measurement.Gyroscope[2] -= calibration_.gyro_bias[2];
+	}
+	if (correctAlignment && calibration_.imu_calibration_matrix_valid) {
+		rotateImuMeasurement(measurement.Gyroscope[0],
+							 measurement.Gyroscope[1],
+							 measurement.Gyroscope[2],
+							 measurement.Accelerometer[0],
+							 measurement.Accelerometer[1],
+							 measurement.Accelerometer[2],
+							 calibration_.imu_calibration_matrix);
 	}
 }
 
@@ -90,11 +88,17 @@ void IMU::LoadCalibrationFromEEPROM(void)
 
 void IMU::ValidateCalibration(void)
 {
+	ValidateCalibrationMatrix();
+	// Validate the other parts of the calibration
+}
+
+void IMU::ValidateCalibrationMatrix(void)
+{
 	const unsigned int ValidationPrecision = 2; // decimal places checked
 
-	if (!calibration_.calibrated) return; // the calibration flag is not even set, so nothing to validate
+	if (!calibration_.imu_calibration_matrix_valid) return; // the calibration flag is not even set, so nothing to validate
 
-	calibration_.calibrated = false; // set the flag to false until we succeed with all checks
+	calibration_.imu_calibration_matrix_valid = false; // set the flag to false until we succeed with all checks
 
 	// We perform a crude validation by ensuring that the calibration matrix is orthogonal : R*R' = I and R'*R = I
 	float * R = calibration_.imu_calibration_matrix; arm_matrix_instance_f32 R_; arm_mat_init_f32(&R_, 3, 3, R);
@@ -122,7 +126,48 @@ void IMU::ValidateCalibration(void)
 	}
 
 	// Matrix has been validated as being a proper rotation matrix (at least it is orthogonal)
-	calibration_.calibrated = true;
+	calibration_.imu_calibration_matrix_valid = true;
+}
+
+bool IMU::isCalibrated()
+{
+	return (isAccelerometerCalibrated() && isGyroscopeCalibrated() && isAlignmentCalibrated());
+}
+
+bool IMU::isAccelerometerCalibrated()
+{
+	return (calibration_.acc_bias_valid && calibration_.acc_scale_valid);
+}
+
+bool IMU::isGyroscopeCalibrated()
+{
+	return calibration_.gyro_bias_valid;
+}
+
+bool IMU::isAlignmentCalibrated()
+{
+	return calibration_.imu_calibration_matrix_valid;
+}
+
+void IMU::SetCalibration(const float accelerometer_bias[3], const float accelerometer_scale[3], const float gyroscope_bias[3], const float calibration_matrix[3*3], bool storeInEEPROM)
+{
+	memcpy(calibration_.acc_bias, accelerometer_bias, sizeof(calibration_.acc_bias));
+	calibration_.acc_bias_valid = true;
+
+	memcpy(calibration_.acc_scale, accelerometer_scale, sizeof(calibration_.acc_scale));
+	calibration_.acc_scale_valid = true;
+
+	memcpy(calibration_.gyro_bias, gyroscope_bias, sizeof(calibration_.gyro_bias));
+	calibration_.gyro_bias_valid = true;
+
+	memcpy(calibration_.imu_calibration_matrix, calibration_matrix, sizeof(calibration_.imu_calibration_matrix));
+	calibration_.imu_calibration_matrix_valid = true;
+
+	ValidateCalibration();
+
+    if (storeInEEPROM && eeprom_) { // if EEPROM is configured, store new calibration in EEPROM
+    	eeprom_->WriteData(eeprom_->sections.imu_calibration, (uint8_t *)&calibration_, sizeof(calibration_));
+    }
 }
 
 void IMU::Calibrate(bool storeInEEPROM)
@@ -158,6 +203,8 @@ void IMU::Calibrate(bool storeInEEPROM)
     arm_scale_f32(avg_gyro, 1.f/num_samples, calibration_.gyro_bias, 3);
 
     calibrateImu(reference_acc_vector_, avg_acc, calibration_.imu_calibration_matrix);
+    calibration_.imu_calibration_matrix_valid = true;
+    calibration_.gyro_bias_valid = true;
 
     Debug::print("Resulting calibration matrix:\n");
     Debug::printf("%f", calibration_.imu_calibration_matrix[0]); Debug::print("\t");
@@ -170,9 +217,9 @@ void IMU::Calibrate(bool storeInEEPROM)
     Debug::printf("%f", calibration_.imu_calibration_matrix[7]); Debug::print("\t");
     Debug::printf("%f\n", calibration_.imu_calibration_matrix[8]);
 
-    calibration_.calibrated = true; // we have now calibrated, but we need to verify that the calibration is valid
+    /* We have now calibrated, but we need to verify that the calibration is valid */
     ValidateCalibration();
-    if (!calibration_.calibrated) {
+    if (!isCalibrated()) {
     	Debug::print("Calibration failed: Could not validate calibration\n\n");
     	osDelay(5000);
     	return;
@@ -182,7 +229,7 @@ void IMU::Calibrate(bool storeInEEPROM)
     	eeprom_->WriteData(eeprom_->sections.imu_calibration, (uint8_t *)&calibration_, sizeof(calibration_));
     }
 
-    Debug::print("Testing:\n");
+    /*Debug::print("Testing:\n");
     Get(meas);
     Debug::print("Unadjusted:\n");
     Debug::print("Acc:\t"); Debug::printf("%f", meas.Accelerometer[0]); Debug::print("\t");
@@ -195,7 +242,89 @@ void IMU::Calibrate(bool storeInEEPROM)
     Debug::printf("%f", meas.Accelerometer[1]); Debug::print("\t"); Debug::printf("%f", meas.Accelerometer[2]); Debug::print("\n");
     Debug::print("Gyro:\t"); Debug::printf("%f", meas.Gyroscope[0]); Debug::print("\t");
     Debug::printf("%f", meas.Gyroscope[1]); Debug::print("\t"); Debug::printf("%f\n", meas.Gyroscope[2]);
-    Debug::print("\n");
+    Debug::print("\n");*/
+}
+
+void IMU::CalibrateAccelerometer(bool storeInEEPROM)
+{
+    Debug::print("Calibrating Accelerometer - tilt accelerometer slowly such that measurements are taken at all sides\n");
+    osDelay(1000);
+
+    float acc_min[3];
+    float acc_max[3];
+
+    uint32_t steadyCount = 0;
+    Measurement_t meas;
+    TickType_t startTime = xTaskGetTickCount();
+    TickType_t endTime = startTime + configTICK_RATE_HZ * ACCELEROMETER_CALIBRATION_TIME;
+    while (xTaskGetTickCount() < endTime)
+    {
+    	Get(meas);
+
+    	if (fabs(vector_length(meas.Accelerometer) - ACCELEROMETER_GRAVITY_NORM) < 0.8/* && vector_length(meas.Gyroscope) < 0.5*/) {
+			steadyCount++;
+			if (steadyCount > ACCELEROMETER_CALIBRATION_STEADY_TIME*ACCELEROMETER_CALIBRATION_SAMPLE_RATE) {
+				if (meas.Accelerometer[0] < acc_min[0])
+					acc_min[0] = ACCELEROMETER_CALIBRATION_LPF_COEFF_A * acc_min[0] + ACCELEROMETER_CALIBRATION_LPF_COEFF_B * meas.Accelerometer[0];
+
+				if (meas.Accelerometer[1] < acc_min[1])
+					acc_min[1] = ACCELEROMETER_CALIBRATION_LPF_COEFF_A * acc_min[1] + ACCELEROMETER_CALIBRATION_LPF_COEFF_B * meas.Accelerometer[1];
+
+				if (meas.Accelerometer[2] < acc_min[2])
+					acc_min[2] = ACCELEROMETER_CALIBRATION_LPF_COEFF_A * acc_min[2] + ACCELEROMETER_CALIBRATION_LPF_COEFF_B * meas.Accelerometer[2];
+
+				if (meas.Accelerometer[0] > acc_max[0])
+					acc_max[0] = ACCELEROMETER_CALIBRATION_LPF_COEFF_A * acc_max[0] + ACCELEROMETER_CALIBRATION_LPF_COEFF_B * meas.Accelerometer[0];
+
+				if (meas.Accelerometer[1] > acc_max[1])
+					acc_max[1] = ACCELEROMETER_CALIBRATION_LPF_COEFF_A * acc_max[1] + ACCELEROMETER_CALIBRATION_LPF_COEFF_B * meas.Accelerometer[1];
+
+				if (meas.Accelerometer[2] > acc_max[2])
+					acc_max[2] = ACCELEROMETER_CALIBRATION_LPF_COEFF_A * acc_max[2] + ACCELEROMETER_CALIBRATION_LPF_COEFF_B * meas.Accelerometer[2];
+			}
+		} else {
+			steadyCount = 0;
+		}
+
+    	/* Compute calibration values */
+    	for (int i = 0; i < 3; i++) {
+    		calibration_.acc_bias[i] = (acc_min[i] + acc_max[i]) / 2.0;
+    		calibration_.acc_scale[i] = 2 * ACCELEROMETER_GRAVITY_NORM / (acc_max[i] - acc_min[i]);
+    	}
+
+    	if (steadyCount == 0)
+    		Debug::print(" === MOVE SLOWLY ===\n");
+    	else
+    		Debug::print(" === CALIBRATING ===\n");
+    	Debug::printf("Accelerometer min: {  %.2f,  %.2f,  %.2f  }\n", acc_min[0], acc_min[1], acc_min[2]);
+    	Debug::printf("Accelerometer max: {  %.2f,  %.2f,  %.2f  }\n", acc_max[0], acc_max[1], acc_max[2]);
+    	Debug::printf("Accelerometer bias: {  %.2f,  %.2f,  %.2f  }\n", calibration_.acc_bias[0], calibration_.acc_bias[1], calibration_.acc_bias[2]);
+    	Debug::printf("Accelerometer scale: {  %.2f,  %.2f,  %.2f  }\n", calibration_.acc_scale[0], calibration_.acc_scale[1], calibration_.acc_scale[2]);
+    	Debug::print("\n");
+
+    	osDelay(1000/ACCELEROMETER_CALIBRATION_SAMPLE_RATE);
+    }
+
+    calibration_.acc_bias_valid = true;
+    calibration_.acc_scale_valid = true;
+
+    Debug::print(" === Finished accelerometer calibration ===\n");
+	Debug::printf("Accelerometer bias: {  %.7f,  %.7f,  %.7f  }\n", calibration_.acc_bias[0], calibration_.acc_bias[1], calibration_.acc_bias[2]);
+	Debug::printf("Accelerometer scale: {  %.7f,  %.7f,  %.7f  }\n", calibration_.acc_scale[0], calibration_.acc_scale[1], calibration_.acc_scale[2]);
+
+    /* We have now calibrated, but we need to verify that the calibration is valid */
+    ValidateCalibration();
+    if (!isAccelerometerCalibrated()) {
+    	Debug::print("Calibration failed: Could not validate calibration\n\n");
+    	osDelay(5000);
+    	return;
+    }
+
+    if (storeInEEPROM && eeprom_) { // if EEPROM is configured, store new calibration in EEPROM
+    	eeprom_->WriteData(eeprom_->sections.imu_calibration, (uint8_t *)&calibration_, sizeof(calibration_));
+    }
+
+    osDelay(5000);
 }
 
 float IMU::vector_length(const float v[3])
@@ -282,15 +411,15 @@ void IMU::calibrateImu(const float desired_acc_vector[3],
   memcpy(calibration_matrix, R, 9*sizeof(R[0]));
 }
 
-void IMU::adjustImuMeasurement(float& gx, float& gy, float& gz,
+void IMU::rotateImuMeasurement(float& gx, float& gy, float& gz,
                           float& ax, float& ay, float& az,
-                          const float calibration_matrix[9], const float gyro_bias[3])
+                          const float calibration_matrix[9])
 {
   arm_matrix_instance_f32 R;
   arm_mat_init_f32(&R, 3, 3, const_cast<float*>(calibration_matrix));
 
   arm_matrix_instance_f32 g;
-  float g_data[3] = {gx-gyro_bias[0], gy-gyro_bias[1], gz-gyro_bias[2]};
+  float g_data[3] = {gx, gy, gz};
   arm_mat_init_f32(&g, 3, 1, g_data);
   arm_mat_mult_f32(&R, &g, &g);
   gx = g_data[0]; gy = g_data[1]; gz = g_data[2];
