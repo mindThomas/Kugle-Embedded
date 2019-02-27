@@ -283,6 +283,14 @@ void Parameters::GetParameter_Callback(void * param, const std::vector<uint8_t>&
 			vPortFree(msgBuf);
 		}
 	}
+	else { // send unknown parameter response
+		lspc::MessageTypesToPC::GetParameter_t response;
+		response.type = lspc::ParameterLookup::unknown;
+		response.param = 0;
+		response.valueType = lspc::ParameterLookup::_unknown;
+		response.arraySize = 0;
+		paramsGlobal->com_->TransmitAsync(lspc::MessageTypesToPC::GetParameter, (uint8_t *)&response, sizeof(response));
+	}
 
 	/* Unlock after reading */
 	xSemaphoreGive( paramsGlobal->readSemaphore_ ); // give back the read protection semaphore
@@ -413,6 +421,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::UseVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseVelocityEstimator; return;
 			case lspc::ParameterLookup::EstimateCOM: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
 			case lspc::ParameterLookup::EstimateBias: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateBias; return;
+			case lspc::ParameterLookup::EnableVelocityLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableVelocityLPF; return;
 			case lspc::ParameterLookup::sigma2_bias: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_bias; return;
 			case lspc::ParameterLookup::sigma2_omega: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_omega; return;
 			case lspc::ParameterLookup::sigma2_heading: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_heading; return;
@@ -423,11 +432,13 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 	else if (type == lspc::ParameterLookup::model) {
 		switch (param) {
 			case lspc::ParameterLookup::l: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.l; return;
+			case lspc::ParameterLookup::CoR: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.CoR; return;
 			case lspc::ParameterLookup::Mk: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mk; return;
 			case lspc::ParameterLookup::Mb: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mb; return;
 			case lspc::ParameterLookup::Bvk: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Bvk; return;
 			case lspc::ParameterLookup::Bvm: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Bvm; return;
 			case lspc::ParameterLookup::Bvb: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Bvb; return;
+			case lspc::ParameterLookup::SaturationTorqueOfMaxOutputTorque: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.SaturationTorqueOfMaxOutputTorque; return;
 			default: return;
 		}
 	}
