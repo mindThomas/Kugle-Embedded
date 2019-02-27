@@ -58,6 +58,7 @@ namespace lspc
 			IndependentHeading = 0x01,
 			YawVelocityBraking,
 			StepTestEnabled,
+			SineTestEnabled,
 			VelocityControllerEnabled,
 			JoystickVelocityControl
 		} behavioural_t;
@@ -79,6 +80,7 @@ namespace lspc
 			Ky,
 			Kz,
 			ContinousSwitching,
+			EquivalentControl,
 			eta,
 			epsilon,
 			LQR_K,
@@ -111,6 +113,9 @@ namespace lspc
 			cov_gyro_mpu,
 			cov_acc_mpu,
 			sigma2_bias,
+			sigma2_omega,
+			sigma2_heading,
+			GyroscopeTrustFactor,
 			QEKF_P_init_diagonal,
 			VelocityEstimator_P_init_diagonal,
 			COMEstimator_P_init_diagonal
@@ -332,6 +337,7 @@ namespace lspc
 			ControllerInfo = 0x12,
 			AttitudeControllerInfo = 0x13,
             VelocityControllerInfo = 0x14,
+			ControllerDebug = 0x15,
             MPCinfo = 0x20,
             PredictedMPCtrajectory = 0x21,
             RawSensor_IMU_MPU9250 = 0x30,
@@ -429,6 +435,58 @@ namespace lspc
             float delivered_torque2;
             float delivered_torque3;
         } ControllerInfo_t;
+
+        typedef struct
+        {
+            float time;
+            struct orient_t
+            {
+                float roll;
+                float pitch;
+                float yaw;
+            } orient;
+            struct orient_ref_t
+            {
+                float roll;
+                float pitch;
+                float yaw;
+            } orient_ref;
+            struct orient_integral_t
+            {
+                float roll;
+                float pitch;
+                float yaw;
+            } orient_integral;
+            struct omega_t
+            {
+                float x;
+                float y;
+                float z;
+            } omega;
+            struct omega_ref_t
+            {
+                float x;
+                float y;
+                float z;
+            } omega_ref;
+            struct vel_t
+            {
+                float x;
+                float y;
+            } vel;
+            struct vel_kinematics_t
+            {
+                float x;
+                float y;
+            } vel_kinematics;
+            struct vel_ref_t
+            {
+                float x;
+                float y;
+            } vel_ref;
+            float torque[3];
+            float S[3];
+        } ControllerDebug_t;
 
         typedef struct
         {

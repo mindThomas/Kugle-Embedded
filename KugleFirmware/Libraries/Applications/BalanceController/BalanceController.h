@@ -39,7 +39,7 @@
 class BalanceController
 {
 	private:
-		const int THREAD_STACK_SIZE = 2000; // notice that this much stack is apparently necessary to avoid issues
+		const int THREAD_STACK_SIZE = 2500; // notice that this much stack is apparently necessary to avoid issues
 		const uint32_t THREAD_PRIORITY = BALANCE_CONTROLLER_PRIORITY;
 
 	public:
@@ -68,6 +68,7 @@ class BalanceController
 		void SendEstimates(void);
 		void SendRawSensors(Parameters& params, const IMU::Measurement_t& imuMeas, const float EncoderAngle[3]);
 		void SendControllerInfo(const lspc::ParameterTypes::controllerType_t Type, const lspc::ParameterTypes::controllerMode_t Mode, const float Torque[3], const float ComputeTime, const float TorqueDelivered[3]);
+		void SendControllerDebug(const float q_integral[4], const float velocity_kinematics[2], const float Torque[3], const float S[3]);
 		static void CalibrateIMUCallback(void * param, const std::vector<uint8_t>& payload);
 		static void RestartControllerCallback(void * param, const std::vector<uint8_t>& payload);
 		static void VelocityReference_Heading_Callback(void * param, const std::vector<uint8_t>& payload);
@@ -95,10 +96,16 @@ class BalanceController
 		float COM[3];
 		float GyroBias[3];
 
+		// Internal or converted estimates
+		float omega_body[3];
+
 		// Internal references
 		float q_ref[4];
+		float q_ref_setpoint[4]; // used in QUATERNION_CONTROL mode to read reference into
 		float omega_ref_body[3];
 		float omega_ref_inertial[3];
+		referenceFrame_t omega_ref_setpoint_frame;
+		float omega_ref_setpoint[3];
 		float velocityReference[2];
 		float headingVelocityReference;
 		float headingReference;

@@ -107,7 +107,6 @@
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/LQR"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/PID"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingMode"/>
 									<listOptionValue builtIn="false" value="../Inc"/>
@@ -214,115 +213,23 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1000332105.1945398997" name="/" resourcePath="Libraries/Misc/Math">
-						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.1472449282" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
-							<option id="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616.1175502658" name="Prefix" superClass="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616"/>
-							<option id="fr.ac6.managedbuild.option.gnu.cross.mcu.202581599.261685728" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu.202581599"/>
-							<option id="fr.ac6.managedbuild.option.gnu.cross.board.410326283.1253823716" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board.410326283"/>
-							<option id="fr.ac6.managedbuild.option.gnu.cross.core.1083960614.687925686" name="Core" superClass="fr.ac6.managedbuild.option.gnu.cross.core.1083960614"/>
-							<option id="fr.ac6.managedbuild.option.gnu.cross.instructionSet.629493224.1096122572" name="Instruction Set" superClass="fr.ac6.managedbuild.option.gnu.cross.instructionSet.629493224"/>
-							<option id="fr.ac6.managedbuild.option.gnu.cross.fpu.1199197787.263558479" name="Floating point hardware" superClass="fr.ac6.managedbuild.option.gnu.cross.fpu.1199197787"/>
-							<option id="fr.ac6.managedbuild.option.gnu.cross.floatabi.1563162206.132515397" name="Floating-point ABI" superClass="fr.ac6.managedbuild.option.gnu.cross.floatabi.1563162206"/>
-							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="fr.ac6.managedbuild.targetPlatform.gnu.cross" isAbstract="false" osList="all" superClass="fr.ac6.managedbuild.targetPlatform.gnu.cross"/>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.507895992" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.308977759">
-								<option id="gnu.c.compiler.option.include.paths.578611885" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="../Inc"/>
-									<listOptionValue builtIn="false" value="../Libraries/Misc/Math"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Debug"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/USBCDC"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/DSP/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
-									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32H7xx/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/RTOS2/Include"/>
-									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Device_Library/Core/Inc"/>
-									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc"/>
-								</option>
-								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c.1090875917" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.c"/>
-								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s.1687347395" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.input.s"/>
-							</tool>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.263948949" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.318870537">
-								<option id="gnu.cpp.compiler.option.include.paths.1770866163" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="../Libraries/Devices/Battery"/>
-									<listOptionValue builtIn="false" value="../Libraries/Misc/Math"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Watchdog"/>
-									<listOptionValue builtIn="false" value="../Libraries/Applications/HealthMonitor"/>
-									<listOptionValue builtIn="false" value="../Libraries/Applications/AttitudeController"/>
-									<listOptionValue builtIn="false" value="../Libraries/Applications/Communication"/>
-									<listOptionValue builtIn="false" value="../Libraries/Applications/PathFollowingController"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/UserInterface/Joystick"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/UserInterface/FrontPanel"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics/MATLABCoder"/>
-									<listOptionValue builtIn="false" value="../Libraries/Misc/MATLABCoderInit"/>
-									<listOptionValue builtIn="false" value="../Libraries/Misc/FirstOrderLPF"/>
-									<listOptionValue builtIn="false" value="../Libraries/Misc/IIR"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/ModelMatrices"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/QuaternionVelocityControl"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingModeMATLABCoder"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingModeMATLABCoder/MATLABCoder"/>
-									<listOptionValue builtIn="false" value="../Libraries/Devices/QuadratureKnob"/>
-									<listOptionValue builtIn="false" value="../Libraries/Devices/ESCON"/>
-									<listOptionValue builtIn="false" value="../Libraries/Devices/IMU"/>
-									<listOptionValue builtIn="false" value="../Libraries/Devices/LCD"/>
-									<listOptionValue builtIn="false" value="../Libraries/Devices/MPU9250"/>
-									<listOptionValue builtIn="false" value="../Libraries/Devices/MTI200"/>
-									<listOptionValue builtIn="false" value="../Libraries/Devices/LSPC"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Debug"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/QEKF"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/QEKF/MATLABCoder"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/PowerManagement"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/MadgwickAHRS/src"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityEKF"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityEKF/MATLABCoder"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF/MATLABCoder"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/LQR"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/MPC"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/SlidingMode"/>
-									<listOptionValue builtIn="false" value="../Inc"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/DSP/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
-									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/include"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS"/>
-									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Device/ST/STM32H7xx/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/Include"/>
-									<listOptionValue builtIn="false" value="../Drivers/CMSIS/RTOS2/Include"/>
-									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Device_Library/Core/Inc"/>
-									<listOptionValue builtIn="false" value="../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Encoder"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/I2C"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/IO"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/PWM"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/InputCapture"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/ADC"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SPI"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/UART"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/Timer"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/SMBus"/>
-									<listOptionValue builtIn="false" value="../Libraries/Periphirals/USBCDC"/>
-									<listOptionValue builtIn="false" value="../Libraries/Misc/Quaternion"/>
-									<listOptionValue builtIn="false" value="../Libraries/Misc/Matrix"/>
-									<listOptionValue builtIn="false" value="../Libraries/Modules/Parameters"/>
-								</option>
-								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp.1341766954" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.cpp"/>
-								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s.204781023" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.input.s"/>
-							</tool>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.969792184" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.292940054"/>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.1242081416" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.266891313"/>
-							<tool id="fr.ac6.managedbuild.tool.gnu.archiver.1713347282" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver.554655037"/>
-							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.1491943276" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.539838764">
-								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1032334639" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
-								<inputType id="fr.ac6.managedbuild.tool.gnu.cross.assembler.input.527228449" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.input"/>
-							</tool>
+					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1000332105.356081948" name="/" resourcePath="Libraries/Misc/MathLib">
+						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.1497850365" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
+							<option id="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616.969852201" name="Prefix" superClass="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.mcu.202581599.602398014" name="Mcu" superClass="fr.ac6.managedbuild.option.gnu.cross.mcu.202581599"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.board.410326283.756487210" name="Board" superClass="fr.ac6.managedbuild.option.gnu.cross.board.410326283"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.core.1083960614.1329462378" name="Core" superClass="fr.ac6.managedbuild.option.gnu.cross.core.1083960614"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.instructionSet.629493224.102555468" name="Instruction Set" superClass="fr.ac6.managedbuild.option.gnu.cross.instructionSet.629493224"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.fpu.1199197787.1283390669" name="Floating point hardware" superClass="fr.ac6.managedbuild.option.gnu.cross.fpu.1199197787"/>
+							<option id="fr.ac6.managedbuild.option.gnu.cross.floatabi.1563162206.1489724257" name="Floating-point ABI" superClass="fr.ac6.managedbuild.option.gnu.cross.floatabi.1563162206"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.1698679242" name="MCU GCC Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.compiler.308977759"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.1949280065" name="MCU G++ Compiler" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.compiler.318870537"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.c.linker.47951574" name="MCU GCC Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.c.linker.292940054"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.263497689" name="MCU G++ Linker" superClass="fr.ac6.managedbuild.tool.gnu.cross.cpp.linker.266891313"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.archiver.408217421" name="MCU GCC Archiver" superClass="fr.ac6.managedbuild.tool.gnu.archiver.554655037"/>
+							<tool id="fr.ac6.managedbuild.tool.gnu.cross.assembler.1483881478" name="MCU GCC Assembler" superClass="fr.ac6.managedbuild.tool.gnu.cross.assembler.539838764"/>
 						</toolChain>
-					</folderInfo>
+					</folderInfo>					
 					<folderInfo id="fr.ac6.managedbuild.config.gnu.cross.exe.debug.1000332105.1711450860" name="/" resourcePath="Libraries/Devices/MPU9250/examples">
 						<toolChain id="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug.766474364" name="Ac6 STM32 MCU GCC" superClass="fr.ac6.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
 							<option id="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616.974320116" name="Prefix" superClass="fr.ac6.managedbuild.option.gnu.cross.prefix.560831616"/>
