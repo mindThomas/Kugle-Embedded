@@ -86,11 +86,11 @@ class Parameters
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
-			float K[3] = {10, 10, 7}; // {80, 80, 10} sliding manifold gain  (S = omega_inertial + K*devec*q_err)
+			float K[3] = {14, 14, 10}; // {80, 80, 10} sliding manifold gain  (S = omega_inertial + K*devec*q_err)
 			bool ContinousSwitching = true;
 			bool EquivalentControl = false; // include equivalent control / computed torque (inverse dynamics)
-			float eta[3] = {7, 7, 7}; // {8, 8, 15}  (3.0) switching gain
-			float epsilon[3] = {0.3, 0.3, 0.5}; // {1.5, 1.5, 0.5} // (0.5) continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
+			float eta[3] = {5, 5, 10}; // {8, 8, 15}  (3.0) switching gain
+			float epsilon[3] = {0.4, 0.4, 0.7}; // {1.5, 1.5, 0.5} // (0.5) continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 			/* LQR parameters */
 			/*
@@ -117,10 +117,10 @@ class Parameters
 			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
 
 			/* Velocity controller parameters */
-			float VelocityController_MaxTilt	= 4.0; // max tilt that velocity controller can set [degrees]
-			float VelocityController_MaxIntegralCorrection = 3.0; // max tilt integral effect can compensate with [degrees]
+			float VelocityController_MaxTilt	= 2.0; // max tilt that velocity controller can set [degrees]
+			float VelocityController_MaxIntegralCorrection = 2.0; // max tilt integral effect can compensate with [degrees]
 			float VelocityController_VelocityClamp = 0.2; // velocity clamp for the proportional gain - note that at this velocity MaxTilt will be set [meters pr. second]
-			float VelocityController_IntegralGain = 0.3; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
+			float VelocityController_IntegralGain = 0.9; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
 			float VelocityController_ReferenceLPFtau = 0.1; // time-constant for low pass filter on velocity reference input
 			/* Controller Tuning parameters end */
 		} controller;
@@ -143,15 +143,15 @@ class Parameters
 			bool EstimateBias = false;
 
 			bool PositionEstimateDefinedInCoR = false; // at default the position estimate is defined in the center of the ball - enabling this flag will move it to the Center of Rotation (CoR)
-			bool UseCoRvelocity = true; // the velocity can conveniently be defined in the Center of Rotation to make it independent of tilt
+			bool UseCoRvelocity = false; // the velocity can conveniently be defined in the Center of Rotation to make it independent of tilt
 			bool UseVelocityEstimator = false;
 			float Var_COM = 1E-6; // variance on COM estimate into velocity estimator
 			float eta_encoder = 10.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
 			bool UseTiltForPrediction = true; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
 			bool UseCOMestimateInVelocityEstimator = false;
 			bool EnableVelocityLPF = true; // Velocity LPF is only used if Velocity Estimator is disabled - OBS. This is necessary to avoid sudden angle reference changes due to noise!
-			float VelocityLPFcoeffs_a[3] = {1.000000000000000,  -1.968676057962467,   0.969163874317244};	// 5 Hz LPF
-			float VelocityLPFcoeffs_b[3] = {0.009966553919394,  -0.019445291484010,   0.009966553919394};	// Created using:  [num, den] = cheby2(2,40,5/(Fs/2))
+			float VelocityLPFcoeffs_a[3] = {1.000000000000000,  -1.713116904140867,   0.749674566393451};	// 40 Hz LPF
+			float VelocityLPFcoeffs_b[3] = {0.017796394239482,   0.000964873773620,   0.017796394239482};	// Created using:  [num, den] = cheby2(2,40,40/(Fs/2))
 
 			bool EstimateCOM = false;
 			float EstimateCOMminVelocity = 0.05; // minimum velocity (checked against estimate) to run COM estimator
@@ -195,7 +195,7 @@ class Parameters
 							   	    0.013511303535437E-03,   0.025679048752216E-03,   0.141723092884984E-03};
 
 			float sigma2_bias = 1E-9; // for MPU9250 use 1E-6 or 1E-7 works well, for MTI-200 use 1E-9 or disable bias estimation completely!
-			float sigma2_omega = 1E-7; // for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
+			float sigma2_omega = 3.16E-6; // for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
 			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
 			float GyroscopeTrustFactor = 1.0; // the higher value the more trust is put into the gyroscope measurements by increasing the accelerometer covariance
 
@@ -275,7 +275,7 @@ class Parameters
 			float MotorMaxTorque = MotorTorqueConstant * MotorMaxCurrent; // Nm
 			float MotorMaxSpeed = 6000 * 2 * pi / 60;  // rad/s of motor (before gearing)  ==  6000 rpm
 			float MaxOutputTorque = i_gear * MotorMaxTorque;
-			float SaturationTorque = 0.6f * MaxOutputTorque;
+			float SaturationTorqueOfMaxOutputTorque = 0.8;
 			/* Model parameters end */	
 		} model;
 		

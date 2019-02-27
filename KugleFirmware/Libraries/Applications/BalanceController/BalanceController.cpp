@@ -566,9 +566,10 @@ __attribute__((optimize("O0")))
 	    }
 
 	    /* Clamp the torque between configurable limits less than or equal to max output torque */
-    	Torque[0] = fmax(fmin(Torque[0], params.model.SaturationTorque), -params.model.SaturationTorque);
-    	Torque[1] = fmax(fmin(Torque[1], params.model.SaturationTorque), -params.model.SaturationTorque);
-    	Torque[2] = fmax(fmin(Torque[2], params.model.SaturationTorque), -params.model.SaturationTorque);
+	    float saturationTorque = params.model.SaturationTorqueOfMaxOutputTorque * params.model.MaxOutputTorque;
+    	Torque[0] = fmax(fmin(Torque[0], saturationTorque), -saturationTorque);
+    	Torque[1] = fmax(fmin(Torque[1], saturationTorque), -saturationTorque);
+    	Torque[2] = fmax(fmin(Torque[2], saturationTorque), -saturationTorque);
 
 	    /* Initial Torque ramp up */
 	    if (params.controller.TorqueRampUp) {
@@ -1052,9 +1053,9 @@ void BalanceController::SendControllerDebug(const float q_integral[4], const flo
 	msg.orient_ref.roll = rad2deg(YPR[2]);
 
 	Quaternion_quat2eul_zyx(q_integral, YPR);
-	msg.orient_integral.yaw = YPR[0];
-	msg.orient_integral.pitch = YPR[1];
-	msg.orient_integral.roll = YPR[2];
+	msg.orient_integral.yaw = rad2deg(YPR[0]);
+	msg.orient_integral.pitch = rad2deg(YPR[1]);
+	msg.orient_integral.roll = rad2deg(YPR[2]);
 
 	msg.omega.x = omega_body[0];
 	msg.omega.y = omega_body[1];

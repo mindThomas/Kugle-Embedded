@@ -38,6 +38,7 @@ namespace lspc
 		} ValueType_t;
 		typedef enum: uint8_t
 		{
+			unknown = 0x00,
 			debug = 0x01,
 			behavioural,
 			controller,
@@ -103,6 +104,7 @@ namespace lspc
 			EstimateBias,
 			UseCoRvelocity,
 			UseVelocityEstimator,
+			EnableVelocityLPF,
 			UseCOMestimateInVelocityEstimator,
 			EstimateCOM,
 			EstimateCOMminVelocity,
@@ -127,6 +129,7 @@ namespace lspc
 			COM_X,
 			COM_Y,
 			COM_Z,
+			CoR,
 			g,
 			rk,
 			Mk,
@@ -145,7 +148,8 @@ namespace lspc
 			Bvm,
 			Bvb,
 			EncoderTicksPrRev,
-			TicksPrRev
+			TicksPrRev,
+			SaturationTorqueOfMaxOutputTorque
 		} model_t;
 
 		typedef enum: uint8_t
