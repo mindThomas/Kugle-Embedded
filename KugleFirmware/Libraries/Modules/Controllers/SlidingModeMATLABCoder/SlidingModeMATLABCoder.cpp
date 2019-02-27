@@ -48,6 +48,6 @@ void SlidingModeMATLABCoder::Step(const float q[4], const float dq[4], const flo
 		_params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw,
 		_params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb,
 		_params.model.l, _params.model.g, _params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z,
-		_params.controller.K, _params.controller.eta, _params.controller.epsilon, _params.controller.ContinousSwitching,
+		_params.controller.K, _params.controller.eta[0], _params.controller.epsilon[0], _params.controller.ContinousSwitching,
 		tau, S);
 }

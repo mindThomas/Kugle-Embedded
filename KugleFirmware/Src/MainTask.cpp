@@ -203,7 +203,7 @@ void MainTask(void * pvParameters)
 		while (remainingLength > 0) {
 			txLength = remainingLength;
 			if (txLength > LSPC_MAXIMUM_PACKAGE_LENGTH) {
-				txLength = LSPC_MAXIMUM_PACKAGE_LENGTH;
+				txLength = LSPC_MAXIMUM_PACKAGE_LENGTH-1;
 				while (pcWriteBuffer[txIdx+txLength] != '\n' && txLength > 0) txLength--; // find and include line-break (if possible)
 				if (txLength == 0) txLength = LSPC_MAXIMUM_PACKAGE_LENGTH;
 				else txLength++;

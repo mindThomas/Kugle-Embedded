@@ -376,6 +376,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::IndependentHeading: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.IndependentHeading; return;
 			case lspc::ParameterLookup::YawVelocityBraking: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.YawVelocityBraking; return;
 			case lspc::ParameterLookup::StepTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.StepTestEnabled; return;
+			case lspc::ParameterLookup::SineTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.SineTestEnabled; return;
 			default: return;
 		}
 	}
@@ -387,12 +388,17 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
 			case lspc::ParameterLookup::DisableQdot: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableQdot; return;
 			case lspc::ParameterLookup::ContinousSwitching: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.ContinousSwitching; return;
-			case lspc::ParameterLookup::eta: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.eta; return;
-			case lspc::ParameterLookup::epsilon: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.epsilon; return;
+			case lspc::ParameterLookup::EquivalentControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EquivalentControl; return;
+			case lspc::ParameterLookup::eta: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.eta[0]; arraySize = 3;  return;
+			case lspc::ParameterLookup::epsilon: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.epsilon[0]; arraySize = 3; return;
 			case lspc::ParameterLookup::K: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[0]; arraySize = 3; return;
 			case lspc::ParameterLookup::Kx: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[0]; return;
 			case lspc::ParameterLookup::Ky: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[1]; return;
 			case lspc::ParameterLookup::Kz: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[2]; return;
+			case lspc::ParameterLookup::VelocityController_MaxTilt: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_MaxTilt; return;
+			case lspc::ParameterLookup::VelocityController_MaxIntegralCorrection: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_MaxIntegralCorrection; return;
+			case lspc::ParameterLookup::VelocityController_VelocityClamp: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_VelocityClamp; return;
+			case lspc::ParameterLookup::VelocityController_IntegralGain: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_IntegralGain; return;
 			default: return;
 		}
 	}
@@ -407,6 +413,10 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::UseVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseVelocityEstimator; return;
 			case lspc::ParameterLookup::EstimateCOM: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
 			case lspc::ParameterLookup::EstimateBias: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateBias; return;
+			case lspc::ParameterLookup::sigma2_bias: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_bias; return;
+			case lspc::ParameterLookup::sigma2_omega: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_omega; return;
+			case lspc::ParameterLookup::sigma2_heading: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_heading; return;
+			case lspc::ParameterLookup::GyroscopeTrustFactor: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.GyroscopeTrustFactor; return;
 			default: return;
 		}
 	}
@@ -415,6 +425,9 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::l: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.l; return;
 			case lspc::ParameterLookup::Mk: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mk; return;
 			case lspc::ParameterLookup::Mb: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Mb; return;
+			case lspc::ParameterLookup::Bvk: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Bvk; return;
+			case lspc::ParameterLookup::Bvm: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Bvm; return;
+			case lspc::ParameterLookup::Bvb: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->model.Bvb; return;
 			default: return;
 		}
 	}

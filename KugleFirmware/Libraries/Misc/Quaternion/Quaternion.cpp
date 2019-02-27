@@ -524,12 +524,21 @@ void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out
      omega_noYaw = [omega(1:2); 0]
      dq_noYaw = 1/2 * Phi(q) * vec*omega_noYaw
   */
-  q_dot_out[0] = dq[0]*q[1]*q[1] + dq[0]*q[2]*q[2] - dq[1]*q[0]*q[1] - dq[2]*q[0]*q[2] + dq[1]*q[2]*q[3] - dq[2]*q[1]*q[3];
+  /*q_dot_out[0] = dq[0]*q[1]*q[1] + dq[0]*q[2]*q[2] - dq[1]*q[0]*q[1] - dq[2]*q[0]*q[2] + dq[1]*q[2]*q[3] - dq[2]*q[1]*q[3];
   q_dot_out[1] = dq[1]*q[0]*q[0] + dq[1]*q[3]*q[3] - dq[0]*q[0]*q[1] + dq[0]*q[2]*q[3] - dq[3]*q[0]*q[2] - dq[3]*q[1]*q[3];
   q_dot_out[2] = dq[2]*q[0]*q[0] + dq[2]*q[3]*q[3] - dq[0]*q[0]*q[2] - dq[0]*q[1]*q[3] + dq[3]*q[0]*q[1] - dq[3]*q[2]*q[3];
-  q_dot_out[3] = dq[3]*q[1]*q[1] + dq[3]*q[2]*q[2] - dq[1]*q[0]*q[2] + dq[2]*q[0]*q[1] - dq[1]*q[1]*q[3] - dq[2]*q[2]*q[3];
-
+  q_dot_out[3] = dq[3]*q[1]*q[1] + dq[3]*q[2]*q[2] - dq[1]*q[0]*q[2] + dq[2]*q[0]*q[1] - dq[1]*q[1]*q[3] - dq[2]*q[2]*q[3];*/
   // The second method is only slightly different from the first, in the sense that it forces the q0 component of omega to be 0 (sort of a rectification)
+
+  /* No inertial yaw angular velocity
+     omega = 2*devec*Gamma(q)'*dq   % inertial
+     omega(3) = 0;
+     dq_withoutYaw = SimplifyWithQuatConstraint(1/2 * Gamma(q) * vec * omega, q)
+  */
+  q_dot_out[0] = dq[0]*q[1]*q[1] + dq[0]*q[2]*q[2] - dq[1]*q[0]*q[1] - dq[2]*q[0]*q[2] - dq[1]*q[2]*q[3] + dq[2]*q[1]*q[3];
+  q_dot_out[1] = dq[1]*q[0]*q[0] + dq[1]*q[3]*q[3] - dq[0]*q[0]*q[1] - dq[0]*q[2]*q[3] + dq[3]*q[0]*q[2] - dq[3]*q[1]*q[3];
+  q_dot_out[2] = dq[2]*q[0]*q[0] + dq[2]*q[3]*q[3] - dq[0]*q[0]*q[2] + dq[0]*q[1]*q[3] - dq[3]*q[0]*q[1] - dq[3]*q[2]*q[3];
+  q_dot_out[3] = dq[3]*q[1]*q[1] + dq[3]*q[2]*q[2] + dq[1]*q[0]*q[2] - dq[2]*q[0]*q[1] - dq[1]*q[1]*q[3] - dq[2]*q[2]*q[3];
 }
 
 float HeadingFromQuaternion(const float q[4])
@@ -543,5 +552,6 @@ float HeadingFromQuaternion(const float q[4])
 	// Now compute heading by taking the x-y components (projecting the x-axis vector down to the xy-plane)
     // heading = atan2(x_vec(2), x_vec(1));
 	float heading = atan2(I_e_x[1], I_e_x[0]);
+
 	return heading;
 }
