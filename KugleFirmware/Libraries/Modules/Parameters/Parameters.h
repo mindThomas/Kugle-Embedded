@@ -72,7 +72,7 @@ class Parameters
 			bool StopAtMotorFailure = true; // determines what action to take at failure: the controller should stop (require manual start) or the motor driver should automatically be reset
 
 			bool DisableQdot = false;
-			float ReferenceTimeout = 0.1; // if reference is older than 100 ms, do not use it!
+			float ReferenceTimeout = 0.2; // if reference is older than 200 ms, do not use it and fall back to 0 reference
 
 			/* Sliding Mode parameters */
 			/*float K[3] = {20, 20, 20}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
@@ -120,11 +120,11 @@ class Parameters
 			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
 
 			/* Velocity controller parameters */
-			float VelocityController_AccelerationLimit = 1.0;
-			float VelocityController_MaxTilt	= 4.0; // max tilt that velocity controller can set [degrees]
+			float VelocityController_AccelerationLimit = 0.2;
+			float VelocityController_MaxTilt	= 3.0; // max tilt that velocity controller can set [degrees]
 			float VelocityController_MaxIntegralCorrection = 4.0; // max tilt integral effect can compensate with [degrees]
 			float VelocityController_VelocityClamp = 0.4; // velocity clamp for the proportional gain - note that at this velocity MaxTilt will be set [meters pr. second]
-			float VelocityController_IntegralGain = 1.5; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
+			float VelocityController_IntegralGain = 0.8; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
 			float VelocityController_ReferenceLPFtau = 0.1; // time-constant for low pass filter on velocity reference input
 			/* Controller Tuning parameters end */
 		} controller;

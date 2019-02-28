@@ -51,6 +51,7 @@ class QuaternionVelocityControl
 
 	private:
 		float q_tilt_integral[4];
+		float VelocityRef_RateLimited[2];
 		float Velocity_Reference_Filtered[2];
 };
 	

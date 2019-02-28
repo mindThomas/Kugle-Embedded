@@ -30,7 +30,7 @@ PowerManagement::PowerManagement(IO& enable19V, IO& enable5V, Battery& bat1, Bat
 	_PulseDirectionUp = true;
 
 	_powerMode = POWERMODE_OFF;
-	Enable(false, false); // start with everything turned off
+	Enable(true, false); // start with 19V turned on and 5V off
 
 	xTaskCreate(PowerManagement::PowerManagementThread, (char *)"Power Management", POWER_MANAGEMENT_THREAD_STACK, (void*) this, powerManagementTaskPriority, &_powerManagementTaskHandle);
 }
