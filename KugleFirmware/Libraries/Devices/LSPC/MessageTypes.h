@@ -172,7 +172,6 @@ namespace lspc
 		typedef enum: uint8_t {
 			OFF = 0x00,
 			QUATERNION_CONTROL,
-			ANGULAR_VELOCITY_CONTROL,
 			VELOCITY_CONTROL,
 			PATH_FOLLOWING,
 			UNKNOWN_MODE = 0xFF
