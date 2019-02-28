@@ -36,9 +36,10 @@ class Parameters
 
 		struct debug_t {
 			/* Debugging parameters */
-			bool EnableLogOutput = false;
+			bool EnableDumpMessages = true;
 			bool EnableRawSensorOutput = true;
 			bool UseFilteredIMUinRawSensorOutput = true;
+			bool DisableMotorOutput = false; // can be enabled to test full controller functionality without torque being applied
 			/* Debugging parameters end */
 		} debug;
 
@@ -86,9 +87,11 @@ class Parameters
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
+			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD;
 			float K[3] = {14, 14, 10}; // {80, 80, 10} sliding manifold gain  (S = omega_inertial + K*devec*q_err)
 			bool ContinousSwitching = true;
-			bool EquivalentControl = false; // include equivalent control / computed torque (inverse dynamics)
+			bool EquivalentControl = true; // include equivalent control / computed torque (inverse dynamics)
+			bool DisableQdotInEquivalentControl = false;
 			float eta[3] = {5, 5, 10}; // {8, 8, 15}  (3.0) switching gain
 			float epsilon[3] = {0.4, 0.4, 0.7}; // {1.5, 1.5, 0.5} // (0.5) continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
@@ -117,10 +120,11 @@ class Parameters
 			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
 
 			/* Velocity controller parameters */
-			float VelocityController_MaxTilt	= 2.0; // max tilt that velocity controller can set [degrees]
-			float VelocityController_MaxIntegralCorrection = 2.0; // max tilt integral effect can compensate with [degrees]
-			float VelocityController_VelocityClamp = 0.2; // velocity clamp for the proportional gain - note that at this velocity MaxTilt will be set [meters pr. second]
-			float VelocityController_IntegralGain = 0.9; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
+			float VelocityController_AccelerationLimit = 1.0;
+			float VelocityController_MaxTilt	= 4.0; // max tilt that velocity controller can set [degrees]
+			float VelocityController_MaxIntegralCorrection = 4.0; // max tilt integral effect can compensate with [degrees]
+			float VelocityController_VelocityClamp = 0.4; // velocity clamp for the proportional gain - note that at this velocity MaxTilt will be set [meters pr. second]
+			float VelocityController_IntegralGain = 1.5; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
 			float VelocityController_ReferenceLPFtau = 0.1; // time-constant for low pass filter on velocity reference input
 			/* Controller Tuning parameters end */
 		} controller;

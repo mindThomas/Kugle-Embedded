@@ -43,13 +43,6 @@ class BalanceController
 		const uint32_t THREAD_PRIORITY = BALANCE_CONTROLLER_PRIORITY;
 
 	public:
-		typedef enum {
-			BODY_FRAME,
-			HEADING_FRAME,
-			INERTIAL_FRAME
-		} referenceFrame_t;
-
-	public:
 		BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_, MTI200 * mti_ = 0);
 		~BalanceController();
 
@@ -71,8 +64,10 @@ class BalanceController
 		void SendControllerDebug(const float q_integral[4], const float velocity_kinematics[2], const float Torque[3], const float S[3]);
 		static void CalibrateIMUCallback(void * param, const std::vector<uint8_t>& payload);
 		static void RestartControllerCallback(void * param, const std::vector<uint8_t>& payload);
-		static void VelocityReference_Heading_Callback(void * param, const std::vector<uint8_t>& payload);
-		static void VelocityReference_Inertial_Callback(void * param, const std::vector<uint8_t>& payload);
+		static void QuaternionReference_Callback(void * param, const std::vector<uint8_t>& payload);
+		static void AngularVelocityReference_Callback(void * param, const std::vector<uint8_t>& payload);
+		static void BalanceControllerReference_Callback(void * param, const std::vector<uint8_t>& payload);
+		static void VelocityReference_Callback(void * param, const std::vector<uint8_t>& payload);
 
 	private:
 		TaskHandle_t TaskHandle_;
@@ -104,8 +99,10 @@ class BalanceController
 		float q_ref_setpoint[4]; // used in QUATERNION_CONTROL mode to read reference into
 		float omega_ref_body[3];
 		float omega_ref_inertial[3];
-		referenceFrame_t omega_ref_setpoint_frame;
+		lspc::ParameterTypes::referenceFrame_t omega_ref_setpoint_frame;
 		float omega_ref_setpoint[3];
+		bool integrate_omega_ref_into_q_ref;
+		lspc::ParameterTypes::referenceFrame_t velocityReferenceFrame;
 		float velocityReference[2];
 		float headingVelocityReference;
 		float headingReference;
@@ -115,15 +112,16 @@ class BalanceController
 		// Consider to combine semaphores into 1 common setpoint/mode semaphore for all
 		struct BalanceReference_t {
 			SemaphoreHandle_t semaphore;
-			referenceFrame_t frame;
+			lspc::ParameterTypes::referenceFrame_t frame;
 			float time;
 			float q[4];
 			float omega[3];
+			bool angularVelocityOnly; // used to indicate whether angular velocity reference should be integrated to generate quaternion reference (hence discarding the quaternion reference in this package)
 		} BalanceReference;
 
 		struct VelocityReference_t {
 			SemaphoreHandle_t semaphore;
-			referenceFrame_t frame;
+			lspc::ParameterTypes::referenceFrame_t frame;
 			float time;
 			float dx;
 			float dy;

@@ -49,9 +49,10 @@ namespace lspc
 
 		typedef enum: uint8_t
 		{
-			EnableLogOutput = 0x01,
+			EnableDumpMessages = 0x01,
 			EnableRawSensorOutput,
-			UseFilteredIMUinRawSensorOutput
+			UseFilteredIMUinRawSensorOutput,
+			DisableMotorOutput
 		} debug_t;
 
 		typedef enum: uint8_t
@@ -60,8 +61,7 @@ namespace lspc
 			YawVelocityBraking,
 			StepTestEnabled,
 			SineTestEnabled,
-			VelocityControllerEnabled,
-			JoystickVelocityControl
+			PowerButtonMode
 		} behavioural_t;
 
 		typedef enum: uint8_t
@@ -76,6 +76,8 @@ namespace lspc
 			TorqueRampUp,
 			TorqueRampUpTime,
 			DisableQdot,
+			DisableQdotInEquivalentControl,
+			ManifoldType,
 			K,
 			Kx,
 			Ky,
@@ -86,6 +88,7 @@ namespace lspc
 			epsilon,
 			LQR_K,
 			LQR_MaxYawError,
+			VelocityController_AccelerationLimit,
 			VelocityController_MaxTilt,
 			VelocityController_MaxIntegralCorrection,
 			VelocityController_VelocityClamp,
@@ -178,8 +181,24 @@ namespace lspc
 		typedef enum: uint8_t {
 			POWER_OFF = 0x00, // default
 			START_STOP_QUATERNION_CONTROLLER,
-			START_STOP_VELOCITY_CONTROLLER
+			START_STOP_VELOCITY_CONTROLLER,
+			UNKNOWN_BUTTON_MODE = 0xFF
 		} powerButtonMode_t;
+
+		typedef enum: uint8_t {
+			Q_DOT_INERTIAL_MANIFOLD = 0x00,
+			Q_DOT_BODY_MANIFOLD,
+			OMEGA_INERTIAL_MANIFOLD,
+			OMEGA_BODY_MANIFOLD, // default/suggested
+			UNKNOWN_MANIFOLD = 0xFF
+		} slidingManifoldType_t;
+
+		typedef enum: uint8_t {
+			BODY_FRAME = 0x00,
+			INERTIAL_FRAME,
+			HEADING_FRAME,
+			UNKNOWN_FRAME = 0xFF
+		} referenceFrame_t;
 	}
 
 	namespace MessageTypesFromPC
@@ -196,12 +215,11 @@ namespace lspc
 			ControllerSettings = 0x12,
 			YawCorrection = 0x20,
 			PositionCorrection = 0x21,
-			AttitudeReference = 0x30,
-			AngularVelocityReference_Body = 0x31,
-            AngularVelocityReference_Inertial = 0x32,
-			VelocityReference_Inertial = 0x33,
-			VelocityReference_Heading = 0x34,
-			MPCpathReference = 0x35,
+			QuaternionReference = 0x30,
+			AngularVelocityReference = 0x31,
+			BalanceControllerReference = 0x32,
+			VelocityReference = 0x33,
+			MPCpathReference = 0x34,
             CalibrateIMU = 0xE0,
             CPUload = 0xE1,
 			RestartController = 0xE2,
@@ -256,47 +274,47 @@ namespace lspc
                 float y;
                 float z;
             } q;
-        } AttitudeReference_t;
+        } QuaternionReference_t;
 
         typedef struct
         {
+        	ParameterTypes::referenceFrame_t frame;
             struct omega_t
             {
                 float x;
                 float y;
                 float z;
             } omega;
-        } AngularVelocityReference_Body_t;
-
-        typedef struct
-        {
-            struct omega_t
-            {
-                float x;
-                float y;
-                float z;
-            } omega;
-        } AngularVelocityReference_Inertial_t;
+        } AngularVelocityReference_t;
 
         typedef struct
 		{
+			ParameterTypes::referenceFrame_t frame; // defines the frame of the angular velocity
+            struct q_t
+            {
+                float w;
+                float x;
+                float y;
+                float z;
+            } q;
+			struct omega_t
+			{
+				float x;
+				float y;
+				float z;
+			} omega;
+		} BalanceControllerReference_t;
+
+        typedef struct
+		{
+        	ParameterTypes::referenceFrame_t frame;
 			struct vel_t
 			{
 				float x;
 				float y;
 				float yaw;
 			} vel;
-		} VelocityReference_Inertial_t;
-
-        typedef struct
-        {
-            struct vel_t
-            {
-                float x;
-                float y;
-                float yaw;
-            } vel;
-        } VelocityReference_Heading_t;
+		} VelocityReference_t;
 
         typedef struct
         {
