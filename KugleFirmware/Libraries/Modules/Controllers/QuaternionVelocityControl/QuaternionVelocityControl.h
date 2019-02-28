@@ -36,9 +36,10 @@ class QuaternionVelocityControl
 
 		void Reset();
 		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, float q_ref_out[4]);
-		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float dt, float q_ref_out[4]);
+		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float acceleration_limit, const float headingRef, const float dt, float q_ref_out[4]);
 
 		void GetIntegral(float q_integral[4]);
+		void GetFilteredVelocityReference(float velocity_reference[2]);
 
 	private:
 		Parameters& _params;
@@ -50,6 +51,7 @@ class QuaternionVelocityControl
 
 	private:
 		float q_tilt_integral[4];
+		float Velocity_Reference_Filtered[2];
 };
 	
 	

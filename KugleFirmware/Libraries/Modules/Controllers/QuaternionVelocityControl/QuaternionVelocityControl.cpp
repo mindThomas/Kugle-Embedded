@@ -63,17 +63,26 @@ void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const 
 	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	Step(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, dt, q_ref_out);
+	Step(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, _params.controller.VelocityController_AccelerationLimit, headingRef, dt, q_ref_out);
 }
 
-void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float dt, float q_ref_out[4])
+void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float acceleration_limit, const float headingRef, const float dt, float q_ref_out[4])
 {
 	//const float Velocity_Inertial_q[4] = {0, dx_filt.sample(fmin(fmax(*dx, -CLAMP_VELOCITY), CLAMP_VELOCITY)), dy_filt.sample(fmin(fmax(*dy, -CLAMP_VELOCITY), CLAMP_VELOCITY)), 0};
 	float Velocity_Inertial_q[4] = {0, dxy[0], dxy[1], 0};
 	float Velocity_Heading_q[4];
 	float Velocity_Heading[2];
 
-	float Velocity_Reference_Filtered[2];
+	/* Rate limitation of velocity reference */
+	float AccelerationRef[2];
+	AccelerationRef[0] = (velocityRef[0] - Velocity_Reference_Filtered[0]) / dt;
+	AccelerationRef[1] = (velocityRef[1] - Velocity_Reference_Filtered[1]) / dt;
+
+	float VelocityRef_RateLimited[2];
+	VelocityRef_RateLimited[0] = Velocity_Reference_Filtered[0] + dt*copysignf(fmin(fabs(AccelerationRef[0]), acceleration_limit), AccelerationRef[0]);
+	VelocityRef_RateLimited[1] = Velocity_Reference_Filtered[1] + dt*copysignf(fmin(fabs(AccelerationRef[1]), acceleration_limit), AccelerationRef[1]);
+
+	//float Velocity_Reference_Filtered[2];
 	Velocity_Reference_Filtered[0] = _dx_ref_filt.Filter(velocityRef[0]);
 	Velocity_Reference_Filtered[1] = _dy_ref_filt.Filter(velocityRef[1]);
 
@@ -135,8 +144,9 @@ void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const 
 	q_tilt[2] = sinf(CorrectionAmountRadian/2)*CorrectionDirection[1];
 	q_tilt[3] = 0;
 
-	if (velocityRef[0] != 0 || velocityRef[1] != 0) {
-		CorrectionAmountRadian = 0; // only do integral action when velocity reference is zero
+	// Disable integrator when velocity reference is non-zero or when the velocity is above a certain limit
+	if (velocityRef[0] != 0 || velocityRef[1] != 0 || fabs(Velocity_Reference_Filtered[0]) > 0.05 || fabs(Velocity_Reference_Filtered[1]) > 0.05 || fabs(Velocity_Heading[0]) > 0.1 || fabs(Velocity_Heading[1]) > 0.1) {
+		CorrectionAmountRadian = 0;
 	}
 
 	float q_tilt_integral_incremental[4];
@@ -168,4 +178,10 @@ void QuaternionVelocityControl::GetIntegral(float q_integral[4])
 	q_integral[1] = q_tilt_integral[1];
 	q_integral[2] = q_tilt_integral[2];
 	q_integral[3] = q_tilt_integral[3];
+}
+
+void QuaternionVelocityControl::GetFilteredVelocityReference(float velocity_reference[2])
+{
+	velocity_reference[0] = Velocity_Reference_Filtered[0];
+	velocity_reference[1] = Velocity_Reference_Filtered[1];
 }

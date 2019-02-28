@@ -366,9 +366,10 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 
 	if (type == lspc::ParameterLookup::debug) {
 		switch (param) {
-			case lspc::ParameterLookup::EnableLogOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableLogOutput; return;
+			case lspc::ParameterLookup::EnableDumpMessages: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableDumpMessages; return;
 			case lspc::ParameterLookup::EnableRawSensorOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.EnableRawSensorOutput; return;
 			case lspc::ParameterLookup::UseFilteredIMUinRawSensorOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.UseFilteredIMUinRawSensorOutput; return;
+			case lspc::ParameterLookup::DisableMotorOutput: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->debug.DisableMotorOutput; return;
 			default: return;
 		}
 	}
@@ -385,6 +386,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::YawVelocityBraking: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.YawVelocityBraking; return;
 			case lspc::ParameterLookup::StepTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.StepTestEnabled; return;
 			case lspc::ParameterLookup::SineTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.SineTestEnabled; return;
+			case lspc::ParameterLookup::PowerButtonMode: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->behavioural.PowerButtonMode; return;
 			default: return;
 		}
 	}
@@ -395,6 +397,8 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::type: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.type; return;
 			case lspc::ParameterLookup::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
 			case lspc::ParameterLookup::DisableQdot: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableQdot; return;
+			case lspc::ParameterLookup::DisableQdotInEquivalentControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableQdotInEquivalentControl; return;
+			case lspc::ParameterLookup::ManifoldType: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.ManifoldType; return;
 			case lspc::ParameterLookup::ContinousSwitching: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.ContinousSwitching; return;
 			case lspc::ParameterLookup::EquivalentControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EquivalentControl; return;
 			case lspc::ParameterLookup::eta: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.eta[0]; arraySize = 3;  return;
@@ -403,6 +407,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::Kx: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[0]; return;
 			case lspc::ParameterLookup::Ky: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[1]; return;
 			case lspc::ParameterLookup::Kz: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[2]; return;
+			case lspc::ParameterLookup::VelocityController_AccelerationLimit: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_AccelerationLimit; return;
 			case lspc::ParameterLookup::VelocityController_MaxTilt: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_MaxTilt; return;
 			case lspc::ParameterLookup::VelocityController_MaxIntegralCorrection: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_MaxIntegralCorrection; return;
 			case lspc::ParameterLookup::VelocityController_VelocityClamp: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_VelocityClamp; return;
