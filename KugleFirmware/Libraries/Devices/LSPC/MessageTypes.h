@@ -92,7 +92,8 @@ namespace lspc
 			VelocityController_MaxTilt,
 			VelocityController_MaxIntegralCorrection,
 			VelocityController_VelocityClamp,
-			VelocityController_IntegralGain
+			VelocityController_IntegralGain,
+			VelocityController_AngleLPFtau
 		} controller_t;
 
 		typedef enum: uint8_t
@@ -108,6 +109,7 @@ namespace lspc
 			UseCoRvelocity,
 			UseVelocityEstimator,
 			EnableVelocityLPF,
+			EnableWheelSlipDetector,
 			UseCOMestimateInVelocityEstimator,
 			EstimateCOM,
 			EstimateCOMminVelocity,

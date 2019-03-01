@@ -46,3 +46,10 @@ void FirstOrderLPF::Reset(void)
 	_inputOld = 0;
 	_lpfOld = 0;
 }
+
+void FirstOrderLPF::ChangeTimeconstant(float tau)
+{
+	_tau = tau;
+	_coeff_b =  1/(2*tau/_Ts + 1); // nominator
+	_coeff_a = 1/(2*tau/_Ts + 1) - 2/(2 + _Ts/tau); // denominator
+}

@@ -28,13 +28,14 @@ class FirstOrderLPF
 		
 		float Filter(float input);
 		void Reset(void);
+		void ChangeTimeconstant(float tau);
 
 	private:
-		const float _Ts;             // Sampling Time
-		const float _tau;            // Filter time constant
+		const float _Ts;       // Sampling Time
+		float _tau;            // Filter time constant
 
-		const float _coeff_b = 0.0;  // IIR filter coefficient (nominator polynomial)
-		const float _coeff_a = 0.0;  // IIR filter coefficient (denominator polynomial)
+		float _coeff_b = 0.0;  // IIR filter coefficient (nominator polynomial)
+		float _coeff_a = 0.0;  // IIR filter coefficient (denominator polynomial)
 		
 		float _lpfOld = 0.0;   // Holds previous sample output value
 		float _inputOld = 0.0; // Holds previous sample output value

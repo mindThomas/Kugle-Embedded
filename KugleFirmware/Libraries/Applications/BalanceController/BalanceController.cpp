@@ -147,7 +147,7 @@ void BalanceController::Thread(void * pvParameters)
 	/* Create and initialize controller and estimator objects */
 	LQR& lqr = *(new LQR(params));
 	SlidingMode& sm = *(new SlidingMode(params));
-	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate, params.controller.VelocityController_ReferenceLPFtau));
+	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate));
 	QEKF& qEKF = *(new QEKF(params, &balanceController->microsTimer));
 	Madgwick& madgwick = *(new Madgwick(params.controller.SampleRate, params.estimator.MadgwickBeta));
 	VelocityEKF& velocityEKF = *(new VelocityEKF(params, &balanceController->microsTimer));
@@ -241,10 +241,7 @@ void BalanceController::Thread(void * pvParameters)
 	balanceController->xy[1] = 0;
 
 	/* Reset reference variables */
-	balanceController->q_ref[0] = 1; // attitude reference = just upright
-	balanceController->q_ref[1] = 0;
-	balanceController->q_ref[2] = 0;
-	balanceController->q_ref[3] = 0;
+	HeadingQuaternion(balanceController->q, balanceController->q_ref); // attitude reference = upright with current heading
 	balanceController->q_ref_setpoint[0] = balanceController->q_ref[0];
 	balanceController->q_ref_setpoint[1] = balanceController->q_ref[1];
 	balanceController->q_ref_setpoint[2] = balanceController->q_ref[2];
@@ -260,7 +257,7 @@ void BalanceController::Thread(void * pvParameters)
 	balanceController->omega_ref_setpoint[1] = 0;
 	balanceController->omega_ref_setpoint[2] = 0;
 	balanceController->integrate_omega_ref_into_q_ref = false;
-	balanceController->headingReference = 0; // consider to replace this with current heading (based on estimate of stabilized QEKF filter)
+	balanceController->headingReference = HeadingFromQuaternion(balanceController->q);
 	balanceController->headingVelocityReference = 0;
 	balanceController->velocityReferenceFrame = lspc::ParameterTypes::UNKNOWN_FRAME;
 	balanceController->velocityReference[0] = 0;
@@ -271,10 +268,7 @@ void BalanceController::Thread(void * pvParameters)
 	xSemaphoreTake( balanceController->BalanceReference.semaphore, ( TickType_t ) portMAX_DELAY); // lock for updating
 	balanceController->BalanceReference.frame = lspc::ParameterTypes::BODY_FRAME;
 	balanceController->BalanceReference.time = 0;
-	balanceController->BalanceReference.q[0] = 1; // attitude reference = just upright
-	balanceController->BalanceReference.q[1] = 0;
-	balanceController->BalanceReference.q[2] = 0;
-	balanceController->BalanceReference.q[3] = 0;
+	HeadingQuaternion(balanceController->q, balanceController->BalanceReference.q); // attitude reference = upright with current heading
 	balanceController->BalanceReference.omega[0] = 0;
 	balanceController->BalanceReference.omega[1] = 0;
 	balanceController->BalanceReference.omega[2] = 0;
@@ -509,10 +503,7 @@ __attribute__((optimize("O0")))
 				}
 				else {
 					// Reference too old - setting default upright reference
-					balanceController->q_ref_setpoint[0] = 1;
-					balanceController->q_ref_setpoint[1] = 0;
-					balanceController->q_ref_setpoint[2] = 0;
-					balanceController->q_ref_setpoint[3] = 0;
+					HeadingQuaternion(balanceController->q_ref_setpoint, balanceController->q_ref_setpoint); // set q_ref_setpoint to the previously set heading and upright
 					balanceController->omega_ref_setpoint_frame = lspc::ParameterTypes::INERTIAL_FRAME;
 					balanceController->omega_ref_setpoint[0] = 0;
 					balanceController->omega_ref_setpoint[1] = 0;
@@ -560,6 +551,15 @@ __attribute__((optimize("O0")))
 		    	balanceController->q_ref[3] = balanceController->q_ref_setpoint[3];
 		    }
 		}
+		else {
+			// We are not in QUATERNION_CONTROL mode - se reset references related to the QUATERNION_CONTROL mode
+			HeadingQuaternion(balanceController->q, balanceController->q_ref_setpoint); // set q_ref_setpoint to the current heading and upright
+			balanceController->omega_ref_setpoint_frame = lspc::ParameterTypes::INERTIAL_FRAME;
+			balanceController->omega_ref_setpoint[0] = 0;
+			balanceController->omega_ref_setpoint[1] = 0;
+			balanceController->omega_ref_setpoint[2] = 0;
+			balanceController->integrate_omega_ref_into_q_ref = false;
+		}
 
 	    /* Velocity control enabled */
 	    if (params.controller.mode == lspc::ParameterTypes::VELOCITY_CONTROL) {
@@ -595,27 +595,37 @@ __attribute__((optimize("O0")))
 			velocityController.GetIntegral(q_tilt_integral);
 			velocityController.GetFilteredVelocityReference(balanceController->velocityReference); // overwrite velocity reference with the filtered one used by the velocity controller  (for logging purposes)
 	    }
+	    else {
+	    	// We are not in VELOCITY_CONTROL mode - se reset references related to the VELOCITY_CONTROL mode
+			balanceController->velocityReferenceFrame = lspc::ParameterTypes::INERTIAL_FRAME;
+			balanceController->velocityReference[0] = 0;
+			balanceController->velocityReference[1] = 0;
+			balanceController->headingVelocityReference = 0;
+			balanceController->headingReference = HeadingFromQuaternion(balanceController->q);
+	    }
 
 	    /* Wheel slip detector and equivalent control + q_dot ramp (to reduce the robot jumping on the ball during wheel slip) */
-	    wheelSlipDetector.Step(EncoderAngle);
-    	if (wheelSlipDetector.SlipDetected()) {
-    		WheelSlipRampGain = 0;
-    	}
-    	else if (WheelSlipRampGain < 1) {
-    		WheelSlipRampGain += dt / params.estimator.WheelSlipIncreaseTime;
-    		if (WheelSlipRampGain > 1) WheelSlipRampGain = 1;
-    	}
+	    if (params.estimator.EnableWheelSlipDetector) {
+			wheelSlipDetector.Step(EncoderAngle);
+			if (wheelSlipDetector.SlipDetected()) {
+				WheelSlipRampGain = 0;
+			}
+			else if (WheelSlipRampGain < 1) {
+				WheelSlipRampGain += dt / params.estimator.WheelSlipIncreaseTime;
+				if (WheelSlipRampGain > 1) WheelSlipRampGain = 1;
+			}
 
-	    if (params.estimator.ReduceEquivalentControlAtWheelSlip)
-	    	EquivalentControlPct = WheelSlipRampGain;
-	    else
-	    	EquivalentControlPct = 1.0;
+			if (params.estimator.ReduceEquivalentControlAtWheelSlip)
+				EquivalentControlPct = WheelSlipRampGain;
+			else
+				EquivalentControlPct = 1.0;
 
-	    if (params.estimator.ReduceQdotAtWheelSlip) {
-	    	balanceController->dq[0] *= WheelSlipRampGain;
-	    	balanceController->dq[1] *= WheelSlipRampGain;
-	    	balanceController->dq[2] *= WheelSlipRampGain;
-	    	balanceController->dq[3] *= WheelSlipRampGain;
+			if (params.estimator.ReduceQdotAtWheelSlip) {
+				balanceController->dq[0] *= WheelSlipRampGain;
+				balanceController->dq[1] *= WheelSlipRampGain;
+				balanceController->dq[2] *= WheelSlipRampGain;
+				balanceController->dq[3] *= WheelSlipRampGain;
+			}
 	    }
 
 	    /* Compute control output based on references */
@@ -741,10 +751,7 @@ __attribute__((optimize("O0")))
 	    	EquivalentControlPct = 1.0;
 
 	    	/* Reset reference variables */
-	    	balanceController->q_ref[0] = 1; // attitude reference = just upright
-	    	balanceController->q_ref[1] = 0;
-	    	balanceController->q_ref[2] = 0;
-	    	balanceController->q_ref[3] = 0;
+	    	HeadingQuaternion(balanceController->q, balanceController->q_ref); // reset attitude reference to upright with current heading
 	    	balanceController->q_ref_setpoint[0] = balanceController->q_ref[0];
 	    	balanceController->q_ref_setpoint[1] = balanceController->q_ref[1];
 	    	balanceController->q_ref_setpoint[2] = balanceController->q_ref[2];
@@ -760,7 +767,7 @@ __attribute__((optimize("O0")))
 	    	balanceController->omega_ref_setpoint[1] = 0;
 	    	balanceController->omega_ref_setpoint[2] = 0;
 	    	balanceController->integrate_omega_ref_into_q_ref = false;
-	    	balanceController->headingReference = 0; // consider to replace this with current heading (based on estimate of stabilized QEKF filter)
+	    	balanceController->headingReference = HeadingFromQuaternion(balanceController->q);
 	    	balanceController->headingVelocityReference = 0;
 	    	balanceController->velocityReferenceFrame = lspc::ParameterTypes::UNKNOWN_FRAME;
 	    	balanceController->velocityReference[0] = 0;

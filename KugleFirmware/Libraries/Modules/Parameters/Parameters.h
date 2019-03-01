@@ -72,7 +72,7 @@ class Parameters
 			bool StopAtMotorFailure = true; // determines what action to take at failure: the controller should stop (require manual start) or the motor driver should automatically be reset
 
 			bool DisableQdot = false;
-			float ReferenceTimeout = 0.2; // if reference is older than 200 ms, do not use it and fall back to 0 reference
+			float ReferenceTimeout = 0.5; // if reference is older than 500 ms, do not use it and fall back to 0 reference
 
 			/* Sliding Mode parameters */
 			/*float K[3] = {20, 20, 20}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
@@ -88,12 +88,12 @@ class Parameters
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
 			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD;
-			float K[3] = {14, 14, 10}; // {80, 80, 10} sliding manifold gain  (S = omega_inertial + K*devec*q_err)
+			float K[3] = {20, 20, 4}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
 			bool ContinousSwitching = true;
 			bool EquivalentControl = true; // include equivalent control / computed torque (inverse dynamics)
 			bool DisableQdotInEquivalentControl = false;
-			float eta[3] = {5, 5, 10}; // {8, 8, 15}  (3.0) switching gain
-			float epsilon[3] = {0.4, 0.4, 0.7}; // {1.5, 1.5, 0.5} // (0.5) continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
+			float eta[3] = {5, 5, 15}; // switching gain
+			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 			/* LQR parameters */
 			/*
@@ -120,12 +120,12 @@ class Parameters
 			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
 
 			/* Velocity controller parameters */
-			float VelocityController_AccelerationLimit = 0.2;
+			float VelocityController_AccelerationLimit = 2.0;
 			float VelocityController_MaxTilt	= 3.0; // max tilt that velocity controller can set [degrees]
 			float VelocityController_MaxIntegralCorrection = 4.0; // max tilt integral effect can compensate with [degrees]
-			float VelocityController_VelocityClamp = 0.4; // velocity clamp for the proportional gain - note that at this velocity MaxTilt will be set [meters pr. second]
+			float VelocityController_VelocityClamp = 0.4; // velocity clamp for the velocity error [meters pr. second]
 			float VelocityController_IntegralGain = 0.8; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
-			float VelocityController_ReferenceLPFtau = 0.1; // time-constant for low pass filter on velocity reference input
+			float VelocityController_AngleLPFtau = 0.05; // time-constant for low pass filter on angle reference output
 			/* Controller Tuning parameters end */
 		} controller;
 
@@ -157,6 +157,7 @@ class Parameters
 			float VelocityLPFcoeffs_a[3] = {1.000000000000000,  -1.713116904140867,   0.749674566393451};	// 40 Hz LPF
 			float VelocityLPFcoeffs_b[3] = {0.017796394239482,   0.000964873773620,   0.017796394239482};	// Created using:  [num, den] = cheby2(2,40,40/(Fs/2))
 
+			bool EnableWheelSlipDetector = true;
 			float WheelSlipAccelerationThreshold = 500; // rad/s
 			float WheelSlipDetectionTime = 0.020; // 20 ms - wheel slip will be detected if wheel acceleration is above threshold for more than this time
 			float WheelSlipIdleTime = 0.100; // after detecting a wheel slip, the wheel acceleration has to be below limit for an idle time before the detection flag is removed
@@ -207,7 +208,7 @@ class Parameters
 							   	    0.013511303535437E-03,   0.025679048752216E-03,   0.141723092884984E-03};
 
 			float sigma2_bias = 1E-9; // for MPU9250 use 1E-6 or 1E-7 works well, for MTI-200 use 1E-9 or disable bias estimation completely!
-			float sigma2_omega = 3.16E-6; // for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
+			float sigma2_omega = 1E-6; // for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
 			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
 			float GyroscopeTrustFactor = 1.0; // the higher value the more trust is put into the gyroscope measurements by increasing the accelerometer covariance
 
