@@ -157,6 +157,14 @@ class Parameters
 			float VelocityLPFcoeffs_a[3] = {1.000000000000000,  -1.713116904140867,   0.749674566393451};	// 40 Hz LPF
 			float VelocityLPFcoeffs_b[3] = {0.017796394239482,   0.000964873773620,   0.017796394239482};	// Created using:  [num, den] = cheby2(2,40,40/(Fs/2))
 
+			float WheelSlipAccelerationThreshold = 500; // rad/s
+			float WheelSlipDetectionTime = 0.020; // 20 ms - wheel slip will be detected if wheel acceleration is above threshold for more than this time
+			float WheelSlipIdleTime = 0.100; // after detecting a wheel slip, the wheel acceleration has to be below limit for an idle time before the detection flag is removed
+			bool ReduceEquivalentControlAtWheelSlip = false; // uses the wheel slip detector
+			bool ReduceQdotAtWheelSlip = true; // uses the wheel slip detector
+			bool EnableIndependentAtWheelSlip = true;
+			float WheelSlipIncreaseTime = 0.2; // time to increase the equivalent control and q_dot back from 0% to 100% after wheel slip is no longer detected
+
 			bool EstimateCOM = false;
 			float EstimateCOMminVelocity = 0.05; // minimum velocity (checked against estimate) to run COM estimator
 			float MaxCOMDeviation = 0.01; // maximum tolerated COM (XY) deviation estimated by COM estimator (given in meters)

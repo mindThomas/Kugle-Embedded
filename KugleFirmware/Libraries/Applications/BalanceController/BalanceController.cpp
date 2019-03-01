@@ -31,6 +31,7 @@
 #include "COMEKF.h"
 #include "VelocityEKF.h"
 #include "Kinematics.h"
+#include "WheelSlipDetector.h"
 #include "Quaternion.h"
 
 #include <string> // for memcpy
@@ -152,6 +153,7 @@ void BalanceController::Thread(void * pvParameters)
 	VelocityEKF& velocityEKF = *(new VelocityEKF(params, &balanceController->microsTimer));
 	COMEKF& comEKF = *(new COMEKF(params, &balanceController->microsTimer));
 	Kinematics& kinematics = *(new Kinematics(params, &balanceController->microsTimer));
+	WheelSlipDetector& wheelSlipDetector = *(new WheelSlipDetector(params, &balanceController->microsTimer));
 	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> accel_x_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
 	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> accel_y_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
 	IIR<sizeof(params.estimator.SoftwareLPFcoeffs_a)/sizeof(float)-1> accel_z_filt(params.estimator.SoftwareLPFcoeffs_a, params.estimator.SoftwareLPFcoeffs_b);
@@ -186,6 +188,8 @@ void BalanceController::Thread(void * pvParameters)
 	/* Control output variables */
 	float Torque[3];
 	float TorqueDelivered[3];
+	float WheelSlipRampGain = 1.0; // used for disabling during wheel slip
+	float EquivalentControlPct = 1.0;
 	int MotorDriverFailureCounts[3];
 	float S[3]; // Sliding surface values
 	float TorqueRampUpGain = 0;
@@ -307,6 +311,8 @@ void BalanceController::Thread(void * pvParameters)
 	MotorDriverFailureCounts[0] = 0;
 	MotorDriverFailureCounts[1] = 0;
 	MotorDriverFailureCounts[2] = 0;
+	EquivalentControlPct = 1.0;
+	WheelSlipRampGain = 1.0;
 
 	float volatile dt_compute, dt_compute2;
 
@@ -407,7 +413,7 @@ __attribute__((optimize("O0")))
 	    Quaternion_GetAngularVelocity_Body(balanceController->q, balanceController->dq, balanceController->omega_body);
 
 		/* Independent heading requires dq to be decoupled around the yaw/heading axis */
-	    if (params.behavioural.IndependentHeading && !params.behavioural.YawVelocityBraking && !params.controller.DisableQdot) {
+	    if (!params.behavioural.YawVelocityBraking && !params.controller.DisableQdot && (params.behavioural.IndependentHeading || (params.estimator.EnableIndependentAtWheelSlip && wheelSlipDetector.SlipDetected()))) {
 	      float dq_tmp[4];
 	      dq_tmp[0] = balanceController->dq[0];
 	      dq_tmp[1] = balanceController->dq[1];
@@ -545,7 +551,7 @@ __attribute__((optimize("O0")))
 					Quaternion_Integration_Inertial(balanceController->q_ref, balanceController->omega_ref_inertial, dt, balanceController->q_ref_setpoint);
 			}
 
-		    if (params.behavioural.IndependentHeading) {
+		    if (params.behavioural.IndependentHeading || (params.estimator.EnableIndependentAtWheelSlip && wheelSlipDetector.SlipDetected())) {
 		    	HeadingIndependentReferenceManual(balanceController->q_ref_setpoint, balanceController->q, balanceController->q_ref);
 		    } else {
 		    	balanceController->q_ref[0] = balanceController->q_ref_setpoint[0];
@@ -581,7 +587,7 @@ __attribute__((optimize("O0")))
 	    	balanceController->omega_ref_inertial[2] = balanceController->headingVelocityReference;
 			Quaternion_RotateVector_Inertial2Body(balanceController->q, balanceController->omega_ref_inertial, balanceController->omega_ref_body);
 
-			if (params.behavioural.IndependentHeading) {
+			if (params.behavioural.IndependentHeading || (params.estimator.EnableIndependentAtWheelSlip && wheelSlipDetector.SlipDetected())) {
 				balanceController->headingReference = HeadingFromQuaternion(balanceController->q);
 			}
 
@@ -590,12 +596,34 @@ __attribute__((optimize("O0")))
 			velocityController.GetFilteredVelocityReference(balanceController->velocityReference); // overwrite velocity reference with the filtered one used by the velocity controller  (for logging purposes)
 	    }
 
+	    /* Wheel slip detector and equivalent control + q_dot ramp (to reduce the robot jumping on the ball during wheel slip) */
+	    wheelSlipDetector.Step(EncoderAngle);
+    	if (wheelSlipDetector.SlipDetected()) {
+    		WheelSlipRampGain = 0;
+    	}
+    	else if (WheelSlipRampGain < 1) {
+    		WheelSlipRampGain += dt / params.estimator.WheelSlipIncreaseTime;
+    		if (WheelSlipRampGain > 1) WheelSlipRampGain = 1;
+    	}
+
+	    if (params.estimator.ReduceEquivalentControlAtWheelSlip)
+	    	EquivalentControlPct = WheelSlipRampGain;
+	    else
+	    	EquivalentControlPct = 1.0;
+
+	    if (params.estimator.ReduceQdotAtWheelSlip) {
+	    	balanceController->dq[0] *= WheelSlipRampGain;
+	    	balanceController->dq[1] *= WheelSlipRampGain;
+	    	balanceController->dq[2] *= WheelSlipRampGain;
+	    	balanceController->dq[3] *= WheelSlipRampGain;
+	    }
+
 	    /* Compute control output based on references */
 	    if (params.controller.type == lspc::ParameterTypes::LQR_CONTROLLER && params.controller.mode != lspc::ParameterTypes::OFF) {
 	    	lqr.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->COM, balanceController->q_ref, balanceController->omega_ref_body, Torque);
 		} else if (params.controller.type == lspc::ParameterTypes::SLIDING_MODE_CONTROLLER && params.controller.mode != lspc::ParameterTypes::OFF) {
 			// OBS. When running the Sliding Mode controller, inertial angular velocity reference is needed
-	    	sm.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->COM, balanceController->q_ref, balanceController->omega_ref_body, Torque, S);
+	    	sm.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->COM, balanceController->q_ref, balanceController->omega_ref_body, EquivalentControlPct, Torque, S);
 		} else {
 			// Undefined controller mode, eg. OFF - set torque output to 0
 			Torque[0] = 0;
@@ -696,7 +724,7 @@ __attribute__((optimize("O0")))
 				}
 			}
 	    }
-	    else if (params.controller.mode == lspc::ParameterTypes::OFF) {
+	    if (params.controller.mode == lspc::ParameterTypes::OFF) {
 	    	/* Delivered torque can not be measured when the motors are disabled */
 	    	TorqueDelivered[0] = 0;
 	    	TorqueDelivered[1] = 0;
@@ -706,6 +734,11 @@ __attribute__((optimize("O0")))
 	    	MotorDriverFailureCounts[0] = 0;
 	    	MotorDriverFailureCounts[1] = 0;
 	    	MotorDriverFailureCounts[2] = 0;
+
+	    	/* Reset wheel slip detector */
+	    	wheelSlipDetector.Reset();
+	    	WheelSlipRampGain = 1.0;
+	    	EquivalentControlPct = 1.0;
 
 	    	/* Reset reference variables */
 	    	balanceController->q_ref[0] = 1; // attitude reference = just upright
@@ -796,13 +829,7 @@ __attribute__((optimize("O0")))
 									 balanceController->COM[0],
 									 balanceController->COM[1],
 									 balanceController->COM[2],
-									 S[0],
-									 S[1],
-									 S[2],
-									 Torque[0],
-									 Torque[1],
-									 Torque[2],
-									 dt_compute,
+									 1.0f*wheelSlipDetector.SlipDetected(0) + 10.0f*wheelSlipDetector.SlipDetected(1) + 100.0f*wheelSlipDetector.SlipDetected(2),
 									 balanceController->q_ref[0],
 									 balanceController->q_ref[1],
 									 balanceController->q_ref[2],
@@ -813,7 +840,15 @@ __attribute__((optimize("O0")))
 									 q_tilt_integral[0],
 									 q_tilt_integral[1],
 									 q_tilt_integral[2],
-									 q_tilt_integral[3]
+									 q_tilt_integral[3],
+									 WheelSlipRampGain,
+									 S[0],
+									 S[1],
+									 S[2],
+									 dt_compute,
+									 Torque[0],
+									 Torque[1],
+									 Torque[2]
 								};
 			com.TransmitAsync(lspc::MessageTypesToPC::MathDump, (uint8_t *)&mathDumpArray, sizeof(mathDumpArray));
 
@@ -888,6 +923,7 @@ __attribute__((optimize("O0")))
 	delete(&velocityEKF);
 	delete(&comEKF);
 	delete(&kinematics);
+	delete(&wheelSlipDetector);
 	delete(&Motor1_LPF);
 	delete(&Motor2_LPF);
 	delete(&Motor3_LPF);
