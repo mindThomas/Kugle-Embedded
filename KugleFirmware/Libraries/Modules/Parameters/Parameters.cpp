@@ -412,6 +412,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::VelocityController_MaxIntegralCorrection: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_MaxIntegralCorrection; return;
 			case lspc::ParameterLookup::VelocityController_VelocityClamp: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_VelocityClamp; return;
 			case lspc::ParameterLookup::VelocityController_IntegralGain: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_IntegralGain; return;
+			case lspc::ParameterLookup::VelocityController_AngleLPFtau: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_AngleLPFtau; return;
 			default: return;
 		}
 	}
@@ -427,6 +428,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::EstimateCOM: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
 			case lspc::ParameterLookup::EstimateBias: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateBias; return;
 			case lspc::ParameterLookup::EnableVelocityLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableVelocityLPF; return;
+			case lspc::ParameterLookup::EnableWheelSlipDetector: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableWheelSlipDetector; return;
 			case lspc::ParameterLookup::sigma2_bias: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_bias; return;
 			case lspc::ParameterLookup::sigma2_omega: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_omega; return;
 			case lspc::ParameterLookup::sigma2_heading: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_heading; return;

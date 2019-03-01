@@ -30,13 +30,14 @@
 class QuaternionVelocityControl
 {
 	public:
-		QuaternionVelocityControl(Parameters& params, Timer * microsTimer, float SamplePeriod, float ReferenceSmoothingTau = 0.1);
-		QuaternionVelocityControl(Parameters& params, float SamplePeriod, float ReferenceSmoothingTau = 0.1);
+		QuaternionVelocityControl(Parameters& params, Timer * microsTimer, float SamplePeriod);
+		QuaternionVelocityControl(Parameters& params, float SamplePeriod);
 		~QuaternionVelocityControl();
 
 		void Reset();
 		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, float q_ref_out[4]);
-		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float acceleration_limit, const float headingRef, const float dt, float q_ref_out[4]);
+		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float dt, float q_ref_out[4]);
+		void Step2(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float angle_lpf_tau,  const float dt, float q_ref_out[4]);
 
 		void GetIntegral(float q_integral[4]);
 		void GetFilteredVelocityReference(float velocity_reference[2]);
@@ -46,13 +47,15 @@ class QuaternionVelocityControl
 		Timer * _microsTimer;
 		uint32_t _prevTimerValue;
 
-		FirstOrderLPF _dx_ref_filt;
-		FirstOrderLPF _dy_ref_filt;
+		FirstOrderLPF _roll_ref_filt;
+		FirstOrderLPF _pitch_ref_filt;
 
 	private:
 		float q_tilt_integral[4];
 		float VelocityRef_RateLimited[2];
 		float Velocity_Reference_Filtered[2];
+
+		float Velocity_Heading_Integral[2];
 };
 	
 	

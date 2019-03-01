@@ -67,6 +67,7 @@ extern void Quaternion_mat_GammaT(const float p[4], float mat[4*4]); // mat = Ga
 extern void Quaternion_mat_devecGammaT(const float p[4], float mat[3*4]); // mat = devec*Gamma(p)'
 extern void Quaternion_Conjugate(const float q[4], float result[4]); // result = q*
 extern void Quaternion_Conjugate(float q[4]); // q = q*
+extern void Quaternion_Negate(float q[4]); // q = -q
 extern void Quaternion_Print(const float q[4]);
 extern void Quaternion_Normalize(const float q[4], float q_out[4]);
 extern void Quaternion_Normalize(float q[4]);
@@ -84,6 +85,7 @@ extern void Quaternion_Integration_Inertial(const float q[4], const float omega_
 extern void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4]);
 extern void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4]);
 extern float HeadingFromQuaternion(const float q[4]);
+extern void HeadingQuaternion(const float q[4], float q_heading[4]);
 
 extern float invSqrt(float x);
 

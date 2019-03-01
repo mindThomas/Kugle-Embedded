@@ -239,6 +239,15 @@ void Quaternion_Conjugate(float q[4])
     q[3] = -q[3];
 }
 
+/* q = -q */
+void Quaternion_Negate(float q[4])
+{
+	q[0] = -q[0];
+    q[1] = -q[1];
+    q[2] = -q[2];
+    q[3] = -q[3];
+}
+
 void Quaternion_Print(const float q[4])
 {
     /*Serial.print("  ");
@@ -436,6 +445,8 @@ void Quaternion_Integration_Inertial(const float q[4], const float omega_inertia
 
 void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4])
 {
+  // OBS!!! MAYBE THIS CODE SHOULD BE DONE DIFFERENTLY BY EXTRACTING HEADING QUATERNION BY EXTRACTING AND USING THE X-AXIS VECTOR DIRECTION (see "HeadingQuaternion2.m")
+
   /* Derive tilt and heading from combined quaternion */
   // Z unit vector of Body in Inertial frame
   // I_e_Z = devec * Phi(q) * Gamma(q)' * [0;0;0;1];
@@ -554,4 +565,17 @@ float HeadingFromQuaternion(const float q[4])
 	float heading = atan2(I_e_x[1], I_e_x[0]);
 
 	return heading;
+}
+
+void HeadingQuaternion(const float q[4], float q_heading[4])
+{
+	float heading = HeadingFromQuaternion(q);
+
+	q_heading[0] = cos(heading / 2);
+	q_heading[1] = 0;
+	q_heading[2] = 0;
+	q_heading[3] = sin(heading / 2);
+
+	if (q[0] < 0) // scalar is negative, make sure this is the case in the output quaternion too
+		Quaternion_Negate(q_heading);
 }
