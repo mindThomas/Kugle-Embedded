@@ -93,7 +93,10 @@ namespace lspc
 			VelocityController_MaxIntegralCorrection,
 			VelocityController_VelocityClamp,
 			VelocityController_IntegralGain,
-			VelocityController_AngleLPFtau
+			VelocityController_AngleLPFtau,
+			VelocityController_OmegaLPFtau,
+			VelocityController_UseOmegaRef
+
 		} controller_t;
 
 		typedef enum: uint8_t

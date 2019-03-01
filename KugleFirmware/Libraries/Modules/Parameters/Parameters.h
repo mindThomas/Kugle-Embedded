@@ -92,7 +92,7 @@ class Parameters
 			bool ContinousSwitching = true;
 			bool EquivalentControl = true; // include equivalent control / computed torque (inverse dynamics)
 			bool DisableQdotInEquivalentControl = false;
-			float eta[3] = {5, 5, 15}; // switching gain
+			float eta[3] = {7, 7, 9}; // switching gain
 			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 			/* LQR parameters */
@@ -120,12 +120,14 @@ class Parameters
 			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
 
 			/* Velocity controller parameters */
-			float VelocityController_AccelerationLimit = 2.0;
-			float VelocityController_MaxTilt	= 3.0; // max tilt that velocity controller can set [degrees]
+			float VelocityController_AccelerationLimit = 1.0;
+			float VelocityController_MaxTilt	= 4.0; // max tilt that velocity controller can set [degrees]
 			float VelocityController_MaxIntegralCorrection = 4.0; // max tilt integral effect can compensate with [degrees]
-			float VelocityController_VelocityClamp = 0.4; // velocity clamp for the velocity error [meters pr. second]
+			float VelocityController_VelocityClamp = 0.3; // velocity clamp for the velocity error [meters pr. second]
 			float VelocityController_IntegralGain = 0.8; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
-			float VelocityController_AngleLPFtau = 0.05; // time-constant for low pass filter on angle reference output
+			float VelocityController_AngleLPFtau = 0.1; // time-constant for low pass filter on angle reference output
+			float VelocityController_OmegaLPFtau = 0.02; // time-constant for low pass filter on angle reference output
+			bool VelocityController_UseOmegaRef = true;
 			/* Controller Tuning parameters end */
 		} controller;
 
@@ -159,11 +161,12 @@ class Parameters
 
 			bool EnableWheelSlipDetector = true;
 			float WheelSlipAccelerationThreshold = 500; // rad/s
-			float WheelSlipDetectionTime = 0.020; // 20 ms - wheel slip will be detected if wheel acceleration is above threshold for more than this time
+			float WheelSlipDetectionTime = 0.015; // 15 ms - wheel slip will be detected if wheel acceleration is above threshold for more than this time
 			float WheelSlipIdleTime = 0.100; // after detecting a wheel slip, the wheel acceleration has to be below limit for an idle time before the detection flag is removed
 			bool ReduceEquivalentControlAtWheelSlip = false; // uses the wheel slip detector
 			bool ReduceQdotAtWheelSlip = true; // uses the wheel slip detector
-			bool EnableIndependentAtWheelSlip = true;
+			bool ReduceTorqueAtWheelSlip = true; // reduces torque for all motors at wheel slip before ramping up again
+			bool EnableIndependentHeadingAtWheelSlip = true;
 			float WheelSlipIncreaseTime = 0.2; // time to increase the equivalent control and q_dot back from 0% to 100% after wheel slip is no longer detected
 
 			bool EstimateCOM = false;
