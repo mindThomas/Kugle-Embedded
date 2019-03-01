@@ -86,6 +86,7 @@
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/Kinematics/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/MATLABCoderInit"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/FirstOrderLPF"/>
+									<listOptionValue builtIn="false" value="../Libraries/Misc/FirstOrderHPF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Misc/IIR"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/ModelMatrices"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/QuaternionVelocityControl"/>

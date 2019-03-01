@@ -26,6 +26,7 @@
 #include "Parameters.h"
 #include "Timer.h"
 #include "FirstOrderLPF.h"
+#include "FirstOrderHPF.h"
 
 class QuaternionVelocityControl
 {
@@ -37,7 +38,9 @@ class QuaternionVelocityControl
 		void Reset();
 		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, float q_ref_out[4]);
 		void Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float dt, float q_ref_out[4]);
-		void Step2(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float angle_lpf_tau,  const float dt, float q_ref_out[4]);
+
+		void StepWithOmega(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, float q_ref_out[4], float omega_body_ref_out[3]);
+		void StepWithOmega(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float angle_lpf_tau, const float omega_lpf_tau, const bool DoNotSetOmegaRef, const float dt, float q_ref_out[4], float omega_body_ref_out[3]);
 
 		void GetIntegral(float q_integral[4]);
 		void GetFilteredVelocityReference(float velocity_reference[2]);
@@ -50,12 +53,18 @@ class QuaternionVelocityControl
 		FirstOrderLPF _roll_ref_filt;
 		FirstOrderLPF _pitch_ref_filt;
 
+		FirstOrderLPF _omega_x_ref_filt;
+		FirstOrderLPF _omega_y_ref_filt;
+
 	private:
 		float q_tilt_integral[4];
 		float VelocityRef_RateLimited[2];
 		float Velocity_Reference_Filtered[2];
 
 		float Velocity_Heading_Integral[2];
+
+		float roll_ref_old;
+		float pitch_ref_old;
 };
 	
 	

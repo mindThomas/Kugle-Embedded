@@ -413,6 +413,8 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::VelocityController_VelocityClamp: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_VelocityClamp; return;
 			case lspc::ParameterLookup::VelocityController_IntegralGain: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_IntegralGain; return;
 			case lspc::ParameterLookup::VelocityController_AngleLPFtau: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_AngleLPFtau; return;
+			case lspc::ParameterLookup::VelocityController_OmegaLPFtau: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_OmegaLPFtau; return;
+			case lspc::ParameterLookup::VelocityController_UseOmegaRef: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.VelocityController_UseOmegaRef; return;
 			default: return;
 		}
 	}

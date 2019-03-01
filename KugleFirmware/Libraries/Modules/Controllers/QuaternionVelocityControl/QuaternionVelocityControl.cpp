@@ -27,12 +27,12 @@
 #include "Quaternion.h"
 #include "Parameters.h"
 
-QuaternionVelocityControl::QuaternionVelocityControl(Parameters& params, Timer * microsTimer, float SamplePeriod) : _params(params), _microsTimer(microsTimer), _roll_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau), _pitch_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau)
+QuaternionVelocityControl::QuaternionVelocityControl(Parameters& params, Timer * microsTimer, float SamplePeriod) : _params(params), _microsTimer(microsTimer), _roll_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau), _pitch_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau), _omega_x_ref_filt(SamplePeriod, params.controller.VelocityController_OmegaLPFtau), _omega_y_ref_filt(SamplePeriod, params.controller.VelocityController_OmegaLPFtau)
 {
 	Reset();
 }
 
-QuaternionVelocityControl::QuaternionVelocityControl(Parameters& params, float SamplePeriod) : _params(params), _microsTimer(0), _roll_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau), _pitch_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau)
+QuaternionVelocityControl::QuaternionVelocityControl(Parameters& params, float SamplePeriod) : _params(params), _microsTimer(0), _roll_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau), _pitch_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau), _omega_x_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau), _omega_y_ref_filt(SamplePeriod, params.controller.VelocityController_AngleLPFtau)
 {
 	Reset();
 }
@@ -61,6 +61,9 @@ void QuaternionVelocityControl::Reset()
 	// Reset velocity integral
 	Velocity_Heading_Integral[0] = 0;
 	Velocity_Heading_Integral[1] = 0;
+
+	roll_ref_old = 0;
+	pitch_ref_old = 0;
 }
 
 void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, float q_ref_out[4])
@@ -71,8 +74,7 @@ void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const 
 	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	//Step(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, _params.controller.VelocityController_AccelerationLimit, dt, q_ref_out);
-	Step2(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, _params.controller.VelocityController_AccelerationLimit, _params.controller.VelocityController_AngleLPFtau, dt, q_ref_out);
+	Step(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, _params.controller.VelocityController_AccelerationLimit, dt, q_ref_out);
 }
 
 void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float dt, float q_ref_out[4])
@@ -109,7 +111,7 @@ void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const 
 	// OBS. The above could also be replaced with a Quaternion transformation function that takes in a 3-dimensional vector
 
 	if (velocityRefGivenInHeadingFrame) { // reference given in heading frame
-		// Calculate velocity error
+		// Calculate velocity errorroll_ref_old
 		Velocity_Heading_error[0] -= Velocity_Reference_Filtered[0];
 		Velocity_Heading_error[1] -= Velocity_Reference_Filtered[1];
 	}
@@ -180,8 +182,18 @@ void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const 
 	Debug::printf("%2.5f, %2.5f, %2.5f, %2.5f\n", q_ref_out[0], q_ref_out[1], q_ref_out[2], q_ref_out[3]);*/
 }
 
+void QuaternionVelocityControl::StepWithOmega(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, float q_ref_out[4], float omega_body_ref_out[3])
+{
+	float dt;
 
-void QuaternionVelocityControl::Step2(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float angle_lpf_tau, const float dt, float q_ref_out[4])
+	if (!_microsTimer) return; // timer not defined
+	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
+	_prevTimerValue = _microsTimer->Get();
+
+	StepWithOmega(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, _params.controller.VelocityController_AccelerationLimit, _params.controller.VelocityController_AngleLPFtau, _params.controller.VelocityController_OmegaLPFtau, _params.controller.VelocityController_UseOmegaRef, dt, q_ref_out, omega_body_ref_out);
+}
+
+void QuaternionVelocityControl::StepWithOmega(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float angle_lpf_tau, const float omega_lpf_tau, const bool DoNotSetOmegaRef, const float dt, float q_ref_out[4], float omega_body_ref_out[3])
 {
 	float Velocity_Inertial_q[4] = {0, dxy[0], dxy[1], 0};
 	float Velocity_Heading_q[4];
@@ -248,20 +260,47 @@ void QuaternionVelocityControl::Step2(const float q[4], const float dq[4], const
 	roll_ref = 	   Kp * (Velocity_Heading_error[1]  +   Velocity_Heading_Integral[1]);
 	pitch_ref = -( Kp * (Velocity_Heading_error[0]  +   Velocity_Heading_Integral[0]) );
 
+	/* Generate angular velocity output by high-pass filtering (numerical differentiation of the Low-pass filtered signal) */
+	/*_omega_x_ref_filt.ChangeTimeconstant(angle_lpf_tau); // ensure that the LPF has the latest time constant (if parameter has been changed)
+	_omega_y_ref_filt.ChangeTimeconstant(angle_lpf_tau);
+	omega_body_ref_out[0] += _omega_x_ref_filt.Filter(roll_ref);
+	omega_body_ref_out[1] += _omega_y_ref_filt.Filter(pitch_ref);*/
+
+	/* Low-pass filter the reference output to avoid sudden angle changes */
+	_roll_ref_filt.ChangeTimeconstant(angle_lpf_tau); // ensure that the LPF has the latest time constant (if parameter has been changed)
+	_pitch_ref_filt.ChangeTimeconstant(angle_lpf_tau);
+	roll_ref = _roll_ref_filt.Filter(roll_ref);
+	pitch_ref = _pitch_ref_filt.Filter(pitch_ref);
+
+	float omega_ref[2];
+	omega_ref[0] = (roll_ref - roll_ref_old) / dt;
+	omega_ref[1] = (pitch_ref - pitch_ref_old) / dt;
+	roll_ref_old = roll_ref;
+	pitch_ref_old = pitch_ref;
+
+	_omega_x_ref_filt.ChangeTimeconstant(omega_lpf_tau); // ensure that the LPF has the latest time constant (if parameter has been changed)
+	_omega_y_ref_filt.ChangeTimeconstant(omega_lpf_tau);
+	omega_ref[0] = _omega_x_ref_filt.Filter(omega_ref[0]);
+	omega_ref[1] = _omega_y_ref_filt.Filter(omega_ref[1]);
+
+	if (!DoNotSetOmegaRef) {
+		omega_body_ref_out[0] += omega_ref[0];
+		omega_body_ref_out[1] += omega_ref[1];
+	}
+
+	/* Construct quaternion reference output */
+	float q_tilt[4];
+	Quaternion_eul2quat_zyx(0, pitch_ref, roll_ref, q_tilt);
+
+	/* Construct q_tilt_integral only for debugging */
+	Quaternion_eul2quat_zyx(0, -Kp*Velocity_Heading_Integral[0], Kp*Velocity_Heading_Integral[1], q_tilt_integral);
+
+	/* Construct heading quaternion based on heading reference */
 	float q_heading[4]; // heading reference quaternion based on heading reference
 	q_heading[0] = cosf(headingRef/2);
 	q_heading[1] = 0;
 	q_heading[2] = 0;
 	q_heading[3] = sinf(headingRef/2);
-
-	_roll_ref_filt.ChangeTimeconstant(angle_lpf_tau); // ensure that the LPF has the latest timeconstant (if parameter has been changed)
-	_pitch_ref_filt.ChangeTimeconstant(angle_lpf_tau);
-	roll_ref = _roll_ref_filt.Filter(roll_ref);
-	pitch_ref = _pitch_ref_filt.Filter(pitch_ref);
-
-	/* Construct quaternion reference output */
-	float q_tilt[4];
-	Quaternion_eul2quat_zyx(0, pitch_ref, roll_ref, q_tilt);
 
 	// Add heading to quaternion reference = q_heading o q_tilt
 	Quaternion_Phi(q_heading, q_tilt, q_ref_out);

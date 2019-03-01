@@ -407,7 +407,7 @@ __attribute__((optimize("O0")))
 	    Quaternion_GetAngularVelocity_Body(balanceController->q, balanceController->dq, balanceController->omega_body);
 
 		/* Independent heading requires dq to be decoupled around the yaw/heading axis */
-	    if (!params.behavioural.YawVelocityBraking && !params.controller.DisableQdot && (params.behavioural.IndependentHeading || (params.estimator.EnableIndependentAtWheelSlip && wheelSlipDetector.SlipDetected()))) {
+	    if (params.behavioural.IndependentHeading && !params.behavioural.YawVelocityBraking && !params.controller.DisableQdot) {
 	      float dq_tmp[4];
 	      dq_tmp[0] = balanceController->dq[0];
 	      dq_tmp[1] = balanceController->dq[1];
@@ -542,7 +542,7 @@ __attribute__((optimize("O0")))
 					Quaternion_Integration_Inertial(balanceController->q_ref, balanceController->omega_ref_inertial, dt, balanceController->q_ref_setpoint);
 			}
 
-		    if (params.behavioural.IndependentHeading || (params.estimator.EnableIndependentAtWheelSlip && wheelSlipDetector.SlipDetected())) {
+		    if (params.behavioural.IndependentHeading || (params.estimator.EnableIndependentHeadingAtWheelSlip && wheelSlipDetector.SlipDetected())) {
 		    	HeadingIndependentReferenceManual(balanceController->q_ref_setpoint, balanceController->q, balanceController->q_ref);
 		    } else {
 		    	balanceController->q_ref[0] = balanceController->q_ref_setpoint[0];
@@ -587,11 +587,12 @@ __attribute__((optimize("O0")))
 	    	balanceController->omega_ref_inertial[2] = balanceController->headingVelocityReference;
 			Quaternion_RotateVector_Inertial2Body(balanceController->q, balanceController->omega_ref_inertial, balanceController->omega_ref_body);
 
-			if (params.behavioural.IndependentHeading || (params.estimator.EnableIndependentAtWheelSlip && wheelSlipDetector.SlipDetected())) {
+			if (params.behavioural.IndependentHeading || (params.estimator.EnableIndependentHeadingAtWheelSlip && wheelSlipDetector.SlipDetected())) {
 				balanceController->headingReference = HeadingFromQuaternion(balanceController->q);
 			}
 
-			velocityController.Step(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->q_ref);
+			//velocityController.Step(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->q_ref);
+			velocityController.StepWithOmega(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->q_ref, balanceController->omega_ref_body);
 			velocityController.GetIntegral(q_tilt_integral);
 			velocityController.GetFilteredVelocityReference(balanceController->velocityReference); // overwrite velocity reference with the filtered one used by the velocity controller  (for logging purposes)
 	    }
@@ -612,7 +613,11 @@ __attribute__((optimize("O0")))
 			}
 			else if (WheelSlipRampGain < 1) {
 				WheelSlipRampGain += dt / params.estimator.WheelSlipIncreaseTime;
-				if (WheelSlipRampGain > 1) WheelSlipRampGain = 1;
+				if (WheelSlipRampGain > 1)
+					WheelSlipRampGain = 1;
+
+				if (params.estimator.ReduceTorqueAtWheelSlip)
+					TorqueRampUpGain = WheelSlipRampGain;
 			}
 
 			if (params.estimator.ReduceEquivalentControlAtWheelSlip)
