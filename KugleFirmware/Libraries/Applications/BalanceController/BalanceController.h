@@ -104,6 +104,7 @@ class BalanceController
 		bool integrate_omega_ref_into_q_ref;
 		lspc::ParameterTypes::referenceFrame_t velocityReferenceFrame;
 		float velocityReference[2];
+		float velocityReference_inertial[2]; // for debugging only
 		float headingVelocityReference;
 		float headingReference;
 		int ReferenceGenerationStep;

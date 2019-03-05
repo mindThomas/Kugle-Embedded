@@ -103,12 +103,12 @@ void WheelSlipDetector::Step(const float motorAngle[3], const float slipAccelera
 	_dpsi_prev[2] = _dpsi[2];
 
 	bool SlipDetected = false;
-	SlipDetected |= fabs(_ddpsi[0]) > slipAccelerationThreshold;
-	SlipDetected |= fabs(_ddpsi[1]) > slipAccelerationThreshold;
-	SlipDetected |= fabs(_ddpsi[2]) > slipAccelerationThreshold;
+	SlipDetected |= fabsf(_ddpsi[0]) > slipAccelerationThreshold;
+	SlipDetected |= fabsf(_ddpsi[1]) > slipAccelerationThreshold;
+	SlipDetected |= fabsf(_ddpsi[2]) > slipAccelerationThreshold;
 
 	for (uint8_t i = 0; i < 3; i++) {
-		if (fabs(_ddpsi[i]) > slipAccelerationThreshold) {
+		if (fabsf(_ddpsi[i]) > slipAccelerationThreshold) {
 			if (_slipTime[i] == 0) {
 				_slipTime[i] += slipIdleTime-slipTimeThreshold;
 			}

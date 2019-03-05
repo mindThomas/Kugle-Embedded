@@ -34,11 +34,11 @@ class ESCON
 		const int ESCON_PWM_FREQUENCY	= 1000;		// 4 kHz
 		const int ESCON_PWM_RANGE = 2000;			// 0-2000, corresponding to 0.1% resolution
 
-		const float ESCON_MAX_RAD_PR_SEC = 1; // rad/s
-		const float ESCON_MAX_AMP_SETPOINT = 1;	 // A
-		const float MOTOR_TORQUE_CONSTANT = 1;  // Nm/A
-		const uint16_t ENCODER_TICKS_PR_REV = 1;	 // ticks/rev on encoder side - hence one revolution on motor shaft (before gearing)
-		const float GEARING_RATIO = 1;
+		const float ESCON_MAX_RAD_PR_SEC; // rad/s
+		const float ESCON_MAX_AMP_SETPOINT;	 // A
+		const float MOTOR_TORQUE_CONSTANT;  // Nm/A
+		const uint16_t ENCODER_TICKS_PR_REV;	 // ticks/rev on encoder side - hence one revolution on motor shaft (before gearing)
+		const float GEARING_RATIO;
 
 	public:
 		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed); // minimal operation general constructor

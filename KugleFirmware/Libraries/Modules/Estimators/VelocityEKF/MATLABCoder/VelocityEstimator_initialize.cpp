@@ -11,6 +11,7 @@
 // Include Files
 #include "rt_nonfinite.h"
 #include "VelocityEstimator.h"
+#include "VelocityEstimator2.h"
 #include "VelocityEstimator_initialize.h"
 
 // Function Definitions
@@ -35,6 +36,8 @@ void VelocityEstimator_initialize(const float P_diagonal_init[2], float X[2], fl
   for (int i = 0; i < 2; i++) {
       P[3*i] = P_diagonal_init[i];
   }
+
+  VelocityEstimator2_init();
 }
 
 //

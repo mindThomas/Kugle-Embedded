@@ -262,6 +262,8 @@ void BalanceController::Thread(void * pvParameters)
 	balanceController->velocityReferenceFrame = lspc::ParameterTypes::UNKNOWN_FRAME;
 	balanceController->velocityReference[0] = 0;
 	balanceController->velocityReference[1] = 0;
+	balanceController->velocityReference_inertial[0] = 0;
+	balanceController->velocityReference_inertial[1] = 0;
 	balanceController->ReferenceGenerationStep = 0; // only used if test reference generation is enabled
 
 	/* Reset quaternion reference input */
@@ -376,7 +378,13 @@ __attribute__((optimize("O0")))
 	        	Cov_q[4*d + d] = 3*1E-7; // set q covariance when MADGWICK is used
 	        }
 		} else { // use QEKF
-			qEKF.Step(imuFiltered.Accelerometer, imuFiltered.Gyroscope, params.estimator.EstimateBias);
+			if (params.estimator.UseHeadingEstimateFromXsensIMU && balanceController->mti) {
+				balanceController->mti->GetEstimates(imuEstimates);
+				float Xsens_Heading = HeadingFromQuaternion(imuEstimates.q);
+				qEKF.Step(imuFiltered.Accelerometer, imuFiltered.Gyroscope, Xsens_Heading, params.estimator.EstimateBias);
+			} else {
+				qEKF.Step(imuFiltered.Accelerometer, imuFiltered.Gyroscope, params.estimator.EstimateBias);
+			}
 			qEKF.GetQuaternion(balanceController->q);
 			qEKF.GetQuaternionDerivative(balanceController->dq);
 			qEKF.GetGyroBias(balanceController->GyroBias);
@@ -385,23 +393,20 @@ __attribute__((optimize("O0")))
 			qEKF.GetBiasCovariance(Cov_bias);
 		}
 
-		/* Quaternion derivative LPF filtering */
-	    /*dq[0] = dq0_filt.Filter(dq[0]);
-	    dq[1] = dq1_filt.Filter(dq[1]);
-	    dq[2] = dq2_filt.Filter(dq[2]);
-	    dq[3] = dq3_filt.Filter(dq[3]);*/
-
 		/* Replace estimates with Xsens estimates */
-		if (params.estimator.UseXsensIMU && params.estimator.UseXsensEstimates) {
+		if (params.estimator.UseXsensIMU && params.estimator.UseXsensQuaternionEstimate) {
 			imu.GetEstimates(imuEstimates);
+			/* Extract estimated angular velocity before replacing quaternion with Xsens estimate */
+			Quaternion_GetAngularVelocity_Body(balanceController->q, balanceController->dq, balanceController->omega_body);
+
+			/* Replace quaternion estimate with Xsens estimate */
 			balanceController->q[0] = imuEstimates.q[0];
 			balanceController->q[1] = imuEstimates.q[1];
 			balanceController->q[2] = imuEstimates.q[2];
 			balanceController->q[3] = imuEstimates.q[3];
-			balanceController->dq[0] = imuEstimates.dq[0];
-			balanceController->dq[1] = imuEstimates.dq[1];
-			balanceController->dq[2] = imuEstimates.dq[2];
-			balanceController->dq[3] = imuEstimates.dq[3];
+
+			/* Recompute quaternion derivative based on angular velocity estimate and newly updated quaternion estimate */
+			Quaternion_GetDQ_FromBody(balanceController->q, balanceController->omega_body, balanceController->dq);
 		}
 
 	    Quaternion_GetAngularVelocity_Body(balanceController->q, balanceController->dq, balanceController->omega_body);
@@ -594,7 +599,7 @@ __attribute__((optimize("O0")))
 			//velocityController.Step(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->q_ref);
 			velocityController.StepWithOmega(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->q_ref, balanceController->omega_ref_body);
 			velocityController.GetIntegral(q_tilt_integral);
-			velocityController.GetFilteredVelocityReference(balanceController->velocityReference); // overwrite velocity reference with the filtered one used by the velocity controller  (for logging purposes)
+			velocityController.GetFilteredVelocityReference_Inertial(balanceController->velocityReference_inertial); // store velocity reference with the filtered one used by the velocity controller  (for logging purposes)
 	    }
 	    else {
 	    	// We are not in VELOCITY_CONTROL mode - se reset references related to the VELOCITY_CONTROL mode
@@ -655,9 +660,9 @@ __attribute__((optimize("O0")))
 
 	    /* Clamp the torque between configurable limits less than or equal to max output torque */
 	    float saturationTorque = params.model.SaturationTorqueOfMaxOutputTorque * params.model.MaxOutputTorque;
-    	Torque[0] = fmax(fmin(Torque[0], saturationTorque), -saturationTorque);
-    	Torque[1] = fmax(fmin(Torque[1], saturationTorque), -saturationTorque);
-    	Torque[2] = fmax(fmin(Torque[2], saturationTorque), -saturationTorque);
+    	Torque[0] = fmaxf(fminf(Torque[0], saturationTorque), -saturationTorque);
+    	Torque[1] = fmaxf(fminf(Torque[1], saturationTorque), -saturationTorque);
+    	Torque[2] = fmaxf(fminf(Torque[2], saturationTorque), -saturationTorque);
 
 	    /* Initial Torque ramp up */
 	    if (params.controller.TorqueRampUp) {
@@ -702,8 +707,8 @@ __attribute__((optimize("O0")))
 			/* Detect motor driver failure mode - and if so, reset motor driver */
 			if (params.controller.MotorFailureDetection && !params.debug.DisableMotorOutput) { // only run motor failure detection is output is actually enabled
 				for (int i = 0; i < 3; i++) {
-					//if (fabs(Torque[i]) > 0.1 && fabs((Torque[i] / TorqueDelivered[i]) - 1.0) > params.controller.MotorFailureThreshold) {
-					if (fabs(Torque[i]) > params.controller.MotorFailureThreshold && fabs(Torque[i] - TorqueDelivered[i]) > params.controller.MotorFailureThreshold) {
+					//if (fabsf(Torque[i]) > 0.1 && fabsf((Torque[i] / TorqueDelivered[i]) - 1.0) > params.controller.MotorFailureThreshold) {
+					if (fabsf(Torque[i]) > params.controller.MotorFailureThreshold && fabsf(Torque[i] - TorqueDelivered[i]) > params.controller.MotorFailureThreshold) {
 						MotorDriverFailureCounts[i]++;
 					} else {
 						MotorDriverFailureCounts[i] = 0;
@@ -777,6 +782,8 @@ __attribute__((optimize("O0")))
 	    	balanceController->velocityReferenceFrame = lspc::ParameterTypes::UNKNOWN_FRAME;
 	    	balanceController->velocityReference[0] = 0;
 	    	balanceController->velocityReference[1] = 0;
+	    	balanceController->velocityReference_inertial[0] = 0;
+	    	balanceController->velocityReference_inertial[1] = 0;
 	    	balanceController->ReferenceGenerationStep = 0; // only used if test reference generation is enabled
 
 	    	/* Reset controllers with internal states */
@@ -849,6 +856,8 @@ __attribute__((optimize("O0")))
 									 balanceController->omega_ref_body[0],
 									 balanceController->omega_ref_body[1],
 									 balanceController->omega_ref_body[2],
+									 balanceController->velocityReference_inertial[0],
+									 balanceController->velocityReference_inertial[1],
 									 q_tilt_integral[0],
 									 q_tilt_integral[1],
 									 q_tilt_integral[2],
