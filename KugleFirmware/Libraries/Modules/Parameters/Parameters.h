@@ -45,11 +45,11 @@ class Parameters
 
 		struct behavioural_t {
 			/* Behavioural parameters */
-			bool IndependentHeading = false;
+			bool IndependentHeading = false; // do not correct/track the heading (will not track the heading reference given as part of the quaternion reference)
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
 			bool StepTestEnabled = false;
 			bool SineTestEnabled = false;
-			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_QUATERNION_CONTROL;
+			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_VELOCITY_CONTROL;
 			/* Behavioural parameters end */
 		} behavioural;
 		
@@ -57,45 +57,42 @@ class Parameters
 			/* Balance Controller Tuning parameters */
 			float SampleRate = 200;
 			
+			/* Controller selection */
 			lspc::ParameterTypes::controllerType_t type = lspc::ParameterTypes::SLIDING_MODE_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
 			lspc::ParameterTypes::controllerMode_t mode = lspc::ParameterTypes::OFF;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
 
+			/* Torque output filtering parameters */
 			bool EnableTorqueLPF = false;
 			float TorqueLPFtau = 0.005; // 0.005 (sliding mode)
 			bool TorqueRampUp = true;
 			float TorqueRampUpTime = 1.0; // seconds to ramp up Torque after initialization
 
+			/* Motor failure detection parameters (detects ESCON motor driver) */
 			bool MotorFailureDetection = true; // detect ESCON motor driver failures (due to current overload, above nominal, for prolonged time)
 			float MotorFailureDetectionTime = 0.05; // 50 ms response time for detecting motor failure until the motor driver is reset
 			//float MotorFailureThreshold = 0.1; // 10% difference between torque setpoint and delivered torque for longer than MotorFailureDetectionTime will trigger the motor failure event
 			float MotorFailureThreshold = 0.5; // more than 0.5 Nm difference between setpoint/requested torque and delivered torque is detected as a failure
 			bool StopAtMotorFailure = true; // determines what action to take at failure: the controller should stop (require manual start) or the motor driver should automatically be reset
 
+			/* Controller behaviour parameters */
 			bool DisableQdot = false;
 			float ReferenceTimeout = 0.5; // if reference is older than 500 ms, do not use it and fall back to 0 reference
 
 			/* Sliding Mode parameters */
-			/*float K[3] = {20, 20, 20}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
-			float eta = 1; // switching gain
-			float epsilon = 0.1;  // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S*/
-
-			/*float K[3] = {20, 20, 3}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
-			float eta = 10; // switching gain
-			float epsilon = 2;  // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S*/
+			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD;
+			bool ContinousSwitching = true;
+			bool EquivalentControl = true; // include equivalent control / computed torque (inverse dynamics)
+			bool DisableQdotInEquivalentControl = false;
 			// u = tau_eq + tau_switching
 			// tau_switching = -eta * sat(S/epsilon)
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
-			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD;
-			float K[3] = {20, 20, 4}; // sliding manifold gain  (S = omega_inertial + K*devec*q_err)
-			bool ContinousSwitching = true;
-			bool EquivalentControl = true; // include equivalent control / computed torque (inverse dynamics)
-			bool DisableQdotInEquivalentControl = false;
+			float K[3] = {20, 20, 4}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
 			float eta[3] = {7, 7, 9}; // {5, 5, 10}  switching gain
 			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
-			/* LQR parameters */
+			/* Balance LQR parameters */
 			float LQR_K[3*8] = {
 					129.602115577122,	8.78174512168197e-14,	-2.58198889746921,	7.87035441101331,	3.35474179461199e-15,	-0.280870541084474,
 					-64.8010577885609,	112.238724474001,		-2.58198889746921,	-3.93517720550666,	6.82429800184739,	-0.280870541084474,
@@ -120,11 +117,13 @@ class Parameters
 			/* Estimator Tuning parameters */
 			float SampleRate = 200;
 			
+			/* Xsens IMU usage */
 			bool UseXsensIMU = true;
 			bool ConfigureXsensIMUatBoot = true;
 			bool UseXsensQuaternionEstimate = false; // should the orientation estimate be replaced by the Xsens IMU estimate (q_dot will still be the output of the estimator due to necessary filtering/smoothing)
 			bool UseHeadingEstimateFromXsensIMU = false; // if the Xsens Quaternion estimate is not used, setting this flag to true will input the Xsens heading into the QEKF as a heading sensor input - Do not use this if a SLAM-based heading input is to be used
 
+			/* Quaternion estimator selection */
 			#define EnableSensorLPFfilters_ 	false
 			bool EnableSensorLPFfilters = EnableSensorLPFfilters_;
 			bool EnableSoftwareLPFfilters = false;
@@ -134,18 +133,28 @@ class Parameters
 			bool UseMadgwick = false;
 			bool EstimateBias = false; // estimate gyroscope bias as part of QEKF - it is not recommended to enable this when using the Xsens IMU since it has internal bias correction
 
+			/* Position estimate configuration */
 			bool PositionEstimateDefinedInCoR = false; // at default the position estimate is defined in the center of the ball - enabling this flag will move it to the Center of Rotation (CoR)
+
+			/* Velocity estimate configuration */
 			bool UseCoRvelocity = false; // the velocity can conveniently be defined in the Center of Rotation to make it independent of tilt
-			bool UseVelocityEstimator = false;
+
+			/* Velocity estimator parameters */
+			bool UseVelocityEstimator = true;
+			bool UseTiltForVelocityPrediction = true; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
+			bool UseQdotInVelocityEstimator = true;
+			bool UseCOMestimateInVelocityEstimator = false;
 			float Var_COM = 3.162277660168379e-06; // (10^(-5.5))  variance on COM estimate into velocity estimator
 			float eta_encoder = 1.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
+			bool UseWheelSlipDetectorInVelocityEstimator = false;
 			float VelocityEstimatorWheelSlipCovariance = 1e-10; // reduce velocity estimator covariance at wheel slip to reduce trust in sensor measurements in general
-			bool UseTiltForVelocityPrediction = true; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
-			bool UseCOMestimateInVelocityEstimator = false;
+
+			/* Velocity LPF (if Velocity estimator is not used */
 			bool EnableVelocityLPF = true; // Velocity LPF is only used if Velocity Estimator is disabled - OBS. This is necessary to avoid sudden angle reference changes due to noise!
 			float VelocityLPFcoeffs_a[3] = {1.000000000000000,  -1.713116904140867,   0.749674566393451};	// 40 Hz LPF
 			float VelocityLPFcoeffs_b[3] = {0.017796394239482,   0.000964873773620,   0.017796394239482};	// Created using:  [num, den] = cheby2(2,40,40/(Fs/2))
 
+			/* Wheel slip detector parameters */
 			bool EnableWheelSlipDetector = true;
 			float WheelSlipAccelerationThreshold = 500; // rad/s
 			float WheelSlipDetectionTime = 0.015; // 15 ms - wheel slip will be detected if wheel acceleration is above threshold for more than this time
@@ -156,14 +165,17 @@ class Parameters
 			bool EnableIndependentHeadingAtWheelSlip = true;
 			float WheelSlipIncreaseTime = 0.2; // time to increase the equivalent control and q_dot back from 0% to 100% after wheel slip is no longer detected
 
+			/* Center Of Mass estimator parameters */
 			bool EstimateCOM = false;
 			float EstimateCOMminVelocity = 0.05; // minimum velocity (checked against estimate) to run COM estimator
 			float MaxCOMDeviation = 0.01; // maximum tolerated COM (XY) deviation estimated by COM estimator (given in meters)
 
+			/* Madgwick filter parameters (if used for Quaternion estimation) */
 			float MadgwickBeta = 0.02; // 0.02  accelerometer influence magnitude on qDot - the smaller the less accelerometer correction
 											  // OBS. Depending on the accelerometer LPF this, increasing this value might feel like the system becomes less agressive,
 											  //      since it is weighting the LPF filtered accelerometer more
 
+			/* Accelerometer and Gyroscope sensor covariances */
 			// Use these tuning parameters to trust the accelerometer or gyroscope more than the other - eg. to reduce trust in the accelerometer due to induced vibrational noise
 			float GyroCov_Tuning_Factor = 1.0;
 			float AccelCov_Tuning_Factor = 1.0;
@@ -197,11 +209,13 @@ class Parameters
 					   	   	   	    0.025720201380381E-03,   0.132103665088956E-03,   0.025679048752216E-03,
 							   	    0.013511303535437E-03,   0.025679048752216E-03,   0.141723092884984E-03};
 
+			/* QEKF (Quaternion estimator) tuning parameters */
 			float sigma2_bias = 1E-9; // for MPU9250 use 1E-6 or 1E-7 works well, for MTI-200 use 1E-9 or disable bias estimation completely!
 			float sigma2_omega = 3.16228e-07; //  (10^(-6.5)) for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
 			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
 			float GyroscopeTrustFactor = 1.0; // the higher value the more trust is put into the gyroscope measurements by increasing the accelerometer covariance
 
+			/* Estimator initialization covariances */
 			// X_QEKF = {q0, q1, q2, q3,   dq0, dq1, dq2, dq3,   gyro_bias_x, gyro_bias_y}
 			float QEKF_P_init_diagonal[11] = {1E-5, 1E-5, 1E-5, 1E-7,   1E-7, 1E-7, 1E-7,   1E-5, 1E-5, 1E-5}; // initialize q3 variance lower than others, since yaw can not be estimated so we are more certain on the initial value to let gyro integration (dead-reckoning) dominate the "yaw" estimate
 			float VelocityEstimator_P_init_diagonal[2] = {1E-1, 1E-1}; // initialize velocity estimator covariance
@@ -227,35 +241,35 @@ class Parameters
 			double pi = 3.14159265358979323846264338327950288;
 			float g = 9.82f;
 
-			// Ball constants
+			/* Ball constants */
 			float rk = 0.129f;
 			float Mk = 1.46f;
 			float coating = 4e-3; // 4 mm rubber coating around ball
 			float Jk = ((2.f * Mk * (rk-coating)*(rk-coating)) / 3.f);			
 
+			/* Center of Mass */
 			// Body center of mass defined with origin in ball center
 			/*
 			float COM_X = -0.02069e-3;
 			float COM_Y = -3.20801e-3;
 			float COM_Z = 550.23854e-3 - rk; // subtract rk since the values are extracted from OnShape with origin in contact point (bottom of ball)
 			*/
-
 			float l = 0.4213f; // norm(COM)
 
 			float COM_X = 0;
 			float COM_Y = 0;
 			float COM_Z = l;
 
-			// Center of rotation - used for velocity estimation
+			/* Center of rotation - used for velocity estimation */
 			float CoR = 0.8720f;
 
-			// Body constants
+			/* Body constants */
 			float Mb = ( 4.31f + 1.844f);
 			float Jbx = 3.9096f;
 			float Jby = 3.9212f;
 			float Jbz = 0.1004f;
 		
-			// Wheel and motor physical constants
+			/* Wheel and motor physical constants */
 			float rw = 0.05f;
 			float Mw = 0.270f;
 			float i_gear = 13.0f / 3; // gear ratio = 4.3 : 1   (https://www.maxonmotor.com/maxon/view/product/223081)
@@ -263,16 +277,16 @@ class Parameters
 			float Jm = 1.21f * 1E-4;
 			float Jw = (Jow + i_gear*i_gear*Jm);
 
-			// Friction constants
+			/* Friction constants */
 			float Bvk = 0*0.001f;
 			float Bvm = 0*0.001f;
 			float Bvb = 0*0.001f;
 			
-			// Encoder constants
+			/* Encoder constants */
 			uint16_t EncoderTicksPrRev = 4*4096;	 // ticks/rev
 			float TicksPrRev = i_gear * EncoderTicksPrRev;
 			
-			// ESCON motor parameters
+			/* ESCON motor parameters */
 			float MotorMaxCurrent = 15; // ESCON 50/5 motor driver (https://www.maxonmotor.com/maxon/view/product/control/4-Q-Servokontroller/438725)
 			float MotorTorqueConstant = 30.5e-3; // Nm / A   (https://www.maxonmotor.com/maxon/view/product/412819)
 			float MotorMaxTorque = MotorTorqueConstant * MotorMaxCurrent; // Nm

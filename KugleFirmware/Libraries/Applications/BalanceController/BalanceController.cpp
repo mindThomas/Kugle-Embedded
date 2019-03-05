@@ -229,7 +229,7 @@ void BalanceController::Thread(void * pvParameters)
 	comEKF.Reset();
 	kinematics.Reset(EncoderAngle);
 
-	balanceController->StabilizeFilters(params, imu, qEKF, madgwick, loopWaitTicks, 1.0f); // stabilize estimators for 1 second
+	balanceController->StabilizeFilters(params, imu, qEKF, madgwick, velocityEKF, loopWaitTicks, 1.0f); // stabilize estimators for 1 second
 
 	/* Reset COM estimate */
 	balanceController->COM[0] = params.model.COM_X;
@@ -956,12 +956,18 @@ __attribute__((optimize("O0")))
 }
 
 /* Initialize/stabilize estimators for certain stabilization time */
-void BalanceController::StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEKF, Madgwick& madgwick, TickType_t loopWaitTicks, float stabilizationTime)
+void BalanceController::StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEKF, Madgwick& madgwick, VelocityEKF& velocityEKF, TickType_t loopWaitTicks, float stabilizationTime)
 {
 	TickType_t xLastWakeTime = xTaskGetTickCount();
 	TickType_t finishTick = xLastWakeTime + configTICK_RATE_HZ * stabilizationTime;
 
 	IMU::Measurement_t imuMeas;
+	int32_t EncoderTicks[3];
+	float Cov_q[4*4]; // set diagonal to something small (if Madgwick is used)
+	Cov_q[4*0 + 0] = 3*1E-7;
+	Cov_q[4*1 + 1] = 3*1E-7;
+	Cov_q[4*2 + 2] = 3*1E-7;
+	Cov_q[4*3 + 3] = 3*1E-7;
 
 	while (xLastWakeTime < finishTick) {
 		// Wait until time has been reached to make control loop periodic
@@ -972,12 +978,21 @@ void BalanceController::StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEK
 	    /* Adjust the measurements according to the calibration */
 		imu.CorrectMeasurement(imuMeas, !params.estimator.UseXsensIMU, !params.estimator.UseXsensIMU, !params.estimator.UseXsensIMU); // do not correct gyroscope bias if Xsens IMU is used (since this is corrected internally by the Xsens Kalman filter)
 
-		// Compute attitude estimate
+		/* Compute quaternion estimate */
 		if (params.estimator.UseMadgwick) {
 			madgwick.updateIMU(imuMeas.Gyroscope[0], imuMeas.Gyroscope[1], imuMeas.Gyroscope[2], imuMeas.Accelerometer[0], imuMeas.Accelerometer[1], imuMeas.Accelerometer[2], 0.1); // use larger beta to make filter converge to current angle by trusting the accelerometer more
 		} else {
 			qEKF.Step(imuMeas.Accelerometer, imuMeas.Gyroscope, false); // do not estimate bias while stabilizing the filter
+			qEKF.GetQuaternionCovariance(Cov_q);
 		}
+
+		/* Compute velocity estimate */
+	    if (params.estimator.UseVelocityEstimator) {
+			EncoderTicks[0] = motor1.GetEncoderRaw();
+			EncoderTicks[1] = motor2.GetEncoderRaw();
+			EncoderTicks[2] = motor3.GetEncoderRaw();
+			velocityEKF.Step(EncoderTicks, q, Cov_q, dq, COM, params.estimator.UseCoRvelocity); // velocity estimator can estimate either CoR velocity or ball velocity
+	    }
 	}
 }
 

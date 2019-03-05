@@ -22,6 +22,7 @@
 #include "VelocityEstimator2.h"
 #include "VelocityEstimator_initialize.h"
 #include <string.h> // for memcpy
+#include <cmath>
 
 #include "MathLib.h" // for matrix symmetrization
 
@@ -78,7 +79,7 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
 	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	Step(encoderTicks, _params.estimator.UseTiltForVelocityPrediction, qEst, Cov_qEst, qDotEst, _params.estimator.UseCOMestimateInVelocityEstimator, COMest, _params.estimator.Var_COM, _params.estimator.eta_encoder, EstimateCoRvelocity, _params.estimator.EnableWheelSlipDetector, _params.estimator.WheelSlipAccelerationThreshold, _params.estimator.VelocityEstimatorWheelSlipCovariance, dt);
+	Step(encoderTicks, _params.estimator.UseTiltForVelocityPrediction, qEst, Cov_qEst, qDotEst, _params.estimator.UseCOMestimateInVelocityEstimator, COMest, _params.estimator.Var_COM, _params.estimator.eta_encoder, EstimateCoRvelocity, (_params.estimator.EnableWheelSlipDetector && _params.estimator.UseWheelSlipDetectorInVelocityEstimator), _params.estimator.WheelSlipAccelerationThreshold, _params.estimator.VelocityEstimatorWheelSlipCovariance, dt);
 }
 
 /**
@@ -101,10 +102,15 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const bool UseTiltForPredi
 	memcpy(P_prev, P, sizeof(P_prev));
 
 	float EncoderDiffMeas[3] = {
-		(float)(encoderTicks[0] - _prevEncoderTicks[0]),
-		(float)(encoderTicks[1] - _prevEncoderTicks[1]),
-		(float)(encoderTicks[2] - _prevEncoderTicks[2])
+		float(encoderTicks[0] - _prevEncoderTicks[0]),
+		float(encoderTicks[1] - _prevEncoderTicks[1]),
+		float(encoderTicks[2] - _prevEncoderTicks[2])
 	};
+
+	for (unsigned int i = 0; i < 3; i++) {
+		/*if (fabsf(EncoderDiffMeas[i]) < 10)
+			EncoderDiffMeas[i] = 0;*/
+	}
 
     /*VelocityEstimator(X_prev, P_prev,
       EncoderDiffMeas,
@@ -123,9 +129,17 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const bool UseTiltForPredi
 		memcpy(COM, COMest, sizeof(COM));
 	}
 
+	float q_dot[4] = { 0, 0, 0, 0 };
+	if (_params.estimator.UseQdotInVelocityEstimator) {
+		q_dot[0] = qDotEst[0];
+		q_dot[1] = qDotEst[1];
+		q_dot[2] = qDotEst[2];
+		q_dot[3] = qDotEst[3];
+	}
+
 	VelocityEstimator2(X_prev, P_prev,
 	      EncoderDiffMeas,
-		  qEst, Cov_qEst, qDotEst,
+		  qEst, Cov_qEst, q_dot,
 	      dt,
 	      _params.model.TicksPrRev,
 		  _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jw, _params.model.rw, _params.model.l, _params.model.g,

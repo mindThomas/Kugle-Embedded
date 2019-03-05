@@ -54,7 +54,7 @@ class BalanceController
 
 	private:
 		void ReferenceGeneration(Parameters& params);
-		void StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEKF, Madgwick& madgwick, TickType_t loopWaitTicks, float stabilizationTime);
+		void StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEKF, Madgwick& madgwick, VelocityEKF& velocityEKF, TickType_t loopWaitTicks, float stabilizationTime);
 
 	private:
 		static void Thread(void * pvParameters);
