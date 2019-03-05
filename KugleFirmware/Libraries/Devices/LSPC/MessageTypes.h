@@ -126,6 +126,8 @@ namespace lspc
             sigma2_omega,
             sigma2_heading,
             GyroscopeTrustFactor,
+			Var_COM,
+			eta_encoder,
             QEKF_P_init_diagonal,
             VelocityEstimator_P_init_diagonal,
             COMEstimator_P_init_diagonal

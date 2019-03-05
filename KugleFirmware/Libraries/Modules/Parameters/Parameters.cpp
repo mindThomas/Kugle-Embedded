@@ -435,6 +435,8 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::sigma2_omega: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_omega; return;
 			case lspc::ParameterLookup::sigma2_heading: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.sigma2_heading; return;
 			case lspc::ParameterLookup::GyroscopeTrustFactor: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.GyroscopeTrustFactor; return;
+			case lspc::ParameterLookup::Var_COM: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.Var_COM; return;
+			case lspc::ParameterLookup::eta_encoder: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->estimator.eta_encoder; return;
 			default: return;
 		}
 	}
