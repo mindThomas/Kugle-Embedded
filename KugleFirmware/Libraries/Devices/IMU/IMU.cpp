@@ -261,7 +261,7 @@ void IMU::CalibrateAccelerometer(bool storeInEEPROM)
     {
     	Get(meas);
 
-    	if (fabs(vector_length(meas.Accelerometer) - ACCELEROMETER_GRAVITY_NORM) < 0.8/* && vector_length(meas.Gyroscope) < 0.5*/) {
+    	if (fabsf(vector_length(meas.Accelerometer) - ACCELEROMETER_GRAVITY_NORM) < 0.8/* && vector_length(meas.Gyroscope) < 0.5*/) {
 			steadyCount++;
 			if (steadyCount > ACCELEROMETER_CALIBRATION_STEADY_TIME*ACCELEROMETER_CALIBRATION_SAMPLE_RATE) {
 				if (meas.Accelerometer[0] < acc_min[0])

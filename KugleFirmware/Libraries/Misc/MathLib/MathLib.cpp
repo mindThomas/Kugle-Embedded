@@ -49,3 +49,9 @@ void Math_SymmetrizeSquareMatrix(float * mat, unsigned int rows)
 
 	vPortFree(in);
 }
+
+void Math_Rotate2D(const float V[2], const float theta, float Vr[2])
+{
+	Vr[0] = cosf(theta) * V[0] - sinf(theta) * V[1];
+	Vr[0] = sinf(theta) * V[0] + cosf(theta) * V[1];
+}

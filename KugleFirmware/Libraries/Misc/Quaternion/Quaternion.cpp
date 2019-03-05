@@ -305,7 +305,7 @@ void Quaternion_quat2eul_zyx(const float q[4], float yaw_pitch_roll[3])
 	float qz = q_normalized[3];
 
   float aSinInput = -2*(qx*qz-qw*qy);
-	aSinInput = fmax(fmin(aSinInput, 1.f), -1.f);
+	aSinInput = fmaxf(fminf(aSinInput, 1.f), -1.f);
 
   yaw_pitch_roll[0] = atan2( 2*(qx*qy+qw*qz), qw*qw + qx*qx - qy*qy - qz*qz ); // yaw
   yaw_pitch_roll[1] = asin( aSinInput ); // pitch
@@ -346,8 +346,8 @@ void Quaternion_AngleClamp(const float q[4], const float angleMax, float q_clamp
 		return;
 	}
 
-	currentAngle = atan2(sinAngle, cosAngle) * 2;
-	clampedAngle = fmin(fmax(currentAngle, -angleMax), angleMax);
+	currentAngle = atan2f(sinAngle, cosAngle) * 2;
+	clampedAngle = fminf(fmaxf(currentAngle, -angleMax), angleMax);
 
 	// Form clamped quaternion
 	q_clamped[0] = cosf(clampedAngle / 2);

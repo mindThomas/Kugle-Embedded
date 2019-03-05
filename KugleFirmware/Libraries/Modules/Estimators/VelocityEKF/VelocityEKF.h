@@ -33,7 +33,7 @@ class VelocityEKF
 		void Reset();
 		void Reset(const int32_t encoderTicks[3]);
 		void Step(const int32_t encoderTicks[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3], const bool EstimateCoRvelocity);
-		void Step(const int32_t encoderTicks[3], const bool UseTiltForPrediction, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const bool UseCOMest, const float COMest[3], const float Var_COM, const float eta_encoder, const bool EstimateCoRvelocity, const float dt);
+		void Step(const int32_t encoderTicks[3], const bool UseTiltForPrediction, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const bool UseCOMest, const float COMest[3], const float Var_COM, const float eta_encoder, const bool EstimateCoRvelocity, const bool EnableWheelSlipDetector, const float WheelSlipAccelerationThreshold, const float WheelSlipSetVelocityVariance, const float dt);
 
 		void GetVelocity(float dxy[2]);
 		void GetVelocityCovariance(float Cov_dxy[2*2]);

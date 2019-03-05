@@ -155,7 +155,7 @@ void FrontPanel::PowerButtonPressed(void * params)
 		}
 	}
 
-	else if (fp->_params->behavioural.PowerButtonMode == lspc::ParameterTypes::START_STOP_QUATERNION_CONTROLLER) {
+	else if (fp->_params->behavioural.PowerButtonMode == lspc::ParameterTypes::START_STOP_QUATERNION_CONTROL) {
 		if (fp->_params->controller.mode == lspc::ParameterTypes::OFF) {
 			fp->_params->LockForChange();
 			fp->_params->controller.mode = lspc::ParameterTypes::QUATERNION_CONTROL;
@@ -168,7 +168,7 @@ void FrontPanel::PowerButtonPressed(void * params)
 		}
 	}
 
-	else if (fp->_params->behavioural.PowerButtonMode == lspc::ParameterTypes::START_STOP_VELOCITY_CONTROLLER) {
+	else if (fp->_params->behavioural.PowerButtonMode == lspc::ParameterTypes::START_STOP_VELOCITY_CONTROL) {
 		if (fp->_params->controller.mode == lspc::ParameterTypes::OFF) {
 			fp->_params->LockForChange();
 			fp->_params->controller.mode = lspc::ParameterTypes::VELOCITY_CONTROL;

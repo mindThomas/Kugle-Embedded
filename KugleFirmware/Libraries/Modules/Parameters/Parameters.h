@@ -49,7 +49,7 @@ class Parameters
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
 			bool StepTestEnabled = false;
 			bool SineTestEnabled = false;
-			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_VELOCITY_CONTROLLER;
+			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_QUATERNION_CONTROL;
 			/* Behavioural parameters end */
 		} behavioural;
 		
@@ -92,31 +92,16 @@ class Parameters
 			bool ContinousSwitching = true;
 			bool EquivalentControl = true; // include equivalent control / computed torque (inverse dynamics)
 			bool DisableQdotInEquivalentControl = false;
-			float eta[3] = {7, 7, 9}; // switching gain
+			float eta[3] = {7, 7, 9}; // {5, 5, 10}  switching gain
 			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 			/* LQR parameters */
-			/*
-			float LQR_K[3*6] = {24.4461099686484,	 0.0000000000000,	 -5.77350269189626,	 2.86355138703516,   0.00000000000000,  -0.579208874021106,
-							   -12.2230549843242,	 21.1709522565575,   -5.77350269189626,	-1.43177569351758,	 2.48115307232164,	-0.579208874021105,
-							   -12.2230549843242,	-21.1709522565575,   -5.77350269189626,	-1.43177569351758,	-2.48115307232165,	-0.579208874021106};
-			*/
-			/*float LQR_K[3*6] = {  // Fairly well working gains for Kugle V1
-					// Q = diag([200 200 3 1 1 0.1]);
-					// R = 0.1 * diag([1 1 1]);
-					50.2853305369288,	2.29267873313278e-14,	-3.16227766016839,	5.28615222444946,	2.68374861500103e-15,	-0.62962764938032,
-					-25.1426652684644,	43.5483736826777,	-3.16227766016839,	-2.64307611222473,	4.58265789413395,	-0.62962764938032,
-					-25.1426652684644,	-43.5483736826776,	-3.16227766016838,	-2.64307611222473,	-4.58265789413395,	-0.62962764938032
-			};*/
-
 			float LQR_K[3*8] = {
-					103.108742162512,	-1.76733821457925e-13,	-2.5819888974716,	-1.35358797102508e-14,	-2.58198889747157,	18.9597239445678,	-4.09220484536091e-14,	-0.56174108216915,
-					-51.5543710812559,	89.3044611421588,	-2.58198889747159,	2.23606797749985,	1.29099444873579,	-9.4798619722839,	16.4430776741983,	-0.561741082169149,
-					-51.5543710812559,	-89.3044611421589,	-2.5819888974716,	-2.23606797749985,	1.29099444873577,	-9.47986197228385,	-16.4430776741983,	-0.561741082169151
+					129.602115577122,	8.78174512168197e-14,	-2.58198889746921,	7.87035441101331,	3.35474179461199e-15,	-0.280870541084474,
+					-64.8010577885609,	112.238724474001,		-2.58198889746921,	-3.93517720550666,	6.82429800184739,	-0.280870541084474,
+					-64.8010577885609,	-112.238724474,			-2.5819888974692,	-3.93517720550666,	-6.82429800184739,	-0.280870541084473
 			};
 			float LQR_MaxYawError = 10.0; // yaw error clamp [degrees]
-			//float LQR_MaxYawVelocityError = 0.1; // rad/s
-			//float LQR_MaxAngleError = 5.0; // general clamp angle [degrees]    (after applying yaw clamp)
 			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
 
 			/* Velocity controller parameters */
@@ -137,7 +122,8 @@ class Parameters
 			
 			bool UseXsensIMU = true;
 			bool ConfigureXsensIMUatBoot = true;
-			bool UseXsensEstimates = false; // should the orientation estimates computed by the Xsens IMU be used or should the calibrated sensor values be used
+			bool UseXsensQuaternionEstimate = false; // should the orientation estimate be replaced by the Xsens IMU estimate (q_dot will still be the output of the estimator due to necessary filtering/smoothing)
+			bool UseHeadingEstimateFromXsensIMU = false; // if the Xsens Quaternion estimate is not used, setting this flag to true will input the Xsens heading into the QEKF as a heading sensor input - Do not use this if a SLAM-based heading input is to be used
 
 			#define EnableSensorLPFfilters_ 	false
 			bool EnableSensorLPFfilters = EnableSensorLPFfilters_;
@@ -146,14 +132,15 @@ class Parameters
 			float SoftwareLPFcoeffs_b[3] = {0.011353393934590, -0.014789591644084, 0.011353393934590};	// Created using:  [num, den] = cheby2(2,40,20/(Fs/2))
 			bool CreateQdotFromQDifference = false;
 			bool UseMadgwick = false;
-			bool EstimateBias = false;
+			bool EstimateBias = false; // estimate gyroscope bias as part of QEKF - it is not recommended to enable this when using the Xsens IMU since it has internal bias correction
 
 			bool PositionEstimateDefinedInCoR = false; // at default the position estimate is defined in the center of the ball - enabling this flag will move it to the Center of Rotation (CoR)
 			bool UseCoRvelocity = false; // the velocity can conveniently be defined in the Center of Rotation to make it independent of tilt
 			bool UseVelocityEstimator = false;
-			float Var_COM = 1E-6; // variance on COM estimate into velocity estimator
-			float eta_encoder = 10.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
-			bool UseTiltForPrediction = true; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
+			float Var_COM = 3.162277660168379e-06; // (10^(-5.5))  variance on COM estimate into velocity estimator
+			float eta_encoder = 1.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
+			float VelocityEstimatorWheelSlipCovariance = 1e-10; // reduce velocity estimator covariance at wheel slip to reduce trust in sensor measurements in general
+			bool UseTiltForVelocityPrediction = true; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
 			bool UseCOMestimateInVelocityEstimator = false;
 			bool EnableVelocityLPF = true; // Velocity LPF is only used if Velocity Estimator is disabled - OBS. This is necessary to avoid sudden angle reference changes due to noise!
 			float VelocityLPFcoeffs_a[3] = {1.000000000000000,  -1.713116904140867,   0.749674566393451};	// 40 Hz LPF
@@ -163,7 +150,7 @@ class Parameters
 			float WheelSlipAccelerationThreshold = 500; // rad/s
 			float WheelSlipDetectionTime = 0.015; // 15 ms - wheel slip will be detected if wheel acceleration is above threshold for more than this time
 			float WheelSlipIdleTime = 0.100; // after detecting a wheel slip, the wheel acceleration has to be below limit for an idle time before the detection flag is removed
-			bool ReduceEquivalentControlAtWheelSlip = false; // uses the wheel slip detector
+			bool ReduceEquivalentControlAtWheelSlip = true; // uses the wheel slip detector
 			bool ReduceQdotAtWheelSlip = true; // uses the wheel slip detector
 			bool ReduceTorqueAtWheelSlip = true; // reduces torque for all motors at wheel slip before ramping up again
 			bool EnableIndependentHeadingAtWheelSlip = true;
@@ -211,7 +198,7 @@ class Parameters
 							   	    0.013511303535437E-03,   0.025679048752216E-03,   0.141723092884984E-03};
 
 			float sigma2_bias = 1E-9; // for MPU9250 use 1E-6 or 1E-7 works well, for MTI-200 use 1E-9 or disable bias estimation completely!
-			float sigma2_omega = 1E-6; // for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
+			float sigma2_omega = 3.16228e-07; //  (10^(-6.5)) for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
 			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
 			float GyroscopeTrustFactor = 1.0; // the higher value the more trust is put into the gyroscope measurements by increasing the accelerometer covariance
 

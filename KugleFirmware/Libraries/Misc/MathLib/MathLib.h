@@ -35,5 +35,6 @@
 
 float Math_Round(float num, unsigned int dec);
 void Math_SymmetrizeSquareMatrix(float * mat, unsigned int rows);
+void Math_Rotate2D(const float V[2], const float theta, float Vr[2]);
 
 #endif

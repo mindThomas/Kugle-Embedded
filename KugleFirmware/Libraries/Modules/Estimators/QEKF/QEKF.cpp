@@ -100,6 +100,24 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
 }
 
 /**
+ * @brief 	Estimate attitude quaternion given accelerometer, gyroscope measurements, a heading input/estimate and passed time
+ * @param	accelerometer[3]   Input: acceleration measurement in body frame [m/s^2]
+ * @param	gyroscope[3]       Input: angular velocity measurement in body frame [rad/s]
+ * @param	heading		       Input: heading angle in inertial frame [rad]
+ * @param   EstimateBias       Input: flag to control if gyroscope bias should be estimated
+ */
+void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool EstimateBias)
+{
+	float dt;
+
+	if (!_microsTimer) return; // timer not defined
+	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
+	_prevTimerValue = _microsTimer->Get();
+
+	Step(accelerometer, gyroscope, heading, EstimateBias, dt);
+}
+
+/**
  * @brief 	Estimate attitude quaternion given accelerometer and gyroscope measurements and passed time
  * @param	accelerometer[3]   Input: acceleration measurement in body frame [m/s^2]
  * @param	gyroscope[3]       Input: angular velocity measurement in body frame [rad/s]
@@ -112,6 +130,22 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
 		Step(accelerometer, gyroscope, 0, false, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mti, _params.estimator.cov_gyro_mti, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
 	else
 		Step(accelerometer, gyroscope, 0, false, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
+}
+
+/**
+ * @brief 	Estimate attitude quaternion given accelerometer, gyroscope measurements, a heading input/estimate and passed time
+ * @param	accelerometer[3]   Input: acceleration measurement in body frame [m/s^2]
+ * @param	gyroscope[3]       Input: angular velocity measurement in body frame [rad/s]
+ * @param	heading		       Input: heading angle in inertial frame [rad]
+ * @param   EstimateBias       Input: flag to control if gyroscope bias should be estimated
+ * @param	dt    			   Input: time passed since last estimate
+ */
+void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool EstimateBias, const float dt)
+{
+	if (_params.estimator.UseXsensIMU) // use MTI covariance
+		Step(accelerometer, gyroscope, heading, true, EstimateBias, EstimateBias, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mti, _params.estimator.cov_gyro_mti, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
+	else
+		Step(accelerometer, gyroscope, heading, true, EstimateBias, EstimateBias, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
 }
 
 /**

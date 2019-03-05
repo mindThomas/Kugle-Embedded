@@ -5,7 +5,7 @@
 // File: VelocityEstimator2.h
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 25-Feb-2019 19:14:04
+// C/C++ source code generated on  : 04-Mar-2019 12:57:31
 //
 #ifndef VELOCITYESTIMATOR2_H
 #define VELOCITYESTIMATOR2_H
@@ -22,8 +22,10 @@ extern void VelocityEstimator2(const float X[2], const float P_prev[4], const
   const float qdotQEKF[4], float SamplePeriod, float TicksPrRev, float Jk, float
   Mk, float rk, float Mb, float Jw, float rw, float l, float g, const float COM
   [3], float CoR, float Var_COM, float eta_encoder, boolean_T
-  UseTiltForPrediction, boolean_T EstimateVelocityAtCoR, float X_out[2], float
-  P_out[4]);
+  UseTiltForPrediction, boolean_T EstimateVelocityAtCoR, boolean_T
+  EnableWheelSlipDetector, float WheelSlipAccelerationThreshold, float
+  WheelSlipSetVelocityVariance, float X_out[2], float P_out[4]);
+extern void VelocityEstimator2_init();
 
 #endif
 

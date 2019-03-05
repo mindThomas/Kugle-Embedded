@@ -451,7 +451,7 @@ void SlidingMode::Saturation(const float * in, const int size, const float * eps
 	//arm_scale_f32(in, 1.f/epsilon, out, size);
     for (int i = 0; i < size; i++) {
     	out[i] = in[i] / epsilon[i];
-    	out[i] = fmin(fmax(out[i], -1), 1);
+    	out[i] = fminf(fmaxf(out[i], -1), 1);
     }
 }
 

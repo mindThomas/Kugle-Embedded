@@ -78,7 +78,7 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
 	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	Step(encoderTicks, _params.estimator.UseTiltForPrediction, qEst, Cov_qEst, qDotEst, _params.estimator.UseCOMestimateInVelocityEstimator, COMest, _params.estimator.Var_COM, _params.estimator.eta_encoder, EstimateCoRvelocity, dt);
+	Step(encoderTicks, _params.estimator.UseTiltForVelocityPrediction, qEst, Cov_qEst, qDotEst, _params.estimator.UseCOMestimateInVelocityEstimator, COMest, _params.estimator.Var_COM, _params.estimator.eta_encoder, EstimateCoRvelocity, _params.estimator.EnableWheelSlipDetector, _params.estimator.WheelSlipAccelerationThreshold, _params.estimator.VelocityEstimatorWheelSlipCovariance, dt);
 }
 
 /**
@@ -90,7 +90,7 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
  * @param	COMest[3]       	Input: estimated center of mass (COM)
  * @param	dt    			   	Input: time passed since last estimate
  */
-void VelocityEKF::Step(const int32_t encoderTicks[3], const bool UseTiltForPrediction, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const bool UseCOMest, const float COMest[3], const float Var_COM, const float eta_encoder, const bool EstimateCoRvelocity, const float dt)
+void VelocityEKF::Step(const int32_t encoderTicks[3], const bool UseTiltForPrediction, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const bool UseCOMest, const float COMest[3], const float Var_COM, const float eta_encoder, const bool EstimateCoRvelocity, const bool EnableWheelSlipDetector, const float WheelSlipAccelerationThreshold, const float WheelSlipSetVelocityVariance, const float dt)
 {
 	if (dt == 0) return; // no time has passed
 
@@ -134,6 +134,7 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const bool UseTiltForPredi
 	      Var_COM,
 	      eta_encoder,
 		  UseTiltForPrediction, EstimateCoRvelocity,
+		  EnableWheelSlipDetector, WheelSlipAccelerationThreshold, WheelSlipSetVelocityVariance,
 	      X, P);
 
 	Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));

@@ -44,6 +44,8 @@ class QuaternionVelocityControl
 
 		void GetIntegral(float q_integral[4]);
 		void GetFilteredVelocityReference(float velocity_reference[2]);
+		void GetFilteredVelocityReference_Heading(float velocity_reference_heading[2]);
+		void GetFilteredVelocityReference_Inertial(float velocity_reference_inertial[2]);
 
 	private:
 		Parameters& _params;
@@ -65,6 +67,10 @@ class QuaternionVelocityControl
 
 		float roll_ref_old;
 		float pitch_ref_old;
+
+		/* For debugging purposes */
+		float Velocity_Reference_Filtered_Inertial[2];
+		float Velocity_Reference_Filtered_Heading[2];
 };
 	
 	

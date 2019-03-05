@@ -101,8 +101,8 @@ void COMEKF::Step(const float dxyEst[2], const float Cov_dxy[2*2], const float q
     _prevVelocity[1] = dxyEst[1];
 
     /* Limit/clamp COM estimate */
-    X[0] = fmax(fmin(X[0], _params.estimator.MaxCOMDeviation), -_params.estimator.MaxCOMDeviation);
-    X[1] = fmax(fmin(X[1], _params.estimator.MaxCOMDeviation), -_params.estimator.MaxCOMDeviation);
+    X[0] = fmaxf(fminf(X[0], _params.estimator.MaxCOMDeviation), -_params.estimator.MaxCOMDeviation);
+    X[1] = fmaxf(fminf(X[1], _params.estimator.MaxCOMDeviation), -_params.estimator.MaxCOMDeviation);
 }
 
 /**
