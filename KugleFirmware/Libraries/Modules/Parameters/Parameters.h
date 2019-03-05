@@ -112,7 +112,7 @@ class Parameters
 			float VelocityController_IntegralGain = 0.8; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
 			float VelocityController_AngleLPFtau = 0.1; // time-constant for low pass filter on angle reference output
 			float VelocityController_OmegaLPFtau = 0.02; // time-constant for low pass filter on angle reference output
-			bool VelocityController_UseOmegaRef = true;
+			bool VelocityController_UseOmegaRef = false;
 			/* Controller Tuning parameters end */
 		} controller;
 
