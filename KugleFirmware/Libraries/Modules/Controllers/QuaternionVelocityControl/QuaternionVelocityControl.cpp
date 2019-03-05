@@ -229,7 +229,7 @@ void QuaternionVelocityControl::StepWithOmega(const float q[4], const float dq[4
 	// OBS. The above could also be replaced with a Quaternion transformation function that takes in a 3-dimensional vector
 	*/
 	float heading = HeadingFromQuaternion(q);
-	Math_Rotate2D(&Velocity_Inertial_q[1], heading, Velocity_Heading_error);
+	Math_Rotate2D(&Velocity_Inertial_q[1], -heading, Velocity_Heading_error);
 
 	if (velocityRefGivenInHeadingFrame) { // reference given in heading frame
 		// Calculate velocity error
