@@ -85,14 +85,14 @@ class Parameters
 			/* Sliding Mode parameters */
 			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD;
 			bool ContinousSwitching = true;
-			bool DisableQdotInEquivalentControl = false;
+			bool DisableQdotInEquivalentControl = true;
 			// u = tau_eq + tau_switching
 			// tau_switching = -eta * sat(S/epsilon)
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
-			float K[3] = {20, 20, 4}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
-			float eta[3] = {7, 7, 9}; // {5, 5, 10}  switching gain
+			float K[3] = {15, 15, 4}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
+			float eta[3] = {6, 6, 5}; // {5, 5, 10}  switching gain
 			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 			float Kv[2] = {0.01, 0.01};
@@ -112,7 +112,7 @@ class Parameters
 			bool VelocityControl_UseOmegaRef = false;
 
 			/* Velocity controller parameters */
-			float VelocityController_MaxTilt	= 4.0; // max tilt that velocity controller can set [degrees]
+			float VelocityController_MaxTilt	= 3.0; // max tilt that velocity controller can set [degrees]
 			float VelocityController_MaxIntegralCorrection = 4.0; // max tilt integral effect can compensate with [degrees]
 			float VelocityController_VelocityClamp = 0.3; // velocity clamp for the velocity error [meters pr. second]
 			float VelocityController_IntegralGain = 0.8; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
