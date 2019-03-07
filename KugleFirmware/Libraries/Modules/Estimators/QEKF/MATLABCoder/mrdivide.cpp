@@ -5,13 +5,13 @@
 // File: mrdivide.cpp
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 22-Feb-2019 19:54:01
+// C/C++ source code generated on  : 06-Mar-2019 11:14:06
 //
 
 // Include Files
 #include <math.h>
 #include "rt_nonfinite.h"
-#include "QEKF.h"
+#include "QEKF_coder.h"
 #include "mrdivide.h"
 
 // Function Definitions
@@ -162,7 +162,7 @@ void mrdivide(const float A[70], const float B[49], float y[70])
   int j;
   int jAcol;
   int c;
-  float b_A[49];
+  static float b_A[49];
   int jy;
   int ix;
   signed char ipiv[7];

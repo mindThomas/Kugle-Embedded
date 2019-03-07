@@ -53,7 +53,7 @@ static float dpsi_old[3];
 //                float P_out[4]
 // Return Type  : void
 //
-__attribute__((optimize("O3"))) void VelocityEstimator2(const float X[2], const float P_prev[4], const float
+/*__attribute__((optimize("O3"))) */void VelocityEstimator2(const float X[2], const float P_prev[4], const float
   EncoderDiffMeas[3], const float qQEKF[4], const float Cov_qQEKF[16], const
   float qdotQEKF[4], float SamplePeriod, float TicksPrRev, float Jk, float Mk,
   float rk, float Mb, float Jw, float rw, float l, float g, const float COM[3],

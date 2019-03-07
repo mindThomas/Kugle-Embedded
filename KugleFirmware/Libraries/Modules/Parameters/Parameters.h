@@ -77,11 +77,14 @@ class Parameters
 			/* Controller behaviour parameters */
 			bool DisableQdot = false;
 			float ReferenceTimeout = 0.5; // if reference is older than 500 ms, do not use it and fall back to 0 reference
+			bool EquivalentControl = true; // include equivalent control / computed torque (inverse dynamics) for both Sliding Mode and LQR (steady state torque)
+
+			bool AngularVelocityClampsEnabled = false;
+			float AngularVelocityClamps[3] = {0.05, 0.05, 0.5}; // omega_body_x, omega_body_y, omega_body_z
 
 			/* Sliding Mode parameters */
 			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD;
 			bool ContinousSwitching = true;
-			bool EquivalentControl = true; // include equivalent control / computed torque (inverse dynamics)
 			bool DisableQdotInEquivalentControl = false;
 			// u = tau_eq + tau_switching
 			// tau_switching = -eta * sat(S/epsilon)
@@ -92,24 +95,39 @@ class Parameters
 			float eta[3] = {7, 7, 9}; // {5, 5, 10}  switching gain
 			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
+			float Kv[2] = {0.01, 0.01};
+			float Kvi[2] = {0, 0};//{0.4, 0.4};
+			float gamma = 0*0.05;
+
 			/* Balance LQR parameters */
-			float LQR_K[3*8] = {
+			float BalanceLQR_K[3*8] = {
 					129.602115577122,	8.78174512168197e-14,	-2.58198889746921,	7.87035441101331,	3.35474179461199e-15,	-0.280870541084474,
 					-64.8010577885609,	112.238724474001,		-2.58198889746921,	-3.93517720550666,	6.82429800184739,	-0.280870541084474,
 					-64.8010577885609,	-112.238724474,			-2.5819888974692,	-3.93517720550666,	-6.82429800184739,	-0.280870541084473
 			};
-			float LQR_MaxYawError = 10.0; // yaw error clamp [degrees]
-			bool LQR_EnableSteadyStateTorque = true; // use steady state torque based on reference
+			float BalanceLQR_MaxYawError = 10.0; // yaw error clamp [degrees]
+
+			/* Common velocity control parameters */
+			float VelocityControl_AccelerationLimit = 1.0;
+			bool VelocityControl_UseOmegaRef = false;
 
 			/* Velocity controller parameters */
-			float VelocityController_AccelerationLimit = 1.0;
 			float VelocityController_MaxTilt	= 4.0; // max tilt that velocity controller can set [degrees]
 			float VelocityController_MaxIntegralCorrection = 4.0; // max tilt integral effect can compensate with [degrees]
 			float VelocityController_VelocityClamp = 0.3; // velocity clamp for the velocity error [meters pr. second]
 			float VelocityController_IntegralGain = 0.8; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
 			float VelocityController_AngleLPFtau = 0.1; // time-constant for low pass filter on angle reference output
 			float VelocityController_OmegaLPFtau = 0.02; // time-constant for low pass filter on angle reference output
-			bool VelocityController_UseOmegaRef = false;
+
+			/* Velocity LQR parameters */
+			float VelocityLQR_VelocityClamp = 0.3;
+			float VelocityLQR_AngularVelocityClamp = 0.1;
+			float VelocityLQR_K[2*10] = {
+					-1.88499850295219e-15,	-0.0547722557505151,	1.04472410383699,	-2.74710168739643e-14,	-4.78898131133348e-15,	-0.192693433718899,	0.419544813314103,	-1.01670198942047e-14,	2.55363317247858,	-4.11642490312979e-14,
+					0.0547722557505164,	1.55551948269232e-15,	-2.56069838477061e-14,	1.04496550787218,	0.192699909128534,	4.74215864266766e-15,	-1.02445888879474e-14,	0.420080685053521,	-3.91776010119057e-14,	2.55372275761996
+			};
+			bool VelocityLQR_IntegralEnabled = false;
+			bool VelocityLQR_PositionControlAtZeroVelocityReference = false;
 			/* Controller Tuning parameters end */
 		} controller;
 
@@ -129,9 +147,22 @@ class Parameters
 			bool EnableSoftwareLPFfilters = false;
 			float SoftwareLPFcoeffs_a[3] = {1.000000000000000, -1.870860377550659, 0.878777573775756};	// 20 Hz LPF
 			float SoftwareLPFcoeffs_b[3] = {0.011353393934590, -0.014789591644084, 0.011353393934590};	// Created using:  [num, den] = cheby2(2,40,20/(Fs/2))
-			bool CreateQdotFromQDifference = false;
 			bool UseMadgwick = false;
-			bool EstimateBias = false; // estimate gyroscope bias as part of QEKF - it is not recommended to enable this when using the Xsens IMU since it has internal bias correction
+
+			/* QEKF (Quaternion estimator) parameters */
+			bool SensorDrivenQEKF = false;
+			bool EstimateBias = true; // estimate gyroscope bias as part of QEKF - it is not recommended to enable this when using the Xsens IMU since it has internal bias correction
+			bool CreateQdotFromQDifference = false;
+			float sigma2_bias = 1E-10; // for MPU9250 use 1E-6 or 1E-7 works well, for MTI-200 use 1E-9 or disable bias estimation completely!
+			float sigma2_omega = 3.16228e-07; //  (10^(-6.5)) for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
+			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
+			float GyroscopeTrustFactor = 10.0; // the higher value the more trust is put into the gyroscope measurements by increasing the accelerometer covariance
+			bool AccelerometerVibration_DetectionEnabled = false;
+			float AccelerometerVibration_NormLPFtau = 0.5; // seconds
+			float AccelerometerVibration_CovarianceVaryFactor = 2.0; // vary/scale the accelerometer covariance depending on exaggerated accelerations (above 'AccelerometerVibration_DetectionAmount') based on VaryFactor=exp(AccelerometerCovarianceVaryFactor*norm_difference)
+			float AccelerometerVibration_MaxVaryFactor = 10000; // vary/scale the accelerometer covariance with maximum this value
+			// X = {q0, q1, q2, q3,   dq0, dq1, dq2, dq3,   gyro_bias_x, gyro_bias_y}
+			float QEKF_P_init_diagonal[11] = {1E-7, 1E-7, 1E-7, 1E-7,   1E-7, 1E-7, 1E-7,   1E-8, 1E-8, 1E-8}; // initialize q3 variance lower than others, since yaw can not be estimated so we are more certain on the initial value to let gyro integration (dead-reckoning) dominate the "yaw" estimate
 
 			/* Position estimate configuration */
 			bool PositionEstimateDefinedInCoR = false; // at default the position estimate is defined in the center of the ball - enabling this flag will move it to the Center of Rotation (CoR)
@@ -140,14 +171,18 @@ class Parameters
 			bool UseCoRvelocity = false; // the velocity can conveniently be defined in the Center of Rotation to make it independent of tilt
 
 			/* Velocity estimator parameters */
-			bool UseVelocityEstimator = true;
-			bool UseTiltForVelocityPrediction = true; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
+			bool UseVelocityEstimator = false;
+			bool UseTiltForVelocityPrediction = false; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
 			bool UseQdotInVelocityEstimator = true;
-			bool UseCOMestimateInVelocityEstimator = false;
-			float Var_COM = 3.162277660168379e-06; // (10^(-5.5))  variance on COM estimate into velocity estimator
-			float eta_encoder = 1.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
+			bool UseCOMestimateInVelocityEstimator = true;
+			float Var_COM = 1e-7; // (10^(-5.5))  variance on COM estimate into velocity estimator
+			float eta_encoder = 10.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
 			bool UseWheelSlipDetectorInVelocityEstimator = false;
 			float VelocityEstimatorWheelSlipCovariance = 1e-10; // reduce velocity estimator covariance at wheel slip to reduce trust in sensor measurements in general
+			// X = {dx, dy}
+			float VelocityEstimator_P_init_diagonal[2] = {1E-1, 1E-1}; // initialize velocity estimator covariance
+			// X = {dx, dy, COM_X, COM_Y}
+			float VelocityEstimator_WithCOM_P_init_diagonal[4] = {1E-1, 1E-1, 1E-9, 1E-9}; // initialize velocity estimator covariance
 
 			/* Velocity LPF (if Velocity estimator is not used */
 			bool EnableVelocityLPF = true; // Velocity LPF is only used if Velocity Estimator is disabled - OBS. This is necessary to avoid sudden angle reference changes due to noise!
@@ -209,16 +244,7 @@ class Parameters
 					   	   	   	    0.025720201380381E-03,   0.132103665088956E-03,   0.025679048752216E-03,
 							   	    0.013511303535437E-03,   0.025679048752216E-03,   0.141723092884984E-03};
 
-			/* QEKF (Quaternion estimator) tuning parameters */
-			float sigma2_bias = 1E-9; // for MPU9250 use 1E-6 or 1E-7 works well, for MTI-200 use 1E-9 or disable bias estimation completely!
-			float sigma2_omega = 3.16228e-07; //  (10^(-6.5)) for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
-			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
-			float GyroscopeTrustFactor = 1.0; // the higher value the more trust is put into the gyroscope measurements by increasing the accelerometer covariance
-
 			/* Estimator initialization covariances */
-			// X_QEKF = {q0, q1, q2, q3,   dq0, dq1, dq2, dq3,   gyro_bias_x, gyro_bias_y}
-			float QEKF_P_init_diagonal[11] = {1E-5, 1E-5, 1E-5, 1E-7,   1E-7, 1E-7, 1E-7,   1E-5, 1E-5, 1E-5}; // initialize q3 variance lower than others, since yaw can not be estimated so we are more certain on the initial value to let gyro integration (dead-reckoning) dominate the "yaw" estimate
-			float VelocityEstimator_P_init_diagonal[2] = {1E-1, 1E-1}; // initialize velocity estimator covariance
 			float COMEstimator_P_init_diagonal[2] = {1E-12, 1E-12}; // initialize COM estimator covariance
 			/* Estimator Tuning parameters end */
 		} estimator;

@@ -22,7 +22,7 @@
 #include <arm_math.h>
 #include <math.h>
 #include <stdlib.h>
-#include <cmath>
+#include <cmath> // for fminf, fmaxf, fabsf
 
 #include "Quaternion.h"
 #include "MathLib.h"
@@ -75,7 +75,7 @@ void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const 
 	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	Step(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, _params.controller.VelocityController_AccelerationLimit, dt, q_ref_out);
+	Step(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, _params.controller.VelocityControl_AccelerationLimit, dt, q_ref_out);
 }
 
 void QuaternionVelocityControl::Step(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float dt, float q_ref_out[4])
@@ -191,7 +191,7 @@ void QuaternionVelocityControl::StepWithOmega(const float q[4], const float dq[4
 	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	StepWithOmega(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, _params.controller.VelocityController_AccelerationLimit, _params.controller.VelocityController_AngleLPFtau, _params.controller.VelocityController_OmegaLPFtau, !_params.controller.VelocityController_UseOmegaRef, dt, q_ref_out, omega_body_ref_out);
+	StepWithOmega(q, dq, dxy, velocityRef, velocityRefGivenInHeadingFrame, headingRef, _params.controller.VelocityControl_AccelerationLimit, _params.controller.VelocityController_AngleLPFtau, _params.controller.VelocityController_OmegaLPFtau, !_params.controller.VelocityControl_UseOmegaRef, dt, q_ref_out, omega_body_ref_out);
 }
 
 void QuaternionVelocityControl::StepWithOmega(const float q[4], const float dq[4], const float dxy[2], const float velocityRef[2], const bool velocityRefGivenInHeadingFrame, const float headingRef, const float acceleration_limit, const float angle_lpf_tau, const float omega_lpf_tau, const bool DoNotSetOmegaRef, const float dt, float q_ref_out[4], float omega_body_ref_out[3])

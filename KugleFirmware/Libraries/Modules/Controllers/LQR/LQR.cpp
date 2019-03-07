@@ -56,7 +56,7 @@ void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const 
 	const float xy[2] = { 0, 0 };
 	const float dxy[2] = { 0, 0 };
 	const float COM[3] = { _params.model.COM_X,_params.model.COM_Y, _params.model.COM_Z };
-	Step(q, dq, xy, dxy, COM, q_ref, omega_ref, (float *)_params.controller.LQR_K, _params.controller.LQR_EnableSteadyStateTorque, tau);
+	Step(q, dq, xy, dxy, COM, q_ref, omega_ref, (float *)_params.controller.BalanceLQR_K, _params.controller.EquivalentControl, tau);
 }
 
 /**
@@ -73,7 +73,7 @@ void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const 
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
 	const float COM[3] = { _params.model.COM_X,_params.model.COM_Y, _params.model.COM_Z };
-	Step(q, dq, xy, dxy, COM, q_ref, omega_ref, (float *)_params.controller.LQR_K, _params.controller.LQR_EnableSteadyStateTorque, tau);
+	Step(q, dq, xy, dxy, COM, q_ref, omega_ref, (float *)_params.controller.BalanceLQR_K, _params.controller.EquivalentControl, tau);
 }
 
 /**
@@ -88,7 +88,7 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
  */
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
-	Step(q, dq, xy, dxy, COM, q_ref, omega_ref, (float *)_params.controller.LQR_K, _params.controller.LQR_EnableSteadyStateTorque, tau);
+	Step(q, dq, xy, dxy, COM, q_ref, omega_ref, (float *)_params.controller.BalanceLQR_K, _params.controller.EquivalentControl, tau);
 }
 
 /**
@@ -126,7 +126,7 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 
 	/* Clamp "yaw" error - this is possibly a crude way of doing it */
 	// ToDo: Consider to clamp the yaw error by converting the quaternion error into roll, pitch and yaw components, then clamp the yaw component and reassemble into quaternion error
-	q_err[3] = fmaxf(fminf(q_err[3], 0.5f*deg2rad(_params.controller.LQR_MaxYawError)), -0.5f*deg2rad(_params.controller.LQR_MaxYawError));
+	q_err[3] = fmaxf(fminf(q_err[3], 0.5f*deg2rad(_params.controller.BalanceLQR_MaxYawError)), -0.5f*deg2rad(_params.controller.BalanceLQR_MaxYawError));
 
 	/* Copy quaternion error into error state vector */
 	X_err[0] = q_err[1];
