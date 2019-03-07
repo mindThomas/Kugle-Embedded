@@ -148,18 +148,6 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
     float gq[4*3]; arm_matrix_instance_f32 gq_; arm_mat_init_f32(&gq_, 4, 3, gq);
     Matrix_Extract(g, 6,3,  2,0,  4,3,  gq);
 
-    /* Compute omega_ref in required frame */
-    float omega_ref[3];
-    if (manifoldType == lspc::ParameterTypes::Q_DOT_INERTIAL_MANIFOLD || manifoldType == lspc::ParameterTypes::OMEGA_INERTIAL_MANIFOLD) {
-    	// Convert omega_ref_body (input) into omega_ref_inertial to be used by sliding mode controller
-    	Quaternion_RotateVector_Body2Inertial(q, omega_ref_body, omega_ref);
-    } else {
-    	// Take omega_ref_body (input) directly, since the sliding mode controller will use angular velocity reference in body frame
-    	omega_ref[0] = omega_ref_body[0];
-    	omega_ref[1] = omega_ref_body[1];
-    	omega_ref[2] = omega_ref_body[2];
-    }
-
     /* Compute quaternion error in required frame */
     float q_err[4];
     if (manifoldType == lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD || manifoldType == lspc::ParameterTypes::OMEGA_BODY_MANIFOLD) {
@@ -193,6 +181,18 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
 		 */
 		Quaternion_PhiT(q_err, q, q_ref);
 	}
+
+    /* Compute omega_ref in required frame */
+    float omega_ref[3];
+    if (manifoldType == lspc::ParameterTypes::Q_DOT_INERTIAL_MANIFOLD || manifoldType == lspc::ParameterTypes::OMEGA_INERTIAL_MANIFOLD) {
+    	// Convert omega_ref_body (input) into omega_ref_inertial to be used by sliding mode controller
+    	Quaternion_RotateVector_Body2Inertial(q_ref, omega_ref_body, omega_ref);
+    } else {
+    	// Take omega_ref_body (input) directly, since the sliding mode controller will use angular velocity reference in body frame
+    	omega_ref[0] = omega_ref_body[0];
+    	omega_ref[1] = omega_ref_body[1];
+    	omega_ref[2] = omega_ref_body[2];
+    }
 
 	/* Compute quaternion derivative reference */
     float dq_ref[4];
@@ -243,13 +243,11 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
         /* Inertial angular velocity */
         /* InputInv = inv(devec*Gamma(q_ref)' * gq) */
         arm_mat_mult_f32(&devecGammaQref_T_, &gq_, &Input_);
-        arm_scale_f32(Input, 2.f, Input, 3*3);
     }
     if (manifoldType == lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD) {
         /* Body angular velocity */
         /* InputInv = inv(devec*Phi(q_ref)' * gq) */
         arm_mat_mult_f32(&devecPhiQref_T_, &gq_, &Input_);
-        arm_scale_f32(Input, 2.f, Input, 3*3);
     }
     else if (manifoldType == lspc::ParameterTypes::OMEGA_BODY_MANIFOLD) {
         /* Body angular velocity */
@@ -279,8 +277,8 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
 		arm_mat_mult_f32(&devecGammaQref_T_, &fq_, &sum3_); // sum = devec*Gamma(q_ref)'*fq
 
 		arm_mat_mult_f32(&devecGammaDQref_T_, &q_, &tmp3_); // devec*Gamma(dq_ref)'*q
-		arm_mult_f32((float*)K, tmp3, tmp3, 3); // K*devec*Gamma(q_ref)'*dq
-		arm_add_f32(tmp3, sum3, sum3, 3); // sum += K*devec*Gamma(q_ref)'*dq
+		arm_mult_f32((float*)K, tmp3, tmp3, 3); // K*devec*Gamma(dq_ref)'*q
+		arm_add_f32(tmp3, sum3, sum3, 3); // sum += K*devec*Gamma(dq_ref)'*q
 
 		if (!DisableQdotInEquivalentControl) {
 			arm_mat_mult_f32(&devecGammaQref_T_, &dq_, &tmp3_); // devec*Gamma(q_ref)'*dq
@@ -300,8 +298,8 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
     	arm_mat_mult_f32(&devecPhiQref_T_, &fq_, &sum3_); // devec*Phi(q_ref)'*fq
 
 		arm_mat_mult_f32(&devecPhiDQref_T_, &q_, &tmp3_); // devec*Phi(dq_ref)'*q
-		arm_mult_f32((float*)K, tmp3, tmp3, 3); // K*devec*Phi(q_ref)'*dq
-		arm_add_f32(tmp3, sum3, sum3, 3); // sum += K*devec*Phi(q_ref)'*dq
+		arm_mult_f32((float*)K, tmp3, tmp3, 3); // K*devec*Phi(dq_ref)'*q
+		arm_add_f32(tmp3, sum3, sum3, 3); // sum += K*devec*Phi(dq_ref)'*q
 
 		if (!DisableQdotInEquivalentControl) {
 			arm_mat_mult_f32(&devecPhiQref_T_, &dq_, &tmp3_); // devec*Phi(q_ref)'*dq
@@ -322,8 +320,8 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
 		arm_scale_f32(sum3, 2.f, sum3, 3); // sum = 2*devec*Phi(q)'*fq
 
 		arm_mat_mult_f32(&devecPhiDQref_T_, &q_, &tmp3_); // devec*Phi(dq_ref)'*q
-		arm_mult_f32((float*)K, tmp3, tmp3, 3); // K*devec*Phi(q_ref)'*dq
-		arm_add_f32(tmp3, sum3, sum3, 3); // sum += K*devec*Phi(q_ref)'*dq
+		arm_mult_f32((float*)K, tmp3, tmp3, 3); // K*devec*Phi(dq_ref)'*q
+		arm_add_f32(tmp3, sum3, sum3, 3); // sum += K*devec*Phi(dq_ref)'*q
 
 		if (!DisableQdotInEquivalentControl) {
 			arm_mat_mult_f32(&devecPhiQref_T_, &dq_, &tmp3_); // devec*Phi(q_ref)'*dq
@@ -344,8 +342,8 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
 		arm_scale_f32(sum3, 2.f, sum3, 3); // sum = 2*devec*Gamma(q)'*fq
 
 		arm_mat_mult_f32(&devecGammaDQref_T_, &q_, &tmp3_); // devec*Gamma(dq_ref)'*q
-		arm_mult_f32((float*)K, tmp3, tmp3, 3); // K*devec*Gamma(q_ref)'*dq
-		arm_add_f32(tmp3, sum3, sum3, 3); // sum += K*devec*Gamma(q_ref)'*dq
+		arm_mult_f32((float*)K, tmp3, tmp3, 3); // K*devec*Gamma(dq_ref)'*q
+		arm_add_f32(tmp3, sum3, sum3, 3); // sum += K*devec*Gamma(dq_ref)'*q
 
 		if (!DisableQdotInEquivalentControl) {
 			arm_mat_mult_f32(&devecGammaQref_T_, &dq_, &tmp3_); // devec*Gamma(q_ref)'*dq
