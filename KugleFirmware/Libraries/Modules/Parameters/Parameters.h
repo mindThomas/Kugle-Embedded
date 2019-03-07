@@ -85,14 +85,15 @@ class Parameters
 			/* Sliding Mode parameters */
 			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD;
 			bool ContinousSwitching = true;
-			bool DisableQdotInEquivalentControl = true;
+			bool DisableQdotInEquivalentControl = false;
+			bool DisableOmegaXYInEquivalentControl = false; // similar to DisableQdotInEquivalentControl except that yaw angular velocity is kept
 			// u = tau_eq + tau_switching
 			// tau_switching = -eta * sat(S/epsilon)
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
-			float K[3] = {15, 15, 4}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
-			float eta[3] = {6, 6, 5}; // {5, 5, 10}  switching gain
+			float K[3] = {15, 15, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
+			float eta[3] = {6, 6, 3}; // {5, 5, 10}  switching gain
 			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 			float Kv[2] = {0.01, 0.01};

@@ -57,7 +57,7 @@ SlidingMode::~SlidingMode()
  */
 void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3], float S[3])
 {
-	Step(q, dq, xy, dxy, q_ref, omega_ref, _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g, _params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z, _params.controller.K, _params.controller.eta, _params.controller.epsilon, _params.controller.ContinousSwitching, _params.controller.EquivalentControl, 1.0, _params.controller.DisableQdotInEquivalentControl, _params.controller.ManifoldType, tau, S);
+	Step(q, dq, xy, dxy, q_ref, omega_ref, _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g, _params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z, _params.controller.K, _params.controller.eta, _params.controller.epsilon, _params.controller.ContinousSwitching, _params.controller.EquivalentControl, 1.0, _params.controller.DisableQdotInEquivalentControl, _params.controller.DisableOmegaXYInEquivalentControl, _params.controller.ManifoldType, tau, S);
 }
 
 /**
@@ -74,7 +74,7 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
  */
 void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], float tau[3], float S[3])
 {
-	Step(q, dq, xy, dxy, q_ref, omega_ref, _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g, COM[0], COM[1], COM[2], _params.controller.K, _params.controller.eta, _params.controller.epsilon, _params.controller.ContinousSwitching, _params.controller.EquivalentControl, 1.0, _params.controller.DisableQdotInEquivalentControl, _params.controller.ManifoldType, tau, S);
+	Step(q, dq, xy, dxy, q_ref, omega_ref, _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g, COM[0], COM[1], COM[2], _params.controller.K, _params.controller.eta, _params.controller.epsilon, _params.controller.ContinousSwitching, _params.controller.EquivalentControl, 1.0, _params.controller.DisableQdotInEquivalentControl, _params.controller.DisableOmegaXYInEquivalentControl, _params.controller.ManifoldType, tau, S);
 }
 
 /**
@@ -92,7 +92,7 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
  */
 void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], const float equivalentControlPct, float tau[3], float S[3])
 {
-	Step(q, dq, xy, dxy, q_ref, omega_ref, _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g, COM[0], COM[1], COM[2], _params.controller.K, _params.controller.eta, _params.controller.epsilon, _params.controller.ContinousSwitching, _params.controller.EquivalentControl, equivalentControlPct, _params.controller.DisableQdotInEquivalentControl, _params.controller.ManifoldType, tau, S);
+	Step(q, dq, xy, dxy, q_ref, omega_ref, _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g, COM[0], COM[1], COM[2], _params.controller.K, _params.controller.eta, _params.controller.epsilon, _params.controller.ContinousSwitching, _params.controller.EquivalentControl, equivalentControlPct, _params.controller.DisableQdotInEquivalentControl, _params.controller.DisableOmegaXYInEquivalentControl, _params.controller.ManifoldType, tau, S);
 }
 
 /**
@@ -109,11 +109,11 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
  * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  * @param	S[3]      	  Output: sliding manifold values for the three surfaces used for the attitude control
  */
-void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref_in[4], const float omega_ref_body[3], const float Jk, const float Mk, const float rk, const float Mb, const float Jbx, const float Jby, const float Jbz, const float Jw, const float rw, const float Bvk, const float Bvm, const float Bvb, const float l, const float g_const, const float COM_X, const float COM_Y, const float COM_Z, const float K[3], const float eta[3], const float epsilon[3], const bool continuousSwitching, const bool IncludeEquivalentControl, const float equivalentControlPct, const bool DisableQdotInEquivalentControl, const lspc::ParameterTypes::slidingManifoldType_t manifoldType, float tau[3], float S[3])
+void SlidingMode::Step(const float q[4], const float dq_in[4], const float xy[2], const float dxy[2], const float q_ref_in[4], const float omega_ref_body[3], const float Jk, const float Mk, const float rk, const float Mb, const float Jbx, const float Jby, const float Jbz, const float Jw, const float rw, const float Bvk, const float Bvm, const float Bvb, const float l, const float g_const, const float COM_X, const float COM_Y, const float COM_Z, const float K[3], const float eta[3], const float epsilon[3], const bool continuousSwitching, const bool IncludeEquivalentControl, const float equivalentControlPct, const bool DisableQdotInEquivalentControl, const bool DisableOmegaXYInEquivalentControl, const lspc::ParameterTypes::slidingManifoldType_t manifoldType, float tau[3], float S[3])
 {
     // See ARM-CMSIS DSP library for matrix operations: https://www.keil.com/pack/doc/CMSIS/DSP/html/group__groupMatrix.html
     arm_matrix_instance_f32 q_; arm_mat_init_f32(&q_, 4, 1, (float32_t *)q);
-    arm_matrix_instance_f32 dq_; arm_mat_init_f32(&dq_, 4, 1, (float32_t *)dq);
+    float dq[4] = {dq_in[0], dq_in[1], dq_in[2], dq_in[3]}; arm_matrix_instance_f32 dq_; arm_mat_init_f32(&dq_, 4, 1, (float32_t *)dq);
     float chi[6] = {xy[0], xy[1], q[0], q[1], q[2], q[3]}; arm_matrix_instance_f32 chi_; arm_mat_init_f32(&chi_, 6, 1, (float32_t *)chi);
     float dchi[6] = {dxy[0], dxy[1], dq[0], dq[1], dq[2], dq[3]}; arm_matrix_instance_f32 dchi_; arm_mat_init_f32(&dchi_, 6, 1, (float32_t *)dchi);
 
@@ -271,6 +271,18 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
     float tmp3[3]; arm_matrix_instance_f32 tmp3_; arm_mat_init_f32(&tmp3_, 3, 1, tmp3);
     float tmp4[4]; arm_matrix_instance_f32 tmp4_; arm_mat_init_f32(&tmp4_, 4, 1, tmp4);
 
+	// Compute dq without x and y angular velocity
+	if (DisableOmegaXYInEquivalentControl) {
+		float omega_body_tmp[3];
+		Quaternion_GetAngularVelocity_Body(q, dq_in, omega_body_tmp); // Compute angular velocity components from dq
+		omega_body_tmp[0] = 0; // Remove x and y component
+		omega_body_tmp[1] = 0;
+		Quaternion_GetDQ_FromBody(q, omega_body_tmp, dq); // Recompute dq without x and y angular velocity components
+		// Recompute matrices used in equivalent control derivations
+		Quaternion_mat_devecPhiT(dq, devecPhiDQ_T); // devec*Phi(dq)'
+		Quaternion_mat_devecGammaT(dq, devecGammaDQ_T); // devec*Gamma(dq)'
+	}
+
     if (manifoldType == lspc::ParameterTypes::Q_DOT_INERTIAL_MANIFOLD) {
     	/* tau_eq = InputInv * ( -devec*Gamma(q_ref)'*fq - 2*devec*Gamma(dq_ref)'*dq - K*devec*Gamma(dq_ref)'*q - K*devec*Gamma(q_ref)'*dq ); */
     	/* Here ddq_ref has been left out since we assume omega_ref to be slowly varying */
@@ -357,6 +369,17 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
 
 		arm_negate_f32(sum3, sum3, 3); // negate the sum to get minus in front of all parts
     }
+
+    // Reconstruct the correct dq for the remaining parts
+	if (DisableOmegaXYInEquivalentControl) {
+		dq[0] = dq_in[0];
+		dq[1] = dq_in[1];
+		dq[2] = dq_in[2];
+		dq[3] = dq_in[3];
+		// Recompute matrices possibly used in the following
+		Quaternion_mat_devecPhiT(dq, devecPhiDQ_T); // devec*Phi(dq)'
+		Quaternion_mat_devecGammaT(dq, devecGammaDQ_T); // devec*Gamma(dq)'
+	}
 
     /* Combine computed parts into equivalent control */
     float tau_eq[3]; arm_matrix_instance_f32 tau_eq_; arm_mat_init_f32(&tau_eq_, 3, 1, tau_eq);
@@ -513,7 +536,7 @@ bool SlidingMode::UnitTest(void)
 
 	float Torque[3];
 	float S[3];
-	Step(q, dq, xy, dxy, q_ref, omega_i_ref, Jk, Mk, rk, Mb, Jbx, Jby, Jbz, Jw, rw, Bvk, Bvm, Bvb, l, g, COM_X, COM_Y, COM_Z, K, eta, epsilon, continuousSwitching, true, 1.0, false, lspc::ParameterTypes::OMEGA_BODY_MANIFOLD, Torque, S);
+	Step(q, dq, xy, dxy, q_ref, omega_i_ref, Jk, Mk, rk, Mb, Jbx, Jby, Jbz, Jw, rw, Bvk, Bvm, Bvb, l, g, COM_X, COM_Y, COM_Z, K, eta, epsilon, continuousSwitching, true, 1.0, false, false, lspc::ParameterTypes::OMEGA_BODY_MANIFOLD, Torque, S);
 
 	float Torque_Expected[3] = {-1.0488, -0.2760, 2.0310};
 	if (Math_Round(Torque[0], 4) == Math_Round(Torque_Expected[0], 4) &&
