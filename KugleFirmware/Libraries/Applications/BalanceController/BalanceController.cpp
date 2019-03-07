@@ -23,18 +23,20 @@
 #include "Parameters.h"
 #include "Debug.h"
 #include "LQR.h"
-#include "QuaternionVelocityControl.h"
 #include "SlidingMode.h"
+#include "QuaternionVelocityControl.h"
 #include "IIR.hpp"
 #include "QEKF.h"
 #include "MadgwickAHRS.h"
 #include "COMEKF.h"
 #include "VelocityEKF.h"
+#include "VelocityCOM_EKF.h"
 #include "Kinematics.h"
 #include "WheelSlipDetector.h"
 #include "Quaternion.h"
 
 #include <string> // for memcpy
+#include <cmath> // for fminf, fmaxf
 
 BalanceController::BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_, MTI200 * mti_) : TaskHandle_(0), isRunning_(false), shouldStop_(false), imu(imu_), motor1(motor1_), motor2(motor2_), motor3(motor3_), com(com_), microsTimer(microsTimer_), mti(mti_)
 {
@@ -151,6 +153,7 @@ void BalanceController::Thread(void * pvParameters)
 	QEKF& qEKF = *(new QEKF(params, &balanceController->microsTimer));
 	Madgwick& madgwick = *(new Madgwick(params.controller.SampleRate, params.estimator.MadgwickBeta));
 	VelocityEKF& velocityEKF = *(new VelocityEKF(params, &balanceController->microsTimer));
+	VelocityCOM_EKF& velocityCOM_EKF = *(new VelocityCOM_EKF(params, &balanceController->microsTimer));
 	COMEKF& comEKF = *(new COMEKF(params, &balanceController->microsTimer));
 	Kinematics& kinematics = *(new Kinematics(params, &balanceController->microsTimer));
 	WheelSlipDetector& wheelSlipDetector = *(new WheelSlipDetector(params, &balanceController->microsTimer));
@@ -216,7 +219,7 @@ void BalanceController::Thread(void * pvParameters)
 
 	/* Reset estimators */
 	imu.Get(imuCorrected);
-	imu.CorrectMeasurement(imuCorrected, true, true);
+	imu.CorrectMeasurement(imuCorrected, !params.estimator.UseXsensIMU, !params.estimator.UseXsensIMU, !params.estimator.UseXsensIMU); // do not correct gyroscope bias if Xsens IMU is used (since this is corrected internally by the Xsens Kalman filter)
 	EncoderTicks[0] = motor1.GetEncoderRaw();
 	EncoderTicks[1] = motor2.GetEncoderRaw();
 	EncoderTicks[2] = motor3.GetEncoderRaw();
@@ -226,6 +229,7 @@ void BalanceController::Thread(void * pvParameters)
 	qEKF.Reset(imuCorrected.Accelerometer); // reset attitude estimator to current attitude, based on IMU
 	madgwick.Reset(imuCorrected.Accelerometer[0], imuCorrected.Accelerometer[1], imuCorrected.Accelerometer[2]);
 	velocityEKF.Reset(EncoderTicks);
+	velocityCOM_EKF.Reset(EncoderTicks);
 	comEKF.Reset();
 	kinematics.Reset(EncoderAngle);
 
@@ -461,9 +465,12 @@ __attribute__((optimize("O0")))
 
 	    /* Velocity estimation using velocity EKF */
 	    if (params.estimator.UseVelocityEstimator) {
-			velocityEKF.Step(EncoderTicks, balanceController->q, Cov_q, balanceController->dq, balanceController->COM, params.estimator.UseCoRvelocity); // velocity estimator can estimate either CoR velocity or ball velocity
+			/*velocityEKF.Step(EncoderTicks, balanceController->q, Cov_q, balanceController->dq, balanceController->COM, params.estimator.UseCoRvelocity); // velocity estimator can estimate either CoR velocity or ball velocity
 	    	velocityEKF.GetVelocity(balanceController->dxy);
-	    	velocityEKF.GetVelocityCovariance(Cov_dxy);
+	    	velocityEKF.GetVelocityCovariance(Cov_dxy);*/
+	    	velocityCOM_EKF.Step(EncoderTicks, balanceController->q, Cov_q, balanceController->dq, params.estimator.UseCoRvelocity, (params.controller.mode != lspc::ParameterTypes::OFF)); // velocity estimator can estimate either CoR velocity or ball velocity
+	    	velocityCOM_EKF.GetVelocity(balanceController->dxy);
+	    	velocityCOM_EKF.GetVelocityCovariance(Cov_dxy);
 	    }
 
 	    /* Center of Mass estimation */
@@ -942,6 +949,7 @@ __attribute__((optimize("O0")))
 	delete(&qEKF);
 	delete(&madgwick);
 	delete(&velocityEKF);
+	delete(&velocityCOM_EKF);
 	delete(&comEKF);
 	delete(&kinematics);
 	delete(&wheelSlipDetector);

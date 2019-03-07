@@ -10,7 +10,7 @@
 
 // Include Files
 #include "rt_nonfinite.h"
-#include "QEKF.h"
+#include "QEKF_coder.h"
 #include "QEKF_initialize.h"
 
 // Function Definitions
@@ -36,6 +36,9 @@ void QEKF_initialize(const float P_diagonal_init[10], float X[10], float P[10*10
   for (int i = 0; i < 10; i++) {
       P[11*i] = P_diagonal_init[i];
   }
+
+  acc_norm_old_not_empty_init();
+  acc_norm_filtered_not_empty_init();
 }
 
 //

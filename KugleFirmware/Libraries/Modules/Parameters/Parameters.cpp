@@ -407,14 +407,16 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::Kx: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[0]; return;
 			case lspc::ParameterLookup::Ky: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[1]; return;
 			case lspc::ParameterLookup::Kz: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[2]; return;
-			case lspc::ParameterLookup::VelocityController_AccelerationLimit: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_AccelerationLimit; return;
+			case lspc::ParameterLookup::VelocityControl_AccelerationLimit: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityControl_AccelerationLimit; return;
+			case lspc::ParameterLookup::VelocityControl_UseOmegaRef: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.VelocityControl_UseOmegaRef; return;
 			case lspc::ParameterLookup::VelocityController_MaxTilt: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_MaxTilt; return;
 			case lspc::ParameterLookup::VelocityController_MaxIntegralCorrection: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_MaxIntegralCorrection; return;
 			case lspc::ParameterLookup::VelocityController_VelocityClamp: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_VelocityClamp; return;
 			case lspc::ParameterLookup::VelocityController_IntegralGain: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_IntegralGain; return;
 			case lspc::ParameterLookup::VelocityController_AngleLPFtau: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_AngleLPFtau; return;
 			case lspc::ParameterLookup::VelocityController_OmegaLPFtau: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_OmegaLPFtau; return;
-			case lspc::ParameterLookup::VelocityController_UseOmegaRef: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.VelocityController_UseOmegaRef; return;
+			case lspc::ParameterLookup::AngularVelocityClampsEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.AngularVelocityClampsEnabled; return;
+			case lspc::ParameterLookup::AngularVelocityClamps: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.AngularVelocityClamps[0]; arraySize = 3; return;
 			default: return;
 		}
 	}
@@ -425,8 +427,12 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::EnableSoftwareLPFfilters: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableSoftwareLPFfilters; return;
 			case lspc::ParameterLookup::CreateQdotFromQDifference: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.CreateQdotFromQDifference; return;
 			case lspc::ParameterLookup::UseMadgwick: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseMadgwick; return;
+			case lspc::ParameterLookup::SensorDrivenQEKF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.SensorDrivenQEKF; return;
 			case lspc::ParameterLookup::UseCoRvelocity: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseCoRvelocity; return;
 			case lspc::ParameterLookup::UseVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseVelocityEstimator; return;
+			case lspc::ParameterLookup::UseTiltForVelocityPrediction: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseTiltForVelocityPrediction; return;
+			case lspc::ParameterLookup::UseQdotInVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseQdotInVelocityEstimator; return;
+			case lspc::ParameterLookup::UseCOMestimateInVelocityEstimator: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.UseCOMestimateInVelocityEstimator; return;
 			case lspc::ParameterLookup::EstimateCOM: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateCOM; return;
 			case lspc::ParameterLookup::EstimateBias: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EstimateBias; return;
 			case lspc::ParameterLookup::EnableVelocityLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->estimator.EnableVelocityLPF; return;

@@ -22,6 +22,7 @@
 #include "QEKF_initialize.h"
 #include "MathLib.h"
 #include <math.h>
+#include <cmath>
 #include <string.h> // for memcpy
  
 #include "Quaternion.h"
@@ -59,7 +60,13 @@ void QEKF::Reset()
 void QEKF::Reset(const float accelerometer[3])
 {
 	Reset();
-	// Reset into certain angle based on accelerometer measurement not yet implemented
+
+	/* Reset quaternion state into certain angle based on accelerometer measurement */
+	// Based on Freescale Application Note: https://www.nxp.com/files-static/sensors/doc/app_note/AN3461.pdf
+	const float mu = 0.0001; // regularization factor
+	float roll = atan2f(accelerometer[1], sqrtf(accelerometer[2]*accelerometer[2] + mu*accelerometer[0]*accelerometer[0]));
+	float pitch = atan2f(-accelerometer[0], sqrtf(accelerometer[1]*accelerometer[1] + accelerometer[2]*accelerometer[2]));
+	Quaternion_eul2quat_zyx(0, pitch, roll, &X[0]);
 }
 
 /**
@@ -69,7 +76,13 @@ void QEKF::Reset(const float accelerometer[3])
 void QEKF::Reset(const float accelerometer[3], const float heading)
 {
 	Reset();
-	// Reset into certain angle based on accelerometer and heading measurement not yet implemented
+
+	/* Reset quaternion state into certain angle based on accelerometer measurement */
+	// Based on Freescale Application Note: https://www.nxp.com/files-static/sensors/doc/app_note/AN3461.pdf
+	const float mu = 0.0001; // regularization factor
+	float roll = atan2f(accelerometer[1], sqrtf(accelerometer[2]*accelerometer[2] + mu*accelerometer[0]*accelerometer[0]));
+	float pitch = atan2f(-accelerometer[0], sqrtf(accelerometer[1]*accelerometer[1] + accelerometer[2]*accelerometer[2]));
+	Quaternion_eul2quat_zyx(heading, pitch, roll, &X[0]);
 }
 
 /**
@@ -127,9 +140,9 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const fl
 void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bool EstimateBias, const float dt)
 {
 	if (_params.estimator.UseXsensIMU) // use MTI covariance
-		Step(accelerometer, gyroscope, 0, false, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mti, _params.estimator.cov_gyro_mti, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
+		Step(accelerometer, gyroscope, 0, false, _params.estimator.SensorDrivenQEKF, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mti, _params.estimator.cov_gyro_mti, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.estimator.AccelerometerVibration_DetectionEnabled, _params.estimator.AccelerometerVibration_NormLPFtau, _params.estimator.AccelerometerVibration_CovarianceVaryFactor, _params.estimator.AccelerometerVibration_MaxVaryFactor, _params.model.g, dt);
 	else
-		Step(accelerometer, gyroscope, 0, false, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
+		Step(accelerometer, gyroscope, 0, false, _params.estimator.SensorDrivenQEKF, EstimateBias, false, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.estimator.AccelerometerVibration_DetectionEnabled, _params.estimator.AccelerometerVibration_NormLPFtau, _params.estimator.AccelerometerVibration_CovarianceVaryFactor, _params.estimator.AccelerometerVibration_MaxVaryFactor, _params.model.g, dt);
 }
 
 /**
@@ -143,9 +156,9 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
 void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool EstimateBias, const float dt)
 {
 	if (_params.estimator.UseXsensIMU) // use MTI covariance
-		Step(accelerometer, gyroscope, heading, true, EstimateBias, EstimateBias, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mti, _params.estimator.cov_gyro_mti, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
+		Step(accelerometer, gyroscope, heading, true, _params.estimator.SensorDrivenQEKF, EstimateBias, EstimateBias, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mti, _params.estimator.cov_gyro_mti, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.estimator.AccelerometerVibration_DetectionEnabled, _params.estimator.AccelerometerVibration_NormLPFtau, _params.estimator.AccelerometerVibration_CovarianceVaryFactor, _params.estimator.AccelerometerVibration_MaxVaryFactor, _params.model.g, dt);
 	else
-		Step(accelerometer, gyroscope, heading, true, EstimateBias, EstimateBias, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.model.g, dt);
+		Step(accelerometer, gyroscope, heading, true, _params.estimator.SensorDrivenQEKF, EstimateBias, EstimateBias, _params.estimator.CreateQdotFromQDifference, _params.estimator.cov_acc_mpu, _params.estimator.cov_gyro_mpu, _params.estimator.GyroscopeTrustFactor, _params.estimator.sigma2_omega, _params.estimator.sigma2_heading, _params.estimator.sigma2_bias, _params.estimator.AccelerometerVibration_DetectionEnabled, _params.estimator.AccelerometerVibration_NormLPFtau, _params.estimator.AccelerometerVibration_CovarianceVaryFactor, _params.estimator.AccelerometerVibration_MaxVaryFactor, _params.model.g, dt);
 }
 
 /**
@@ -163,7 +176,7 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const fl
  * @param   g                  Input: gravity constant [m/s^2]
  * @param	dt    			   Input: time passed since last estimate
  */
-void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool UseHeadingForCorrection, const bool EstimateBias, const bool EstimateYawBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float GyroscopeTrustFactor, const float sigma2_omega, const float sigma2_heading, const float sigma2_bias, const float g, const float dt)
+void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool UseHeadingForCorrection, const bool SensorDriven, const bool EstimateBias, const bool EstimateYawBias, const bool CreateQdotFromDifference, const float cov_acc[9], const float cov_gyro[9], const float GyroscopeTrustFactor, const float sigma2_omega, const float sigma2_heading, const float sigma2_bias, const bool AccelerometerVibrationDetectionEnabled, const float AccelerometerVibrationNormLPFtau, const float AccelerometerVibrationCovarianceVaryFactor, const float AccelerometerCovarianceMaxVaryFactor, const float g, const float dt)
 {
 	if (dt == 0) return; // no time has passed
 
@@ -174,12 +187,14 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const fl
 	memcpy(P_prev, P, sizeof(P_prev));
 
 	_QEKF(X_prev, P_prev,
-		 gyroscope, accelerometer, heading,
-		 UseHeadingForCorrection,
+		 gyroscope, accelerometer,
+		 heading, UseHeadingForCorrection,
 		 dt,
+		 SensorDriven, // true == sensor driven Kalman filter
 		 EstimateBias, EstimateYawBias,
-		 true,  // normalize accelerometer = true
-		 cov_gyro, cov_acc,  GyroscopeTrustFactor, sigma2_omega, sigma2_heading, sigma2_bias,
+		 true,  // true == normalize accelerometer
+		 cov_gyro, cov_acc, GyroscopeTrustFactor, sigma2_omega, sigma2_heading, sigma2_bias,
+		 AccelerometerVibrationDetectionEnabled, AccelerometerVibrationNormLPFtau, AccelerometerVibrationCovarianceVaryFactor, AccelerometerCovarianceMaxVaryFactor,
 		 g,
 		 X, P);
 
@@ -320,6 +335,7 @@ bool QEKF::UnitTest(void)
 								  0.0072E-03,    0.4333E-03,    0.0041E-03,
 								  0.0096E-03,    0.0041E-03,    1.0326E-03};
 
+	const bool SensorDriven = true;
 	const float sigma2_bias = 1E-11;
 	const float sigma2_omega = 1E-4;
 	const float sigma2_heading = powf(deg2rad(1) / 3.0f, 2);
@@ -328,6 +344,11 @@ bool QEKF::UnitTest(void)
 	const bool EstimateYawBias = true;
 	const bool CreateQdotFromDifference = false;
 	const bool UseHeadingForCorrection = true;
+	const float VibrationDetectionAmount = 1.0;
+	const bool VibrationDetectionEnabled = false;
+	const float VibrationNormLPFtau = 0.5;
+	const float VibrationCovarianceVaryFactor = 2.0;
+	const float VibrationMaxVaryFactor = 10000;
 
 	const float QEKF_P_init_diagonal[11] = {1E-5, 1E-5, 1E-5, 1E-7,   1E-7, 1E-7, 1E-7, 1E-7,   1E-5, 1E-5, 1E-5};
 
@@ -339,8 +360,8 @@ bool QEKF::UnitTest(void)
 
 	const float dt = 1.0 / 200.0; // 400 Hz
 
-	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, GyroscopeTrustFactor, sigma2_omega, sigma2_heading, sigma2_bias, g, dt);
-	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, GyroscopeTrustFactor, sigma2_omega, sigma2_heading, sigma2_bias, g, dt);
+	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, SensorDriven, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, GyroscopeTrustFactor, sigma2_omega, sigma2_heading, sigma2_bias, VibrationDetectionEnabled, VibrationNormLPFtau, VibrationCovarianceVaryFactor, VibrationMaxVaryFactor, g, dt);
+	Step(Accelerometer, Gyroscope, heading, UseHeadingForCorrection, SensorDriven, EstimateBias, EstimateYawBias, CreateQdotFromDifference, cov_acc_mpu, cov_gyro_mpu, GyroscopeTrustFactor, sigma2_omega, sigma2_heading, sigma2_bias, VibrationDetectionEnabled, VibrationNormLPFtau, VibrationCovarianceVaryFactor, VibrationMaxVaryFactor, g, dt);
 
 	float q[4];
 	GetQuaternion(q);

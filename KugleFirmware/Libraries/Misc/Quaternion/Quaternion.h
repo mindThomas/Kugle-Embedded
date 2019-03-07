@@ -63,6 +63,7 @@ extern void Quaternion_mat_PhiT(const float q[4], float mat[4*4]);
 extern void Quaternion_mat_devecPhiT(const float q[4], float mat[3*4]);
 extern void Quaternion_Gamma(const float p[4], const float q[4], float result[4]); // result = q o p = Gamma(p)*q
 extern void Quaternion_GammaT(const float p[4], const float q[4], float result[4]); // result = q o p* = Gamma(p)^T*q
+extern void Quaternion_mat_Gamma(const float p[4], float mat[4*4]); // mat = Gamma(p)
 extern void Quaternion_mat_GammaT(const float p[4], float mat[4*4]); // mat = Gamma(p)'
 extern void Quaternion_mat_devecGammaT(const float p[4], float mat[3*4]); // mat = devec*Gamma(p)'
 extern void Quaternion_Conjugate(const float q[4], float result[4]); // result = q*
@@ -76,8 +77,9 @@ extern void Quaternion_quat2eul_zyx(const float q[4], float yaw_pitch_roll[3]);
 extern void Quaternion_RotateVector_Body2Inertial(const float q[4], const float v[3], float v_out[3]);
 extern void Quaternion_RotateVector_Inertial2Body(const float q[4], const float v[3], float v_out[3]);
 extern void Quaternion_AngleClamp(const float q[4], const float angleMax, float q_clamped[4]);
-extern void Quaternion_GetAngularVelocity_Body(const float q[4], const float dq[4], float omega_out[3]);
-extern void Quaternion_GetAngularVelocity_Body(const float q[4], const float dq[4], float omega_out[3]);
+extern void Quaternion_GetAngularVelocity_Inertial(const float q[4], const float dq[4], float omega_inertial_out[3]);
+extern void Quaternion_GetAngularVelocity_Body(const float q[4], const float dq[4], float omega_body_out[3]);
+extern void Quaternion_GetDQ_FromInertial(const float q[4], const float omega_inertial[3], float dq[4]);
 extern void Quaternion_GetDQ_FromBody(const float q[4], const float omega_body[3], float dq[4]);
 extern void Quaternion_Integration_Body(const float q[4], const float omega_body[3], const float dt, float q_out[4]);
 extern void Quaternion_Integration_Inertial(const float q[4], const float omega_inertial[3], const float dt, float q_out[4]);

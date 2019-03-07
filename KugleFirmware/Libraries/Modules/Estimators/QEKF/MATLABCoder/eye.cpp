@@ -5,22 +5,35 @@
 // File: eye.cpp
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 22-Feb-2019 19:54:01
+// C/C++ source code generated on  : 06-Mar-2019 11:14:06
 //
 
 // Include Files
 #include <string.h>
 #include "rt_nonfinite.h"
-#include "QEKF.h"
+#include "QEKF_coder.h"
 #include "eye.h"
 
 // Function Definitions
 
 //
+// Arguments    : double I[16]
+// Return Type  : void
+//
+void b_eye(double I[16])
+{
+  int k;
+  memset(&I[0], 0, sizeof(double) << 4);
+  for (k = 0; k < 4; k++) {
+    I[k + (k << 2)] = 1.0;
+  }
+}
+
+//
 // Arguments    : double I[100]
 // Return Type  : void
 //
-void b_eye(double I[100])
+void c_eye(double I[100])
 {
   int k;
   memset(&I[0], 0, 100U * sizeof(double));
@@ -30,15 +43,15 @@ void b_eye(double I[100])
 }
 
 //
-// Arguments    : double I[16]
+// Arguments    : double I[9]
 // Return Type  : void
 //
-void eye(double I[16])
+void eye(double I[9])
 {
   int k;
-  memset(&I[0], 0, sizeof(double) << 4);
-  for (k = 0; k < 4; k++) {
-    I[k + (k << 2)] = 1.0;
+  memset(&I[0], 0, 9U * sizeof(double));
+  for (k = 0; k < 3; k++) {
+    I[k + 3 * k] = 1.0;
   }
 }
 

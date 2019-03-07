@@ -195,6 +195,20 @@ void Quaternion_devecGammaT(const float p[4], const float q[4], float result[3])
     result[2] = -p[3]*q[0] - p[2]*q[1] + p[1]*q[2] + p[0]*q[3];
 }
 
+/* mat = Gamma(p) */
+void Quaternion_mat_Gamma(const float p[4], float mat[4*4])
+{
+    /*Gamma = @(p)[p(0) -p(1) -p(2) -p(3);   % for q o p = Gamma(p) * q
+                   p(1) p(0) p(3) -p(2);
+                   p(2) -p(3) p(0) p(1);
+                   p(3) p(2) -p(1) p(0)];
+    */
+    mat[0]  = p[0];  mat[1]  = -p[1];  mat[2]  = -p[2];  mat[3]  = -p[3];
+    mat[4]  = p[1];  mat[5]  = p[0];   mat[6]  = p[3];   mat[7]  = -p[2];
+    mat[8]  = p[2];  mat[9]  = -p[3];  mat[10] = p[0];   mat[11] = p[1];
+    mat[12] = p[3];  mat[13] = p[2];   mat[14] = -p[1];  mat[15] = p[0];
+}
+
 /* mat = Gamma(p)^T */
 void Quaternion_mat_GammaT(const float p[4], float mat[4*4])
 {
@@ -356,28 +370,33 @@ void Quaternion_AngleClamp(const float q[4], const float angleMax, float q_clamp
 	q_clamped[3] = (q[3] / sinAngle) * sinf(clampedAngle / 2);
 }
 
-void Quaternion_GetAngularVelocity_Inertial(const float q[4], const float dq[4], float omega_out[3])
+void Quaternion_GetAngularVelocity_Inertial(const float q[4], const float dq[4], float omega_inertial_out[3])
 {
 	// dq = 1/2 * q o q_omega_body
 	// q_omega_body = 2*inv(q) o dq
 	// We therefore have:
 	// omega_body = devec * 2 * Phi(q)' * dq
-	Quaternion_devecPhiT(q, dq, omega_out);
-	omega_out[0] *= 2;
-	omega_out[1] *= 2;
-	omega_out[2] *= 2;
+	Quaternion_devecPhiT(q, dq, omega_inertial_out);
+	arm_scale_f32(omega_inertial_out, 2.0f, omega_inertial_out, 3);
 }
 
-void Quaternion_GetAngularVelocity_Body(const float q[4], const float dq[4], float omega_out[3])
+void Quaternion_GetAngularVelocity_Body(const float q[4], const float dq[4], float omega_body_out[3])
 {
 	// dq = 1/2 * q_omega_inertial o q
 	// q_omega_inertial = 2*dq o inv(q)
 	// We therefore have:
 	// omega_body = devec * 2 * Gamma(q)' * dq
-	Quaternion_devecGammaT(q, dq, omega_out);
-	omega_out[0] *= 2;
-	omega_out[1] *= 2;
-	omega_out[2] *= 2;
+	Quaternion_devecGammaT(q, dq, omega_body_out);
+	arm_scale_f32(omega_body_out, 2.0f, omega_body_out, 3);
+}
+
+void Quaternion_GetDQ_FromInertial(const float q[4], const float omega_inertial[3], float dq[4])
+{
+	// dq = 1/2 * q_omega_body o q
+	// dq = 1/2 * Gamma(q) * [0;q_omega_inertial];
+    float omega_q[4] = {0, omega_inertial[0], omega_inertial[1], omega_inertial[2]};
+    Quaternion_Phi(q, omega_q, dq); // Gamma(q) * [0;omega_inertial]
+    arm_scale_f32(dq, 0.5f, dq, 4);
 }
 
 void Quaternion_GetDQ_FromBody(const float q[4], const float omega_body[3], float dq[4])
@@ -385,7 +404,7 @@ void Quaternion_GetDQ_FromBody(const float q[4], const float omega_body[3], floa
 	// dq = 1/2 * q o q_omega_body
 	// dq = 1/2 * Phi(q) * [0;q_omega_body];
     float omega_q[4] = {0, omega_body[0], omega_body[1], omega_body[2]};
-    Quaternion_Phi(q, omega_q, dq); // Gamma(q_ref) * [0;omega_ref]
+    Quaternion_Phi(q, omega_q, dq); // Phi(q) * [0;omega_body]
     arm_scale_f32(dq, 0.5f, dq, 4);
 }
 
@@ -571,10 +590,10 @@ void HeadingQuaternion(const float q[4], float q_heading[4])
 {
 	float heading = HeadingFromQuaternion(q);
 
-	q_heading[0] = cos(heading / 2);
+	q_heading[0] = cos(heading / 2.0f);
 	q_heading[1] = 0;
 	q_heading[2] = 0;
-	q_heading[3] = sin(heading / 2);
+	q_heading[3] = sin(heading / 2.0f);
 
 	if (q[0] < 0) // scalar is negative, make sure this is the case in the output quaternion too
 		Quaternion_Negate(q_heading);

@@ -77,6 +77,8 @@ namespace lspc
             TorqueRampUpTime,
             DisableQdot,
             DisableQdotInEquivalentControl,
+			AngularVelocityClampsEnabled,
+			AngularVelocityClamps,
             ManifoldType,
             K,
             Kx,
@@ -88,15 +90,14 @@ namespace lspc
             epsilon,
             LQR_K,
             LQR_MaxYawError,
-            VelocityController_AccelerationLimit,
+            VelocityControl_AccelerationLimit,
+			VelocityControl_UseOmegaRef,
             VelocityController_MaxTilt,
             VelocityController_MaxIntegralCorrection,
             VelocityController_VelocityClamp,
             VelocityController_IntegralGain,
             VelocityController_AngleLPFtau,
-            VelocityController_OmegaLPFtau,
-            VelocityController_UseOmegaRef
-
+            VelocityController_OmegaLPFtau
         } controller_t;
 
         typedef enum: uint8_t
@@ -109,10 +110,13 @@ namespace lspc
             CreateQdotFromQDifference,
             UseMadgwick,
             EstimateBias,
+			SensorDrivenQEKF,
             UseCoRvelocity,
             UseVelocityEstimator,
             EnableVelocityLPF,
             EnableWheelSlipDetector,
+			UseTiltForVelocityPrediction,
+			UseQdotInVelocityEstimator,
             UseCOMestimateInVelocityEstimator,
             EstimateCOM,
             EstimateCOMminVelocity,
@@ -196,6 +200,7 @@ namespace lspc
             Q_DOT_BODY_MANIFOLD,
             OMEGA_INERTIAL_MANIFOLD,
             OMEGA_BODY_MANIFOLD, // default/suggested
+			VELOCITY_AND_Q_DOT_MANIFOLD,
             UNKNOWN_MANIFOLD = 0xFF
         } slidingManifoldType_t;
 
