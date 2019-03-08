@@ -66,7 +66,7 @@
 
 /* EEPROM emulation start address in Flash */
 
-  #define EEPROM_START_ADDRESS  ADDR_FLASH_SECTOR_6_BANK2 /* sector6 of bank 2 */
+  #define EEPROM_START_ADDRESS  ADDR_FLASH_SECTOR_6_BANK1 /* sector6 of bank 2 */
 
 
 /* Pages 0 and 1 base and end addresses */
@@ -108,7 +108,7 @@ class EEPROM
 			uint16_t internal = 0x002;
 			uint16_t sys_info = 0x050;
 			uint16_t imu_calibration = 0x100;
-			uint16_t parameters = 0x1000;
+			uint16_t parameters = 0x200;
 		} sections;
 
 	public:
