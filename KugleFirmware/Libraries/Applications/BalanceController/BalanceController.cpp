@@ -25,6 +25,7 @@
 #include "LQR.h"
 #include "SlidingMode.h"
 #include "QuaternionVelocityControl.h"
+#include "VelocityLQR.h"
 #include "IIR.hpp"
 #include "QEKF.h"
 #include "MadgwickAHRS.h"
@@ -150,6 +151,7 @@ void BalanceController::Thread(void * pvParameters)
 	LQR& lqr = *(new LQR(params));
 	SlidingMode& sm = *(new SlidingMode(params));
 	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate));
+	VelocityLQR& velocityLQR = *(new VelocityLQR(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate));
 	QEKF& qEKF = *(new QEKF(params, &balanceController->microsTimer));
 	Madgwick& madgwick = *(new Madgwick(params.controller.SampleRate, params.estimator.MadgwickBeta));
 	VelocityEKF& velocityEKF = *(new VelocityEKF(params, &balanceController->microsTimer));
@@ -604,9 +606,12 @@ __attribute__((optimize("O0")))
 			}
 
 			//velocityController.Step(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->q_ref);
-			velocityController.StepWithOmega(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->q_ref, balanceController->omega_ref_body);
+			/*velocityController.StepWithOmega(balanceController->q, balanceController->dq, balanceController->dxy, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->q_ref, balanceController->omega_ref_body);
 			velocityController.GetIntegral(q_tilt_integral);
 			velocityController.GetFilteredVelocityReference_Inertial(balanceController->velocityReference_inertial); // store velocity reference with the filtered one used by the velocity controller  (for logging purposes)
+			*/
+			velocityLQR.Step(balanceController->xy, balanceController->q, balanceController->dxy, balanceController->dq, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->headingVelocityReference, balanceController->q_ref, balanceController->omega_ref_body);
+			velocityLQR.GetFilteredVelocityReference_Inertial(balanceController->velocityReference_inertial);
 	    }
 	    else {
 	    	// We are not in VELOCITY_CONTROL mode - se reset references related to the VELOCITY_CONTROL mode
@@ -795,6 +800,7 @@ __attribute__((optimize("O0")))
 
 	    	/* Reset controllers with internal states */
 	    	velocityController.Reset();
+                velocityLQR.Reset();
 	    }
 
 	    if (params.controller.mode != lspc::ParameterTypes::OFF && !params.debug.DisableMotorOutput) {
@@ -946,6 +952,7 @@ __attribute__((optimize("O0")))
 	delete(&lqr);
 	delete(&sm);
 	delete(&velocityController);
+        delete(&velocityLQR);
 	delete(&qEKF);
 	delete(&madgwick);
 	delete(&velocityEKF);
