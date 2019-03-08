@@ -86,15 +86,15 @@ class Parameters
 			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD;
 			bool ContinousSwitching = true;
 			bool DisableQdotInEquivalentControl = false;
-			bool DisableOmegaXYInEquivalentControl = false; // similar to DisableQdotInEquivalentControl except that yaw angular velocity is kept
+			bool DisableOmegaXYInEquivalentControl = true; // similar to DisableQdotInEquivalentControl except that yaw angular velocity is kept
 			// u = tau_eq + tau_switching
 			// tau_switching = -eta * sat(S/epsilon)
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
-			float K[3] = {15, 15, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
-			float eta[3] = {6, 6, 3}; // {5, 5, 10}  switching gain
-			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
+			float K[3] = {6, 6, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
+			float eta[3] = {5, 5, 6}; // {5, 5, 10}  switching gain
+			float epsilon[3] = {0.8, 0.8, 0.3}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 			float Kv[2] = {0.01, 0.01};
 			float Kvi[2] = {0, 0};//{0.4, 0.4};
@@ -110,7 +110,7 @@ class Parameters
 
 			/* Common velocity control parameters */
 			float VelocityControl_AccelerationLimit = 1.0;
-			bool VelocityControl_UseOmegaRef = false;
+			bool VelocityControl_UseOmegaRef = true;
 
 			/* Velocity controller parameters */
 			float VelocityController_MaxTilt	= 3.0; // max tilt that velocity controller can set [degrees]
@@ -118,17 +118,20 @@ class Parameters
 			float VelocityController_VelocityClamp = 0.3; // velocity clamp for the velocity error [meters pr. second]
 			float VelocityController_IntegralGain = 0.8; // integral gain, which corresponds to the incremental compensation rate (1/gain is the number of seconds it takes the integral to reach a constant offset value)
 			float VelocityController_AngleLPFtau = 0.1; // time-constant for low pass filter on angle reference output
-			float VelocityController_OmegaLPFtau = 0.02; // time-constant for low pass filter on angle reference output
+			float VelocityController_OmegaLPFtau = 0.3; // time-constant for low pass filter on angle reference output
 
 			/* Velocity LQR parameters */
-			float VelocityLQR_VelocityClamp = 0.3;
-			float VelocityLQR_AngularVelocityClamp = 0.1;
+			float VelocityLQR_VelocityClamp = 0.5;
+			float VelocityLQR_AngularVelocityClamp = 0.5;
 			float VelocityLQR_K[2*10] = {
-					-1.88499850295219e-15,	-0.0547722557505151,	1.04472410383699,	-2.74710168739643e-14,	-4.78898131133348e-15,	-0.192693433718899,	0.419544813314103,	-1.01670198942047e-14,	2.55363317247858,	-4.11642490312979e-14,
-					0.0547722557505164,	1.55551948269232e-15,	-2.56069838477061e-14,	1.04496550787218,	0.192699909128534,	4.74215864266766e-15,	-1.02445888879474e-14,	0.420080685053521,	-3.91776010119057e-14,	2.55372275761996
+					1.20495276485036e-14,	-0.999999999999943,	9.57622655412988,	1.07269782092211e-13,	1.81156418200928e-14,	-1.56367340001856,	3.55048271315795,	3.60191361345669e-14,	4.55367707656021,	3.35649664687253e-14,
+					0.999999999999976,	-4.93444326794843e-15,	9.16997798798626e-14,	9.58330393966576,	1.56400044281033,	-1.36239574252401e-14,	2.90922217285368e-14,	3.5561021496512,	2.37666072559232e-14,	4.55403037855776
 			};
 			bool VelocityLQR_IntegralEnabled = false;
-			bool VelocityLQR_PositionControlAtZeroVelocityReference = false;
+			bool VelocityLQR_PositionControlAtZeroVelocityReference = true;
+			float VelocityLQR_PositionControlAtZeroVelocityReference_MaximumKickinVelocity = 0.1;
+			float VelocityLQR_IntegratorPowerupStabilizeTime = 3.0; // wait 3 seconds in the beginning for integrator to settle (and before allowing manual movement)
+			float VelocityController_StabilizationDetectionVelocity = 0.2; // if the robot is pushed with a velocity of more than 0.2 m/s after the initialization time the initialization integrator will be disabled allowing manual movement
 			/* Controller Tuning parameters end */
 		} controller;
 
@@ -157,13 +160,13 @@ class Parameters
 			float sigma2_bias = 1E-10; // for MPU9250 use 1E-6 or 1E-7 works well, for MTI-200 use 1E-9 or disable bias estimation completely!
 			float sigma2_omega = 3.16228e-07; //  (10^(-6.5)) for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
 			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
-			float GyroscopeTrustFactor = 10.0; // the higher value the more trust is put into the gyroscope measurements by increasing the accelerometer covariance
+			float GyroscopeTrustFactor = 2.0; // the higher value the more trust is put into the gyroscope measurements by increasing the accelerometer covariance
 			bool AccelerometerVibration_DetectionEnabled = false;
 			float AccelerometerVibration_NormLPFtau = 0.5; // seconds
 			float AccelerometerVibration_CovarianceVaryFactor = 2.0; // vary/scale the accelerometer covariance depending on exaggerated accelerations (above 'AccelerometerVibration_DetectionAmount') based on VaryFactor=exp(AccelerometerCovarianceVaryFactor*norm_difference)
 			float AccelerometerVibration_MaxVaryFactor = 10000; // vary/scale the accelerometer covariance with maximum this value
 			// X = {q0, q1, q2, q3,   dq0, dq1, dq2, dq3,   gyro_bias_x, gyro_bias_y}
-			float QEKF_P_init_diagonal[11] = {1E-7, 1E-7, 1E-7, 1E-7,   1E-7, 1E-7, 1E-7,   1E-8, 1E-8, 1E-8}; // initialize q3 variance lower than others, since yaw can not be estimated so we are more certain on the initial value to let gyro integration (dead-reckoning) dominate the "yaw" estimate
+			float QEKF_P_init_diagonal[11] = {1E-7, 1E-7, 1E-7, 1E-9,   1E-7, 1E-7, 1E-9,   1E-8, 1E-8, 1E-8}; // initialize q3 variance lower than others, since yaw can not be estimated so we are more certain on the initial value to let gyro integration (dead-reckoning) dominate the "yaw" estimate
 
 			/* Position estimate configuration */
 			bool PositionEstimateDefinedInCoR = false; // at default the position estimate is defined in the center of the ball - enabling this flag will move it to the Center of Rotation (CoR)
@@ -172,7 +175,7 @@ class Parameters
 			bool UseCoRvelocity = false; // the velocity can conveniently be defined in the Center of Rotation to make it independent of tilt
 
 			/* Velocity estimator parameters */
-			bool UseVelocityEstimator = false;
+			bool UseVelocityEstimator = true;
 			bool UseTiltForVelocityPrediction = false; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
 			bool UseQdotInVelocityEstimator = true;
 			bool UseCOMestimateInVelocityEstimator = true;
