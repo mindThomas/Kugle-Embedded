@@ -372,21 +372,21 @@ void Quaternion_AngleClamp(const float q[4], const float angleMax, float q_clamp
 
 void Quaternion_GetAngularVelocity_Inertial(const float q[4], const float dq[4], float omega_inertial_out[3])
 {
-	// dq = 1/2 * q o q_omega_body
-	// q_omega_body = 2*inv(q) o dq
+	// dq = 1/2 * q_omega_inertial o q
+	// q_omega_inertial = 2*dq o inv(q)
 	// We therefore have:
-	// omega_body = devec * 2 * Phi(q)' * dq
-	Quaternion_devecPhiT(q, dq, omega_inertial_out);
+	// omega_body = devec * 2 * Gamma(q)' * dq
+	Quaternion_devecGammaT(q, dq, omega_inertial_out);
 	arm_scale_f32(omega_inertial_out, 2.0f, omega_inertial_out, 3);
 }
 
 void Quaternion_GetAngularVelocity_Body(const float q[4], const float dq[4], float omega_body_out[3])
 {
-	// dq = 1/2 * q_omega_inertial o q
-	// q_omega_inertial = 2*dq o inv(q)
+	// dq = 1/2 * q o q_omega_body
+	// q_omega_body = 2*inv(q) o dq
 	// We therefore have:
-	// omega_body = devec * 2 * Gamma(q)' * dq
-	Quaternion_devecGammaT(q, dq, omega_body_out);
+	// omega_body = devec * 2 * Phi(q)' * dq
+	Quaternion_devecPhiT(q, dq, omega_body_out);
 	arm_scale_f32(omega_body_out, 2.0f, omega_body_out, 3);
 }
 
