@@ -107,6 +107,7 @@
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityEKF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityCOM_EKF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityEKF/MATLABCoder"/>
+									<listOptionValue builtIn="false" value="../Libraries/Modules/Controllers/VelocityLQR"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/VelocityCOM_EKF/MATLABCoder"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF"/>
 									<listOptionValue builtIn="false" value="../Libraries/Modules/Estimators/COMEKF/MATLABCoder"/>
