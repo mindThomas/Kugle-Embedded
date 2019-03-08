@@ -107,7 +107,7 @@
 #define configTICK_RATE_HZ                       ((TickType_t)1000)
 #define configMAX_PRIORITIES                     ( 20 )
 #define configMINIMAL_STACK_SIZE                 ((uint16_t)256)
-#define configTOTAL_HEAP_SIZE                    ((size_t)128*1024)
+#define configTOTAL_HEAP_SIZE                    ((size_t)64*1024)
 #define configMAX_TASK_NAME_LEN                  ( 20 )
 #define configGENERATE_RUN_TIME_STATS            1
 #define configIDLE_SHOULD_YIELD           		 1

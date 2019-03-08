@@ -494,7 +494,7 @@ returnValue DenseMatrix_bilinear(	DenseMatrix* _THIS,
 	int ii, jj, kk, col;
 	int i,j,k,irA;
 
-	myStatic real_t Ax[NVCMAX*NVMAX];
+	myStatic2 real_t Ax[NVCMAX*NVMAX];
 	real_t h;
 	
 	for (ii = 0; ii < xN; ii++)

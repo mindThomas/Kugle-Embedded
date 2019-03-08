@@ -37,8 +37,8 @@
 /** Instance of ACADO data structure */
 extern "C" __EXPORT {
 	// Put the ACADO variables and workspace in same memory region as the FreeRTOS heap is put but WITHOUT OVERLAPPING ---- This is handled by the compiler/linker
-	__attribute__ ((used,section(".ramd1_heap_acadoVariables"))) ACADOvariables acadoVariables;
-	__attribute__ ((used,section(".ramd1_heap_acadoWorkspace"))) ACADOworkspace acadoWorkspace;
+	__attribute__ ((used,section(".ramd1_acadoVariables"))) ACADOvariables acadoVariables;
+	__attribute__ ((used,section(".ramd1_acadoWorkspace"))) ACADOworkspace acadoWorkspace;
 }
 
 namespace MPC {

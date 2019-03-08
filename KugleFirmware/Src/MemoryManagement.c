@@ -15,8 +15,10 @@
 
 #define USE_FREERTOS
 
-extern int _sramd1_heap; // get address to global symbol defined in linker file
-extern int _eramd1_heap; // get address to global symbol defined in linker file
+extern int _sramd1; // get address to global symbol defined in linker file
+extern int _eramd1; // get address to global symbol defined in linker file
+extern int _sramd2; // get address to global symbol defined in linker file
+extern int _eramd2; // get address to global symbol defined in linker file
 extern uint8_t freeRTOSMemoryScheme;
 
 /*void ZeroInitFreeRTOSheap(void);
@@ -75,10 +77,17 @@ void __wrap__free_r (void * ptr)
 
 void ZeroInitRAM_D1(void)
 {
-	uint8_t * heapPtr = (uint8_t*)&_sramd1_heap; // heap is placed at this global symbol address
-	uint8_t * heapEndPtr = (uint8_t*)&_eramd1_heap; // heap is placed at this global symbol address
+	uint8_t * RAM_D1_Ptr = (uint8_t*)&_sramd1; // heap is placed at this global symbol address
+	uint8_t * RAM_D1_EndPtr = (uint8_t*)&_eramd1; // heap is placed at this global symbol address
 	freeRTOSMemoryScheme = configUSE_HEAP_SCHEME;
-	memset(heapPtr, 0, heapEndPtr-heapPtr);
+	memset(RAM_D1_Ptr, 0, RAM_D1_EndPtr-RAM_D1_Ptr);
+}
+
+void ZeroInitRAM_D2(void)
+{
+	uint8_t * RAM_D2_Ptr = (uint8_t*)&_sramd2;
+	uint8_t * RAM_D2_EndPtr = (uint8_t*)&_eramd2;
+	memset(RAM_D2_Ptr, 0, RAM_D2_EndPtr-RAM_D2_Ptr);
 }
 
 #if 0

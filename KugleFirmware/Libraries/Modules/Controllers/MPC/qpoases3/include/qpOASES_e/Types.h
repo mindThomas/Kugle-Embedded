@@ -100,7 +100,8 @@
 #ifdef __NO_STATIC__
   #define myStatic 
 #else
-  #define myStatic static
+  #define myStatic static __attribute__((__section__(".ramd2")))
+  #define myStatic2 static __attribute__((__section__(".ramd1")))
 #endif /* __NO_STATIC__ */
 
 

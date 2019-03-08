@@ -37,7 +37,7 @@ int acado_solve( void )
 {
 
 	returnValue retVal;
-	QProblem qp;
+	myStatic QProblem qp;
 	Options options;
 
 	acado_nWSR = QPOASES_NWSRMAX;

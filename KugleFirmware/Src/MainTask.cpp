@@ -130,6 +130,15 @@ void MainTask(void * pvParameters)
 
 	/* Initialize MPC */
 	MPC::MPC * mpc = new MPC::MPC;
+	/* Test MPC */
+	double desired_position[2] = {0, 0};
+	mpc->setXYreferencePosition(desired_position);
+	double position[2] = {0.1, 0.1};
+	double velocity[2] = {0, 0};
+	double quaternion[4] = {1,0,0,0};
+	mpc->setCurrentState(position, velocity, quaternion);
+	mpc->Step();
+
 
 	/* Initialize motors */
 	ESCON * motor1 = new ESCON(1);

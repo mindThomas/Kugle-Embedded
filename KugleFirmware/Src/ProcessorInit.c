@@ -124,6 +124,11 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
+  /* Enable memory clocks */
+  __HAL_RCC_D2SRAM1_CLK_ENABLE();
+  __HAL_RCC_D2SRAM2_CLK_ENABLE();
+  __HAL_RCC_D2SRAM3_CLK_ENABLE();
 }
 
 void Enter_DFU_Bootloader(void)

@@ -22,5 +22,6 @@
 #define MEMORY_MANAGEMENT_H
 
 void ZeroInitRAM_D1(void);
+void ZeroInitRAM_D2(void);
 	
 #endif 

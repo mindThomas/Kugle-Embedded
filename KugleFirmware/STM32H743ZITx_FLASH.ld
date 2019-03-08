@@ -158,17 +158,29 @@ SECTIONS
   } >DTCMRAM
 
     /* User_heap_stack section, used to check that there is enough RAM left */
-  .ramd1_heap (NOLOAD) :
+  .ramd1 (NOLOAD) :
   {
     . = ALIGN(4);
-    _sramd1_heap = .;        /* create a global symbol at data start */
-    *(.ramd1_heap)           /* .ramd1_heap sections */
-    *(.ramd1_heap*)          /* .ramd1_heap* sections */
+    _sramd1 = .;        /* create a global symbol at data start */
+    *(.ramd1)           /* .ramd1_heap sections */
+    *(.ramd1*)          /* .ramd1_heap* sections */
 
     . = ALIGN(4);
-    _eramd1_heap = .;        /* define a global symbol at data end */
+    _eramd1 = .;        /* define a global symbol at data end */
   } >RAM_D1
 
+    /* User_heap_stack section, used to check that there is enough RAM left */
+  .ramd2 (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _sramd2 = .;        /* create a global symbol at data start */
+    *(.ramd2)           /* .ramd1_heap sections */
+    *(.ramd2*)          /* .ramd1_heap* sections */
+
+    . = ALIGN(4);
+    _eramd2 = .;        /* define a global symbol at data end */
+  } >RAM_D2
+  
   /* Remove information from the standard libraries */
   /DISCARD/ :
   {

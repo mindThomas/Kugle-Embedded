@@ -38,7 +38,6 @@ TaskHandle_t mainTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void SystemClock_Config2(void);
 
 /**
   * @brief  The application entry point.
@@ -58,6 +57,7 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
   ZeroInitRAM_D1();
+  ZeroInitRAM_D2();
 
   /* Create the main thread which creates objects and spawns the rest of the threads */
   xTaskCreate(MainTask, "mainTask", 1024, (void*) NULL, MAIN_TASK_PRIORITY, &mainTaskHandle);
