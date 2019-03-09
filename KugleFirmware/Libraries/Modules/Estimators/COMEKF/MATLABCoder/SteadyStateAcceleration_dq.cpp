@@ -10,7 +10,7 @@
 
 // Include Files
 #include "rt_nonfinite.h"
-#include "VelocityEstimator.h"
+#include "COMEstimator.h"
 #include "SteadyStateAcceleration_dq.h"
 
 // Function Definitions

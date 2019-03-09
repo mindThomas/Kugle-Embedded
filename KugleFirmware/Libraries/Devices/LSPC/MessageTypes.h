@@ -121,9 +121,7 @@ namespace lspc
             UseVelocityEstimator,
             EnableVelocityLPF,
             EnableWheelSlipDetector,
-			UseTiltForVelocityPrediction,
 			UseQdotInVelocityEstimator,
-            UseCOMestimateInVelocityEstimator,
             EstimateCOM,
             EstimateCOMminVelocity,
             MaxCOMDeviation,
@@ -136,11 +134,10 @@ namespace lspc
             sigma2_omega,
             sigma2_heading,
             GyroscopeTrustFactor,
-			Var_COM,
 			eta_encoder,
-            QEKF_P_init_diagonal,
-            VelocityEstimator_P_init_diagonal,
-            COMEstimator_P_init_diagonal
+			eta_accelerometer,
+			var_acc_bias,
+			var_acceleration
         } estimator_t;
 
         typedef enum: uint8_t
