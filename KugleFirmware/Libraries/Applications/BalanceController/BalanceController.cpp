@@ -800,7 +800,7 @@ __attribute__((optimize("O0")))
 
 	    	/* Reset controllers with internal states */
 	    	velocityController.Reset();
-                velocityLQR.Reset();
+			velocityLQR.Reset();
 	    }
 
 	    if (params.controller.mode != lspc::ParameterTypes::OFF && !params.debug.DisableMotorOutput) {

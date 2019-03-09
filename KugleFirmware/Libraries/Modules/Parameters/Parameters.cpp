@@ -398,6 +398,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
 			case lspc::ParameterLookup::DisableQdot: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableQdot; return;
 			case lspc::ParameterLookup::DisableQdotInEquivalentControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableQdotInEquivalentControl; return;
+			case lspc::ParameterLookup::DisableOmegaXYInEquivalentControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableOmegaXYInEquivalentControl; return;
 			case lspc::ParameterLookup::ManifoldType: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.ManifoldType; return;
 			case lspc::ParameterLookup::ContinousSwitching: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.ContinousSwitching; return;
 			case lspc::ParameterLookup::EquivalentControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EquivalentControl; return;
@@ -407,6 +408,11 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::Kx: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[0]; return;
 			case lspc::ParameterLookup::Ky: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[1]; return;
 			case lspc::ParameterLookup::Kz: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[2]; return;
+			case lspc::ParameterLookup::Kv_x: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kv[0]; return;
+			case lspc::ParameterLookup::Kv_y: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kv[1]; return;
+			case lspc::ParameterLookup::Kvi_x: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kvi[0]; return;
+			case lspc::ParameterLookup::Kvi_y: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kvi[1]; return;
+			case lspc::ParameterLookup::gamma: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.gamma; return;
 			case lspc::ParameterLookup::VelocityControl_AccelerationLimit: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityControl_AccelerationLimit; return;
 			case lspc::ParameterLookup::VelocityControl_UseOmegaRef: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.VelocityControl_UseOmegaRef; return;
 			case lspc::ParameterLookup::VelocityController_MaxTilt: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.VelocityController_MaxTilt; return;
