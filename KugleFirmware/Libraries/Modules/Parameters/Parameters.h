@@ -204,17 +204,13 @@ class Parameters
 
 			/* Velocity estimator parameters */
 			bool UseVelocityEstimator = true;
-			bool UseTiltForVelocityPrediction = false; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
 			bool UseQdotInVelocityEstimator = true;
-			bool UseCOMestimateInVelocityEstimator = true;
-			float Var_COM = 1e-7; // (10^(-5.5))  variance on COM estimate into velocity estimator
-			float eta_encoder = 10.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
-			bool UseWheelSlipDetectorInVelocityEstimator = false;
-			float VelocityEstimatorWheelSlipCovariance = 1e-10; // reduce velocity estimator covariance at wheel slip to reduce trust in sensor measurements in general
-			// X = {dx, dy}
-			float VelocityEstimator_P_init_diagonal[2] = {1E-1, 1E-1}; // initialize velocity estimator covariance
-			// X = {dx, dy, COM_X, COM_Y}
-			float VelocityEstimator_WithCOM_P_init_diagonal[4] = {1E-1, 1E-1, 1E-9, 1E-9}; // initialize velocity estimator covariance
+			float eta_encoder = 1.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
+			float eta_accelerometer = 5;
+			float var_acc_bias = 1E-9;
+			float var_acceleration = 1E-5;
+			// X = {dx, dy, ddx, ddy, acc_bias_x, acc_bias_y, acc_bias_z}
+			float VelocityEstimator_P_init_diagonal[7] = {1E-1,1E-1, 1E-2,1E-2, 1E-9,1E-9,1E-9}; // initialize velocity estimator covariance
 
 			/* Velocity LPF (if Velocity estimator is not used */
 			bool EnableVelocityLPF = true; // Velocity LPF is only used if Velocity Estimator is disabled - OBS. This is necessary to avoid sudden angle reference changes due to noise!

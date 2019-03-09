@@ -2,27 +2,31 @@
 // Academic License - for use in teaching, academic research, and meeting
 // course requirements at degree granting institutions only.  Not for
 // government, commercial, or other organizational use.
-// File: QEKF_initialize.h
+// File: mrdivide.h
 //
 // MATLAB Coder version            : 4.0
-// C/C++ source code generated on  : 29-Oct-2018 20:49:17
+// C/C++ source code generated on  : 09-Mar-2019 19:21:50
 //
-#ifndef COMESTIMATOR_INITIALIZE_H
-#define COMESTIMATOR_INITIALIZE_H
+#ifndef VELOCITYESTIMATOR_MRDIVIDE_H
+#define VELOCITYESTIMATOR_MRDIVIDE_H
 
 // Include Files
 #include <stddef.h>
 #include <stdlib.h>
 #include "rtwtypes.h"
-#include "COMEstimator_types.h"
+#include "VelocityEstimator_types.h"
+
+namespace nsVelocityEstimator {
 
 // Function Declarations
-extern void COMEstimator_initialize(const float P_diagonal_init[2], float X[2], float P[2*2]);
+extern void mrdivide(const float A[42], const float B[36], float y[42]);
+
+}
 
 #endif
 
 //
-// File trailer for COMEstimator_initialize.h
+// File trailer for mrdivide.h
 //
 // [EOF]
 //
