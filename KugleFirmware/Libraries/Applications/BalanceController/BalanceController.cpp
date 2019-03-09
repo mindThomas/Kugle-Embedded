@@ -149,7 +149,7 @@ void BalanceController::Thread(void * pvParameters)
 
 	/* Create and initialize controller and estimator objects */
 	LQR& lqr = *(new LQR(params));
-	SlidingMode& sm = *(new SlidingMode(params));
+	SlidingMode& sm = *(new SlidingMode(params, &balanceController->microsTimer));
 	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate));
 	VelocityLQR& velocityLQR = *(new VelocityLQR(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate));
 	QEKF& qEKF = *(new QEKF(params, &balanceController->microsTimer));
@@ -576,7 +576,7 @@ __attribute__((optimize("O0")))
 		}
 
 	    /* Velocity control enabled */
-	    if (params.controller.mode == lspc::ParameterTypes::VELOCITY_CONTROL) {
+	    if (params.controller.mode == lspc::ParameterTypes::VELOCITY_CONTROL || (params.controller.mode == lspc::ParameterTypes::QUATERNION_CONTROL && params.controller.ManifoldType == lspc::ParameterTypes::VELOCITY_AND_Q_DOT_MANIFOLD)) {
 			// Get velocity reference
 	    	if (xSemaphoreTake( balanceController->VelocityReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for reading
 	    		if ((microsTimer.GetTime() - balanceController->VelocityReference.time) < params.controller.ReferenceTimeout) {
@@ -610,8 +610,10 @@ __attribute__((optimize("O0")))
 			velocityController.GetIntegral(q_tilt_integral);
 			velocityController.GetFilteredVelocityReference_Inertial(balanceController->velocityReference_inertial); // store velocity reference with the filtered one used by the velocity controller  (for logging purposes)
 			*/
-			velocityLQR.Step(balanceController->xy, balanceController->q, balanceController->dxy, balanceController->dq, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->headingVelocityReference, balanceController->q_ref, balanceController->omega_ref_body);
-			velocityLQR.GetFilteredVelocityReference_Inertial(balanceController->velocityReference_inertial);
+			if (params.controller.mode == lspc::ParameterTypes::VELOCITY_CONTROL) {
+				velocityLQR.Step(balanceController->xy, balanceController->q, balanceController->dxy, balanceController->dq, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), balanceController->headingReference, balanceController->headingVelocityReference, balanceController->q_ref, balanceController->omega_ref_body);
+				velocityLQR.GetFilteredVelocityReference_Inertial(balanceController->velocityReference_inertial);
+			}
 	    }
 	    else {
 	    	// We are not in VELOCITY_CONTROL mode - se reset references related to the VELOCITY_CONTROL mode
@@ -655,7 +657,10 @@ __attribute__((optimize("O0")))
 	    	lqr.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->COM, balanceController->q_ref, balanceController->omega_ref_body, Torque);
 		} else if (params.controller.type == lspc::ParameterTypes::SLIDING_MODE_CONTROLLER && params.controller.mode != lspc::ParameterTypes::OFF) {
 			// OBS. When running the Sliding Mode controller, inertial angular velocity reference is needed
-	    	sm.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->COM, balanceController->q_ref, balanceController->omega_ref_body, EquivalentControlPct, Torque, S);
+			if (params.controller.ManifoldType == lspc::ParameterTypes::VELOCITY_AND_Q_DOT_MANIFOLD)
+				sm.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->COM, balanceController->q_ref, balanceController->omega_ref_body, balanceController->velocityReference, (balanceController->velocityReferenceFrame == lspc::ParameterTypes::HEADING_FRAME), EquivalentControlPct, Torque, S);
+			else
+				sm.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->COM, balanceController->q_ref, balanceController->omega_ref_body, EquivalentControlPct, Torque, S);
 		} else {
 			// Undefined controller mode, eg. OFF - set torque output to 0
 			Torque[0] = 0;
@@ -801,6 +806,7 @@ __attribute__((optimize("O0")))
 	    	/* Reset controllers with internal states */
 	    	velocityController.Reset();
 			velocityLQR.Reset();
+			sm.Reset();
 	    }
 
 	    if (params.controller.mode != lspc::ParameterTypes::OFF && !params.debug.DisableMotorOutput) {

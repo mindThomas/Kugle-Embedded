@@ -49,7 +49,7 @@ class Parameters
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
 			bool StepTestEnabled = false;
 			bool SineTestEnabled = false;
-			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_VELOCITY_CONTROL;
+			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_QUATERNION_CONTROL;
 			/* Behavioural parameters end */
 		} behavioural;
 		
@@ -83,7 +83,7 @@ class Parameters
 			float AngularVelocityClamps[3] = {0.05, 0.05, 0.5}; // omega_body_x, omega_body_y, omega_body_z
 
 			/* Sliding Mode parameters */
-			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD;
+			lspc::ParameterTypes::slidingManifoldType_t ManifoldType = lspc::ParameterTypes::VELOCITY_AND_Q_DOT_MANIFOLD;
 			bool ContinousSwitching = true;
 			bool DisableQdotInEquivalentControl = false;
 			bool DisableOmegaXYInEquivalentControl = true; // similar to DisableQdotInEquivalentControl except that yaw angular velocity is kept
@@ -100,16 +100,16 @@ class Parameters
 			#else
 
 			// The gains below are much more sluggish/slow than the above but works well with the Velocity LQR controller settings both angle (q_ref) and angular velocity (omega_ref) references
-			float K[3] = {6, 6, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
-			float eta[3] = {5, 5, 6}; // {5, 5, 10}  switching gain
+			float K[3] = {5, 5, 5}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
+			float eta[3] = {3, 3, 3}; // {5, 5, 10}  switching gain
 			float epsilon[3] = {0.8, 0.8, 0.3}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 			#endif
 
 			/* Velocity sliding mode gains */
-			float Kv[2] = {0, 0};
-			float Kvi[2] = {0, 0};
-			float gamma = 0; // Note: Use this carefully. If value becomes too large the output will end up oscillating and thus turn off the motors (will sound like a 100 Hz humming with increasing amplitude).
+			float Kv[2] = {0.3, 0.3};
+			float Kvi[2] = {0.5, 0.5};
+			float gamma = 0.05; // Note: Use this carefully. If value becomes too large the output will end up oscillating and thus turn off the motors (will sound like a 100 Hz humming with increasing amplitude).
 
 			/* Balance LQR parameters */
 			float BalanceLQR_MaxYawError = 10.0; // yaw error clamp [degrees]

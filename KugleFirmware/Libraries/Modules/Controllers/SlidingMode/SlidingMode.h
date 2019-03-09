@@ -24,17 +24,26 @@
 #include <stdlib.h>
 
 #include "Parameters.h"
+#include "Timer.h"
 
 class SlidingMode
 {
 	public:
+		SlidingMode(Parameters& params, Timer * microsTimer);
 		SlidingMode(Parameters& params);
 		~SlidingMode();
+
+		void Reset();
 
 		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3], float S[3]);
 		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], float tau[3], float S[3]);
 		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], const float equivalentControlPct, float tau[3], float S[3]);
-		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref_in[4], const float omega_ref_body[3], const float Jk, const float Mk, const float rk, const float Mb, const float Jbx, const float Jby, const float Jbz, const float Jw, const float rw, const float Bvk, const float Bvm, const float Bvb, const float l, const float g_const, const float COM_X, const float COM_Y, const float COM_Z, const float K[3], const float eta[3], const float epsilon[3], const bool continuousSwitching, const bool IncludeEquivalentControl, const float equivalentControlPct, const bool DisableQdotInEquivalentControl, const bool DisableOmegaXYInEquivalentControl, const lspc::ParameterTypes::slidingManifoldType_t manifoldType, float tau[3], float S[3]);
+		void Step(const float q[4], const float dq_in[4], const float xy[2], const float dxy[2], const float q_ref_in[4], const float omega_ref_body[3], const float Jk, const float Mk, const float rk, const float Mb, const float Jbx, const float Jby, const float Jbz, const float Jw, const float rw, const float Bvk, const float Bvm, const float Bvb, const float l, const float g_const, const float COM_X, const float COM_Y, const float COM_Z, const float K[3], const float eta[3], const float epsilon[3], const bool continuousSwitching, const bool IncludeEquivalentControl, const float equivalentControlPct, const bool DisableQdotInEquivalentControl, const bool DisableOmegaXYInEquivalentControl, const lspc::ParameterTypes::slidingManifoldType_t manifoldType, float tau[3], float S[3]);
+
+		// Velocity sliding manifold
+		void Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], const float velocity_reference[2], const bool VelocityReferenceInHeadingFrame, const float equivalentControlPct, float tau[3], float S[3]);
+		void Step(const float q[4], const float dq_in[4], const float xy[2], const float dxy[2], const float q_ref_in[4], const float omega_ref_body[3], const float velocity_reference[2], const bool VelocityReferenceInHeadingFrame, const float Jk, const float Mk, const float rk, const float Mb, const float Jbx, const float Jby, const float Jbz, const float Jw, const float rw, const float Bvk, const float Bvm, const float Bvb, const float l, const float g_const, const float COM_X, const float COM_Y, const float COM_Z, const float Kq[3], const float Kv[2], const float Kvi[2], const float eta[3], const float epsilon[3], const float gamma, const bool continuousSwitching, const bool IncludeEquivalentControl, const float equivalentControlPct, const bool DisableQdotInEquivalentControl, const bool DisableOmegaXYInEquivalentControl, const float dt, float tau[3], float S[3]);
+
 		void HeadingIndependentReferenceManual(const float q_ref[4], const float q[4], float q_ref_out[4]);
 		void HeadingIndependentQdot(const float dq[4], const float q[4], float q_dot_out[4]);
 
@@ -46,6 +55,12 @@ class SlidingMode
 
 	private:
 		Parameters& _params;
+		Timer * _microsTimer;
+		uint32_t _prevTimerValue;
+
+	private:
+		float Sv_integral[2];
+		float tau_prev[3];
 };
 	
 	
