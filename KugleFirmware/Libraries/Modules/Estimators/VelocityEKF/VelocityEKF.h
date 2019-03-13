@@ -1,13 +1,12 @@
 /* Copyright (C) 2018-2019 Thomas Jespersen, TKJ Electronics. All rights reserved.
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
- * the Free Software Foundation, version 3.
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the MIT License
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
- * General Public License for more details. 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the MIT License for further details.
  *
  * Contact information
  * ------------------------------------------
@@ -32,8 +31,8 @@ class VelocityEKF
 	
 		void Reset();
 		void Reset(const int32_t encoderTicks[3]);
-		void Step(const int32_t encoderTicks[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3], const bool EstimateCoRvelocity);
-		void Step(const int32_t encoderTicks[3], const bool UseTiltForPrediction, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const bool UseCOMest, const float COMest[3], const float Var_COM, const float eta_encoder, const bool EstimateCoRvelocity, const bool EnableWheelSlipDetector, const float WheelSlipAccelerationThreshold, const float WheelSlipSetVelocityVariance, const float dt);
+		void Step(const int32_t encoderTicks[3], const float Accelerometer[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4]);
+		void Step(const int32_t encoderTicks[3], const float eta_encoder, const float Accelerometer[3], const float Cov_Accelerometer[3*3], const float eta_accelerometer, const float eta_acc_bias, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float eta_acceleration, const float dt);
 
 		void GetVelocity(float dxy[2]);
 		void GetVelocityCovariance(float Cov_dxy[2*2]);
@@ -46,8 +45,8 @@ class VelocityEKF
 		int32_t _prevEncoderTicks[3];
 
 		/* State estimate */
-		float X[2];   // state estimates = { dx, dy }
-		float P[2*2]; // covariance matrix
+		float X[7];   // state estimates = { dx, dy, ddx, ddy, acc_bias_x, acc_bias_y, acc_bias_z }
+		float P[7*7]; // covariance matrix
 };
 	
 	

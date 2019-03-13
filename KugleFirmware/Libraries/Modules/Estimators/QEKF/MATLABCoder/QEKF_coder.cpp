@@ -99,7 +99,7 @@ static float rt_atan2f_snf(float u0, float u1)
 //                float P_out[100]
 // Return Type  : void
 //
-void _QEKF(const float X[10], const float P_prev[100], const
+__attribute__((optimize("O3"))) void _QEKF(const float X[10], const float P_prev[100], const
   float Gyroscope[3], const float Accelerometer[3], float Heading, boolean_T
   UseHeadingForCorrection, float SamplePeriod, boolean_T SensorDriven, boolean_T
   BiasEstimationEnabled, boolean_T YawBiasEstimationEnabled, boolean_T

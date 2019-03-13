@@ -1,13 +1,12 @@
 /* Copyright (C) 2018-2019 Thomas Jespersen, TKJ Electronics. All rights reserved.
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
- * the Free Software Foundation, version 3.
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the MIT License
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
- * General Public License for more details. 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the MIT License for further details.
  *
  * Contact information
  * ------------------------------------------
@@ -92,21 +91,40 @@ class Parameters
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
+			//#define AGGRESSIVE_SLIDING_MODE // OBS! Requires at least "DisableOmegaXYInEquivalentControl" to be true
+			#ifdef AGGRESSIVE_SLIDING_MODE
+			float K[3] = {15, 15, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
+			float eta[3] = {6, 6, 3}; // {5, 5, 10}  switching gain
+			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
+			#else
+
+			// The gains below are much more sluggish/slow than the above but works well with the Velocity LQR controller settings both angle (q_ref) and angular velocity (omega_ref) references
 			float K[3] = {6, 6, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
 			float eta[3] = {5, 5, 6}; // {5, 5, 10}  switching gain
 			float epsilon[3] = {0.8, 0.8, 0.3}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
-			float Kv[2] = {0.01, 0.01};
-			float Kvi[2] = {0, 0};//{0.4, 0.4};
-			float gamma = 0*0.05;
+			#endif
+
+			/* Velocity sliding mode gains */
+			float Kv[2] = {0, 0};
+			float Kvi[2] = {0, 0};
+			float gamma = 0; // Note: Use this carefully. If value becomes too large the output will end up oscillating and thus turn off the motors (will sound like a 100 Hz humming with increasing amplitude).
 
 			/* Balance LQR parameters */
+			float BalanceLQR_MaxYawError = 10.0; // yaw error clamp [degrees]
+			/* LQR gains generated with "LQR_ErrorDynamicsBased.m" based on:
+				Q = diag([1000, 1000, ... % q2, q3  (roll, pitch)
+			          	  1, ...    % q4  (yaw)
+			          	  0.1, 0.1, ... % dq2, dq3
+			          	  0.01, ...    % dq4
+			             ]);
+				R = 0.05 * diag([1 1 1]); % torque outputs
+			*/
 			float BalanceLQR_K[3*8] = {
 					129.602115577122,	8.78174512168197e-14,	-2.58198889746921,	7.87035441101331,	3.35474179461199e-15,	-0.280870541084474,
 					-64.8010577885609,	112.238724474001,		-2.58198889746921,	-3.93517720550666,	6.82429800184739,	-0.280870541084474,
 					-64.8010577885609,	-112.238724474,			-2.5819888974692,	-3.93517720550666,	-6.82429800184739,	-0.280870541084473
 			};
-			float BalanceLQR_MaxYawError = 10.0; // yaw error clamp [degrees]
 
 			/* Common velocity control parameters */
 			float VelocityControl_AccelerationLimit = 1.0;
@@ -123,15 +141,24 @@ class Parameters
 			/* Velocity LQR parameters */
 			float VelocityLQR_VelocityClamp = 0.5;
 			float VelocityLQR_AngularVelocityClamp = 0.5;
-			float VelocityLQR_K[2*10] = {
-					1.20495276485036e-14,	-0.999999999999943,	9.57622655412988,	1.07269782092211e-13,	1.81156418200928e-14,	-1.56367340001856,	3.55048271315795,	3.60191361345669e-14,	4.55367707656021,	3.35649664687253e-14,
-					0.999999999999976,	-4.93444326794843e-15,	9.16997798798626e-14,	9.58330393966576,	1.56400044281033,	-1.36239574252401e-14,	2.90922217285368e-14,	3.5561021496512,	2.37666072559232e-14,	4.55403037855776
-			};
 			bool VelocityLQR_IntegralEnabled = false;
 			bool VelocityLQR_PositionControlAtZeroVelocityReference = true;
 			float VelocityLQR_PositionControlAtZeroVelocityReference_MaximumKickinVelocity = 0.1;
 			float VelocityLQR_IntegratorPowerupStabilizeTime = 3.0; // wait 3 seconds in the beginning for integrator to settle (and before allowing manual movement)
 			float VelocityController_StabilizationDetectionVelocity = 0.2; // if the robot is pushed with a velocity of more than 0.2 m/s after the initialization time the initialization integrator will be disabled allowing manual movement
+			/* LQR gains generated with "LQR_VelocityController_basedOnSimulinkLinearization.m" based on:
+			   Q = diag([20, 20, ... % x, y
+            			 0.01, 0.01, ... % q2, q3
+          	  	  	  	 10, 10, ... % dx, dy
+          	  	  	  	 0.1, 0.1, ... % dq2, dq3
+          	  	  	  	 0.01, 0.01, ... % q2_ref, q3_ref
+          	  	  	 	]);
+			   R = 20 * diag([1 1]); % omega_ref_x, omega_ref_y
+			*/
+			float VelocityLQR_K[2*10] = {
+					1.20495276485036e-14,	-0.999999999999943,	9.57622655412988,	1.07269782092211e-13,	1.81156418200928e-14,	-1.56367340001856,	3.55048271315795,	3.60191361345669e-14,	4.55367707656021,	3.35649664687253e-14,
+					0.999999999999976,	-4.93444326794843e-15,	9.16997798798626e-14,	9.58330393966576,	1.56400044281033,	-1.36239574252401e-14,	2.90922217285368e-14,	3.5561021496512,	2.37666072559232e-14,	4.55403037855776
+			};
 			/* Controller Tuning parameters end */
 		} controller;
 
@@ -176,17 +203,13 @@ class Parameters
 
 			/* Velocity estimator parameters */
 			bool UseVelocityEstimator = true;
-			bool UseTiltForVelocityPrediction = false; // whether or not to propagate the velocity estimate with the predicted acceleration based on the current tilt
 			bool UseQdotInVelocityEstimator = true;
-			bool UseCOMestimateInVelocityEstimator = true;
-			float Var_COM = 1e-7; // (10^(-5.5))  variance on COM estimate into velocity estimator
-			float eta_encoder = 10.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
-			bool UseWheelSlipDetectorInVelocityEstimator = false;
-			float VelocityEstimatorWheelSlipCovariance = 1e-10; // reduce velocity estimator covariance at wheel slip to reduce trust in sensor measurements in general
-			// X = {dx, dy}
-			float VelocityEstimator_P_init_diagonal[2] = {1E-1, 1E-1}; // initialize velocity estimator covariance
-			// X = {dx, dy, COM_X, COM_Y}
-			float VelocityEstimator_WithCOM_P_init_diagonal[4] = {1E-1, 1E-1, 1E-9, 1E-9}; // initialize velocity estimator covariance
+			float eta_encoder = 1.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
+			float eta_accelerometer = 5;
+			float var_acc_bias = 1E-9;
+			float var_acceleration = 1E-5;
+			// X = {dx, dy, ddx, ddy, acc_bias_x, acc_bias_y, acc_bias_z}
+			float VelocityEstimator_P_init_diagonal[7] = {1E-1,1E-1, 1E-2,1E-2, 1E-9,1E-9,1E-9}; // initialize velocity estimator covariance
 
 			/* Velocity LPF (if Velocity estimator is not used */
 			bool EnableVelocityLPF = true; // Velocity LPF is only used if Velocity Estimator is disabled - OBS. This is necessary to avoid sudden angle reference changes due to noise!

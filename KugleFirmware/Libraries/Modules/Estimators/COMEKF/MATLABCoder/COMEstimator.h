@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "rtwtypes.h"
-#include "VelocityEstimator_types.h"
+#include "COMEstimator_types.h"
 
 // Function Declarations
 extern void COMEstimator(const float X[2], const float P_prev[4], const float
