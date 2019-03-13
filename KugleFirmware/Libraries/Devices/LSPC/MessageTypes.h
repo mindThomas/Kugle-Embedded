@@ -1,13 +1,12 @@
 /* Copyright (C) 2018-2019 Thomas Jespersen, TKJ Electronics. All rights reserved.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, version 3.
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the MIT License
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the MIT License for further details.
  *
  * Contact information
  * ------------------------------------------
@@ -77,6 +76,7 @@ namespace lspc
             TorqueRampUpTime,
             DisableQdot,
             DisableQdotInEquivalentControl,
+			DisableOmegaXYInEquivalentControl,
 			AngularVelocityClampsEnabled,
 			AngularVelocityClamps,
             ManifoldType,
@@ -84,6 +84,11 @@ namespace lspc
             Kx,
             Ky,
             Kz,
+			Kv_x,
+			Kv_y,
+			Kvi_x,
+			Kvi_y,
+			gamma,
             ContinousSwitching,
             EquivalentControl,
             eta,
@@ -115,9 +120,7 @@ namespace lspc
             UseVelocityEstimator,
             EnableVelocityLPF,
             EnableWheelSlipDetector,
-			UseTiltForVelocityPrediction,
 			UseQdotInVelocityEstimator,
-            UseCOMestimateInVelocityEstimator,
             EstimateCOM,
             EstimateCOMminVelocity,
             MaxCOMDeviation,
@@ -130,11 +133,10 @@ namespace lspc
             sigma2_omega,
             sigma2_heading,
             GyroscopeTrustFactor,
-			Var_COM,
 			eta_encoder,
-            QEKF_P_init_diagonal,
-            VelocityEstimator_P_init_diagonal,
-            COMEstimator_P_init_diagonal
+			eta_accelerometer,
+			var_acc_bias,
+			var_acceleration
         } estimator_t;
 
         typedef enum: uint8_t

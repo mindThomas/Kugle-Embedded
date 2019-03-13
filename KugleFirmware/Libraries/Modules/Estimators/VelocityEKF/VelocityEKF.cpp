@@ -1,13 +1,12 @@
 /* Copyright (C) 2018-2019 Thomas Jespersen, TKJ Electronics. All rights reserved.
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
- * the Free Software Foundation, version 3.
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the MIT License
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
- * General Public License for more details. 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the MIT License for further details.
  *
  * Contact information
  * ------------------------------------------
@@ -19,7 +18,6 @@
  
 #include "VelocityEKF.h"
 #include "VelocityEstimator.h"
-#include "VelocityEstimator2.h"
 #include "VelocityEstimator_initialize.h"
 #include <string.h> // for memcpy
 #include <cmath>
@@ -71,7 +69,7 @@ void VelocityEKF::Reset(const int32_t encoderTicks[3])
  * @param	qDotEst[4]       	Input: estimated quaternion derivative
  * @param	COMest[3]       	Input: estimated center of mass (COM)
  */
-void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float COMest[3], const bool EstimateCoRvelocity)
+void VelocityEKF::Step(const int32_t encoderTicks[3], const float Accelerometer[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4])
 {
 	float dt;
 
@@ -79,7 +77,10 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
 	dt = _microsTimer->GetDeltaTime(_prevTimerValue);
 	_prevTimerValue = _microsTimer->Get();
 
-	Step(encoderTicks, _params.estimator.UseTiltForVelocityPrediction, qEst, Cov_qEst, qDotEst, _params.estimator.UseCOMestimateInVelocityEstimator, COMest, _params.estimator.Var_COM, _params.estimator.eta_encoder, EstimateCoRvelocity, (_params.estimator.EnableWheelSlipDetector && _params.estimator.UseWheelSlipDetectorInVelocityEstimator), _params.estimator.WheelSlipAccelerationThreshold, _params.estimator.VelocityEstimatorWheelSlipCovariance, dt);
+	if (_params.estimator.UseXsensIMU) // use MTI covariance
+		Step(encoderTicks, _params.estimator.eta_encoder, Accelerometer, _params.estimator.cov_acc_mti, _params.estimator.eta_accelerometer, _params.estimator.var_acc_bias, qEst, Cov_qEst, qDotEst, _params.estimator.var_acceleration, dt);
+	else
+		Step(encoderTicks, _params.estimator.eta_encoder, Accelerometer, _params.estimator.cov_acc_mpu, _params.estimator.eta_accelerometer, _params.estimator.var_acc_bias, qEst, Cov_qEst, qDotEst, _params.estimator.var_acceleration, dt);
 }
 
 /**
@@ -91,14 +92,14 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float qEst[4], const
  * @param	COMest[3]       	Input: estimated center of mass (COM)
  * @param	dt    			   	Input: time passed since last estimate
  */
-void VelocityEKF::Step(const int32_t encoderTicks[3], const bool UseTiltForPrediction, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const bool UseCOMest, const float COMest[3], const float Var_COM, const float eta_encoder, const bool EstimateCoRvelocity, const bool EnableWheelSlipDetector, const float WheelSlipAccelerationThreshold, const float WheelSlipSetVelocityVariance, const float dt)
+void VelocityEKF::Step(const int32_t encoderTicks[3], const float eta_encoder, const float Accelerometer[3], const float Cov_Accelerometer[3*3], const float eta_accelerometer, const float eta_acc_bias, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float eta_acceleration, const float dt)
 {
 	if (dt == 0) return; // no time has passed
 
-	float X_prev[2];
+	float X_prev[7];
 	memcpy(X_prev, X, sizeof(X_prev));
 
-	float P_prev[2*2];
+	float P_prev[7*7];
 	memcpy(P_prev, P, sizeof(P_prev));
 
 	float EncoderDiffMeas[3] = {
@@ -106,28 +107,6 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const bool UseTiltForPredi
 		float(encoderTicks[1] - _prevEncoderTicks[1]),
 		float(encoderTicks[2] - _prevEncoderTicks[2])
 	};
-
-	for (unsigned int i = 0; i < 3; i++) {
-		/*if (fabsf(EncoderDiffMeas[i]) < 10)
-			EncoderDiffMeas[i] = 0;*/
-	}
-
-    /*VelocityEstimator(X_prev, P_prev,
-      EncoderDiffMeas,
-      qEst, Cov_qEst, qDotEst,
-      dt,
-      _params.model.i_gear, _params.model.EncoderTicksPrRev,
-	  _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jbx, _params.model.Jby, _params.model.Jbz, _params.model.Jw, _params.model.rw, _params.model.Bvk, _params.model.Bvm, _params.model.Bvb, _params.model.l, _params.model.g,
-	  COMest,
-      1E-5, // Var_COM
-      10.0f, // eta_qQEKF_velocity
-      0.0f, // eta_dqQEKF_encoder
-      X, P);*/
-
-	float COM[3] = { _params.model.COM_X, _params.model.COM_Y, _params.model.COM_Z };
-	if (UseCOMest) {
-		memcpy(COM, COMest, sizeof(COM));
-	}
 
 	float q_dot[4] = { 0, 0, 0, 0 };
 	if (_params.estimator.UseQdotInVelocityEstimator) {
@@ -137,18 +116,15 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const bool UseTiltForPredi
 		q_dot[3] = qDotEst[3];
 	}
 
-	VelocityEstimator2(X_prev, P_prev,
-	      EncoderDiffMeas,
+	VelocityEstimator(X_prev, P_prev,
+	      EncoderDiffMeas, eta_encoder,
+		  Accelerometer, Cov_Accelerometer, eta_accelerometer,
+		  eta_acc_bias,
 		  qEst, Cov_qEst, q_dot,
+		  eta_acceleration,
 	      dt,
 	      _params.model.TicksPrRev,
-		  _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jw, _params.model.rw, _params.model.l, _params.model.g,
-		  COM,
-		  _params.model.CoR,
-	      Var_COM,
-	      eta_encoder,
-		  UseTiltForPrediction, EstimateCoRvelocity,
-		  EnableWheelSlipDetector, WheelSlipAccelerationThreshold, WheelSlipSetVelocityVariance,
+		  _params.model.rk, _params.model.rw, _params.model.g,
 	      X, P);
 
 	Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));
@@ -174,5 +150,9 @@ void VelocityEKF::GetVelocity(float dxy[2])
  */
 void VelocityEKF::GetVelocityCovariance(float Cov_dxy[2*2])
 {
-	memcpy(Cov_dxy, P, sizeof(P));
+    for (int m = 0; m < 2; m++) {
+      for (int n = 0; n < 2; n++) {
+    	  Cov_dxy[2*m + n] = P[7*m + n];
+      }
+    }
 }

@@ -17,7 +17,7 @@
 #include "VelocityEstimator_types.h"
 
 // Function Declarations
-extern void VelocityEstimator_initialize(const float P_diagonal_init[2], float X[2], float P[2*2]);
+extern void VelocityEstimator_initialize(const float P_diagonal_init[7], float X[7], float P[7*7]);
 
 #endif
 
