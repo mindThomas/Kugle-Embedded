@@ -25,8 +25,8 @@
 class SMBus
 {
 	private:
-		const uint32_t SMBUS_DEFAULT_FREQUENCY = 100000;	// 100 kHz
-		const uint8_t SMBUS_MASTER_ADDRESS = 38;
+		const uint32_t SMBUS_DEFAULT_FREQUENCY = 50000;	// 100 kHz
+		const uint8_t SMBUS_MASTER_ADDRESS =  0x08; //38;
 
 	public:
 		typedef enum port_t {
@@ -34,6 +34,13 @@ class SMBus
 			PORT_I2C2,
 			PORT_I2C4
 		} port_t;
+
+/*		typedef enum DeviceAddr : uint8_t{ // according to smbus protocol v 1.1
+			host = 0x08,
+			Charger = 0x09,
+			Selector_SystemManager = 0x0A,
+			battery = 0x0B,
+		} smBusDeviceAddr;*/
 
 	public:
 		SMBus(port_t port, uint8_t devAddr); // use default frequency (or current configured frequency)
@@ -46,6 +53,8 @@ class SMBus
 		void Write(uint8_t reg, uint8_t value);
 		void Read(uint8_t reg, uint8_t * buffer, uint8_t readLength);
 		uint8_t Read(uint8_t reg);
+		int16_t blockRead(uint8_t reg, uint8_t * buffer, uint8_t bufferLength);
+		bool devicePresent();
 
 	public:
 		typedef struct hardware_resource_t {

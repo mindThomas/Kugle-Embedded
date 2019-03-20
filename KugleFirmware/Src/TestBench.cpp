@@ -20,6 +20,7 @@
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "Priorities.h"
+#include "stm32h7xx_hal.h"
 
 #include <string>
 #include <stdlib.h>
@@ -40,6 +41,7 @@
 #include "Parameters.h"
 #include "FrontPanel.h"
 #include "VelocityEKF.h"
+
 
 void TestBench(void * pvParameters);
 TaskHandle_t testBenchTaskHandle;
@@ -70,6 +72,82 @@ bool level1, level2, level3;
 float ax, ay, az, gx, gy, gz, mx, my, mz;
 
 float angle = 0;
+
+#if 1
+void TestBench(void * pvParameters)
+{
+
+		/* Initialize communication */
+		USBCDC * usb = new USBCDC(USBCDC_TRANSMITTER_PRIORITY);
+		LSPC * lspcUSB = new LSPC(usb, LSPC_RECEIVER_PRIORITY, LSPC_TRANSMITTER_PRIORITY); // very important to use "new", otherwise the object gets placed on the stack which does not have enough memory!
+		Debug * dbg = new Debug(lspcUSB); // pair debug module with configured LSPC module to enable "Debug::print" functionality
+		//params.AttachLSPC(lspcUSB); // attach USB object to allow modification of parameters over USB
+
+		/* Initialize microseconds timer */
+		Timer * microsTimer = new Timer(Timer::TIMER6, 1000000); // create a 1 MHz counting timer used for micros() timing
+
+		/* Initialize power management */
+		IO * enable19V = new IO(GPIOE, GPIO_PIN_4); // configure as output
+		IO * enable5V = new IO(GPIOC, GPIO_PIN_3); // configure as output
+		PWM * powerLED = new PWM(PWM::TIMER17, PWM::CH1, POWER_LED_PWM_FREQUENCY, POWER_LED_PWM_RANGE);
+		PowerManagement * pm = new PowerManagement(*enable19V, *enable5V, *powerLED, POWER_MANAGEMENT_PRIORITY, *lspcUSB, *microsTimer);
+		pm->SetPowerMode(pm->PowerMode_t::POWERMODE_ALL_ON);
+
+/*
+		SMBUS_HandleTypeDef Device;
+
+		const uint8_t SMBUS_MASTER_ADDRESS = 0x08; // smbus.h defined to 38
+
+		Device.Init.OwnAddress1 = SMBUS_MASTER_ADDRESS;
+		Device.Init.AnalogFilter = SMBUS_ANALOGFILTER_ENABLE;
+		Device.Init.AddressingMode = SMBUS_ADDRESSINGMODE_7BIT;
+		Device.Init.DualAddressMode = SMBUS_DUALADDRESS_DISABLE;
+		Device.Init.OwnAddress2 = 0;
+		Device.Init.OwnAddress2Masks = SMBUS_OA2_NOMASK;
+		Device.Init.GeneralCallMode = SMBUS_GENERALCALL_DISABLE;
+		Device.Init.NoStretchMode = SMBUS_NOSTRETCH_DISABLE;
+		Device.Init.PacketErrorCheckMode = SMBUS_PEC_ENABLE;//SMBUS_PEC_DISABLE;
+		Device.Init.PeripheralMode = SMBUS_PERIPHERAL_MODE_SMBUS_HOST;
+		Device.Init.SMBusTimeout = 0x000084C4;
+
+		uint32_t ErrCode = HAL_SMBUS_Init(&Device);
+		STACK_SMBUS_GetBuffer(&context);
+		STACK_SMBUS_HostCommand(&context,&cmd,addr,WRITE);
+*/
+
+		// poll stack context from when ready stat
+
+		/* Send CPU load every second */
+			char * pcWriteBuffer = (char *)pvPortMalloc(1024);
+			while (1)
+			{
+				vTaskGetRunTimeStats(pcWriteBuffer);
+				char * endPtr = &pcWriteBuffer[strlen(pcWriteBuffer)];
+				*endPtr++ = '\n'; *endPtr++ = '\n'; *endPtr++ = 0;
+
+				// Split into multiple packages and send
+				uint16_t txIdx = 0;
+				uint16_t remainingLength = strlen(pcWriteBuffer);
+				uint16_t txLength;
+
+				while (remainingLength > 0) {
+					txLength = remainingLength;
+					if (txLength > LSPC_MAXIMUM_PACKAGE_LENGTH) {
+						txLength = LSPC_MAXIMUM_PACKAGE_LENGTH;
+						while (pcWriteBuffer[txIdx+txLength] != '\n' && txLength > 0) txLength--; // find and include line-break (if possible)
+						if (txLength == 0) txLength = LSPC_MAXIMUM_PACKAGE_LENGTH;
+						else txLength++;
+					}
+					lspcUSB->TransmitAsync(lspc::MessageTypesToPC::CPUload, (uint8_t *)&pcWriteBuffer[txIdx], txLength);
+
+					txIdx += txLength;
+					remainingLength -= txLength;
+				}
+				osDelay(1000);
+			}
+}
+#endif
+
 
 #if 0
 void TestBench(void * pvParameters)

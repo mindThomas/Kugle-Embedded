@@ -373,6 +373,7 @@ namespace lspc
             AttitudeControllerInfo = 0x13,
             VelocityControllerInfo = 0x14,
             ControllerDebug = 0x15,
+			powerManagment_info = 0x15,
             MPCinfo = 0x20,
             PredictedMPCtrajectory = 0x21,
             RawSensor_IMU_MPU9250 = 0x30,
@@ -627,14 +628,35 @@ namespace lspc
 
         typedef struct
         {
-            float time;
-            float vbat1;
-            float vbat2;
-            float current1;
-            float current2;
-            float pct1;
-            float pct2;
+            //Header  header
+            float voltage;          // Voltage in Volts (Mandatory)
+            float current;          // Negative when discharging (A)  (If unmeasured NaN)
+            float charge;           // Current charge in Ah  (If unmeasured NaN)
+            float capacity;         // Capacity in Ah (last full capacity)  (If unmeasured NaN)
+            float design_capacity;  // Capacity in Ah (design capacity)  (If unmeasured NaN)
+            float percentage;       // Charge percentage on 0 to 1 range  (If unmeasured NaN)
+			uint8_t   power_supply_status;     // The charging status as reported. Values defined above
+			uint8_t   power_supply_health;     // The battery health metric. Values defined above
+			uint8_t   power_supply_technology; // The battery chemistry. Values defined above
+            bool    present;        // True if the battery is present
+
+            float cell_voltage[10];   // An array of individual cell voltages for each cell in the pack
+                                   // If individual voltages unknown but number of cells known set each to NaN
+            uint8_t location;        // The location into which the battery is inserted. (slot number or plug)
+            uint32_t serial_number;   // The best approximation of the battery serial number
         } RawSensor_Battery_t;
+
+        typedef struct
+        {
+        	float time;
+        	float batteryAssamblyChargePercentage; // Charge percentage on 0 to 1 range  (If unmeasured NaN)
+        	float batteryAssamblyTotalCharge; // Current charge in Ah  (If unmeasured NaN)
+        	float batteryAssamblyTotalCapacity; // Capacity in Ah (last full capacity)  (If unmeasured NaN)
+        	uint8_t nBatteries; // 0 if no batteries present
+			uint8_t power_supply_status;     // The charging status as reported.
+			uint8_t power_supply_health;     // The battery health metric.
+			bool batteryAssamblyGettingOld;
+        } powerManagment_info_t;
 
         typedef struct
         {
