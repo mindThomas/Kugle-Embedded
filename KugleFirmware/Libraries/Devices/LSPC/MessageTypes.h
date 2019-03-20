@@ -373,7 +373,7 @@ namespace lspc
             AttitudeControllerInfo = 0x13,
             VelocityControllerInfo = 0x14,
             ControllerDebug = 0x15,
-			powerManagment_info = 0x15,
+			powerManagment_info = 0x16,
             MPCinfo = 0x20,
             PredictedMPCtrajectory = 0x21,
             RawSensor_IMU_MPU9250 = 0x30,
