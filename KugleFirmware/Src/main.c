@@ -58,8 +58,7 @@ int main(void)
   ZeroInitFreeRTOSheap();
 
   /* Create the main thread which creates objects and spawns the rest of the threads */
-  //xTaskCreate(MainTask, "mainTask", 1024, (void*) NULL, MAIN_TASK_PRIORITY, &mainTaskHandle); %% udkommenter igen
-  TestBench_Init();
+  xTaskCreate(MainTask, "mainTask", 1024, (void*) NULL, MAIN_TASK_PRIORITY, &mainTaskHandle); %% udkommenter igen
 
   /* Start scheduler */
   osKernelStart();
