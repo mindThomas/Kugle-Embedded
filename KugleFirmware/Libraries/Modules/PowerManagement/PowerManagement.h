@@ -35,6 +35,8 @@
 #define POWER_LED_PWM_FREQUENCY 	200
 #define POWER_LED_PWM_RANGE			100
 #define POWER_MANAGMENT_THREAD_DT	10 		// ms
+#define BATTERY_POLLING_DT			1000  	// ms  choose something that adds up to POWER_MANAGMENT_THREAD_DT
+
 
 class PowerManagement
 {
@@ -58,7 +60,6 @@ class PowerManagement
 	private:
 		// constants that can be changed through rosservice!
         uint16_t chargerCurrentLimit = 7800;	// mA - actually 8000mA however set a bit lower to be safe!
-        uint16_t BATTERY_POLLING_DT	= 1000;  	// ms  choose something that adds up to POWER_MANAGMENT_THREAD_DT
 		float BATTERY_LOW_PERCENTAGE = 0.05;	// a number between 0 and 1!!!
 
 		IO& _enable19V; // Devices on 19V bus: LiDAR, PC (Intel NUC or Jetson) and Motors

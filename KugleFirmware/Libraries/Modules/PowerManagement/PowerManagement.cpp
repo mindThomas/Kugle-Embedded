@@ -263,7 +263,7 @@ void PowerManagement::PowerManagementThread(void * pvParameters)
 	/* This task could possibly also poll for the real time stats - https://www.freertos.org/a00021.html#vTaskGetRunTimeStats */
 
 	uint16_t batteryPollingRateCounter = 0;
-	uint16_t batteryPollingRateCounterMax = BATTERY_POLLING_DT/POWER_MANAGMENT_THREAD_DT;
+	uint16_t batteryPollingRateCounterMax = BATTERY_POLLING_DT / POWER_MANAGMENT_THREAD_DT;
 
 	while (1) {
 		/*if (pm->_ledMode != PULSING)
