@@ -91,13 +91,6 @@ void MainTask(void * pvParameters)
 	/* Initialize global parameters */
 	Parameters& params = *(new Parameters);
 
-	/* Initialize power management */
-	IO * enable19V = new IO(GPIOE, GPIO_PIN_4); // configure as output
-	IO * enable5V = new IO(GPIOC, GPIO_PIN_3); // configure as output
-	Battery * battery1 = new Battery();
-	Battery * battery2 = new Battery();
-	PWM * powerLED = new PWM(PWM::TIMER17, PWM::CH1, POWER_LED_PWM_FREQUENCY, POWER_LED_PWM_RANGE);
-	PowerManagement * pm = new PowerManagement(*enable19V, *enable5V, *battery1, *battery2, *powerLED, POWER_MANAGEMENT_PRIORITY);
 
 	/* Initialize EEPROM */
 	EEPROM * eeprom = new EEPROM;
@@ -105,6 +98,9 @@ void MainTask(void * pvParameters)
 	eeprom->EnableSection(eeprom->sections.parameters, params.getParameterSizeBytes());
 	eeprom->Initialize();
 	params.AttachEEPROM(eeprom); // attach EEPROM to load and store parameters into EEPROM
+
+	/* Initialize microseconds timer */
+	Timer * microsTimer = new Timer(Timer::TIMER6, 1000000); // create a 1 MHz counting timer used for micros() timing
 
 	/* Initialize MATLAB coder globals */
 	MATLABCoder_initialize();
@@ -118,6 +114,12 @@ void MainTask(void * pvParameters)
 	/* Register general (system wide) LSPC callbacks */
 	lspcUSB->registerCallback(lspc::MessageTypesFromPC::Reboot, &Reboot_Callback);
 	lspcUSB->registerCallback(lspc::MessageTypesFromPC::EnterBootloader, &EnterBootloader_Callback);
+
+	/* Initialize power management */
+	IO * enable19V = new IO(GPIOE, GPIO_PIN_4); // configure as output
+	IO * enable5V = new IO(GPIOC, GPIO_PIN_3); // configure as output
+	PWM * powerLED = new PWM(PWM::TIMER17, PWM::CH1, POWER_LED_PWM_FREQUENCY, POWER_LED_PWM_RANGE);
+	PowerManagement * pm = new PowerManagement(*enable19V, *enable5V, *powerLED, POWER_MANAGEMENT_PRIORITY, *lspcUSB, *microsTimer);
 
 	/* Debug boot info */
 	Debug::print("Booting...\n");
@@ -169,9 +171,6 @@ void MainTask(void * pvParameters)
 	if (!imu->isCalibrated()) {
 		imu->SetCalibration(params.sensor.default_accelerometer_bias, params.sensor.default_accelerometer_scale, params.sensor.default_gyroscope_bias, params.sensor.default_calibration_matrix);
 	}
-
-	/* Initialize microseconds timer */
-	Timer * microsTimer = new Timer(Timer::TIMER6, 1000000); // create a 1 MHz counting timer used for micros() timing
 
 	/* Initialize motors */
 	ESCON * motor1 = new ESCON(1, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed);
