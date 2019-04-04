@@ -385,6 +385,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::YawVelocityBraking: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.YawVelocityBraking; return;
 			case lspc::ParameterLookup::StepTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.StepTestEnabled; return;
 			case lspc::ParameterLookup::SineTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.SineTestEnabled; return;
+			case lspc::ParameterLookup::CircleTestEnabled: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->behavioural.CircleTestEnabled; return;
 			case lspc::ParameterLookup::PowerButtonMode: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->behavioural.PowerButtonMode; return;
 			default: return;
 		}
@@ -395,6 +396,7 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::mode: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.mode; return;
 			case lspc::ParameterLookup::type: valueType = lspc::ParameterLookup::_uint8; *paramPtr = (void *)&this->controller.type; return;
 			case lspc::ParameterLookup::EnableTorqueLPF: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.EnableTorqueLPF; return;
+			case lspc::ParameterLookup::MotorFailureDetection: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.MotorFailureDetection; return;
 			case lspc::ParameterLookup::DisableQdot: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableQdot; return;
 			case lspc::ParameterLookup::DisableQdotInEquivalentControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableQdotInEquivalentControl; return;
 			case lspc::ParameterLookup::DisableOmegaXYInEquivalentControl: valueType = lspc::ParameterLookup::_bool; *paramPtr = (void *)&this->controller.DisableOmegaXYInEquivalentControl; return;

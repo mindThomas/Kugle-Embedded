@@ -1006,55 +1006,38 @@ void BalanceController::StabilizeFilters(Parameters& params, IMU& imu, QEKF& qEK
 /* Reference generation based on selected test */
 void BalanceController::ReferenceGeneration(Parameters& params)
 {
-    /*if (params.behavioural.JoystickVelocityControl) {
-		// Get velocity references from input (eg. joystick)
-		float ref_dx = 0; // default values if the reference semaphore could not be obtained
-		float ref_dy = 0;
-		float ref_dyaw = 0;
-    	if (xSemaphoreTake( VelocityReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for reading
-    		ref_dx = VelocityReference.dx;
-    		ref_dy = VelocityReference.dy;
-    		ref_dyaw = VelocityReference.dyaw;
-    		xSemaphoreGive( VelocityReference.semaphore ); // give semaphore back
-    	}
-    }
-
-    else if (params.behavioural.VelocityControllerEnabled) {
-		float VelRef[2] = {0,0};
-
-		if (params.behavioural.StepTestEnabled) {
-			ReferenceGenerationStep++;
-			if (ReferenceGenerationStep > 8*params.controller.SampleRate) // reset after 8 seconds
-				ReferenceGenerationStep = 0;
-
-			if (ReferenceGenerationStep < 4*params.controller.SampleRate) { // from 0-4 seconds
-				VelRef[0] = 0;
-			}
-			else if (ReferenceGenerationStep < 8*params.controller.SampleRate) { // from 4-8 seconds
-				VelRef[0] = 0.2;
-			}
-		}
-
-		velocityController.Step(q, dq, dxy, VelRef, true, deg2rad(0.0f), q_ref);
-	}
-    else */
 	if (params.behavioural.StepTestEnabled) {
 		float quaternion_reference[4];
     	ReferenceGenerationStep++;
-		if (ReferenceGenerationStep > 8*params.controller.SampleRate) // reset after 8 seconds
+		if (ReferenceGenerationStep >= 20*params.controller.SampleRate) // reset after 20 seconds
 			ReferenceGenerationStep = 0;
 
 		if (ReferenceGenerationStep < 2*params.controller.SampleRate) { // from 0-2 seconds
-			Quaternion_eul2quat_zyx(0, 0, deg2rad(0), quaternion_reference);
+			Quaternion_eul2quat_zyx(deg2rad(0), deg2rad(0), deg2rad(0), quaternion_reference); // rpy = 0,0,0
 		}
 		else if (ReferenceGenerationStep < 4*params.controller.SampleRate) { // from 2-4 seconds
-			Quaternion_eul2quat_zyx(0, 0, deg2rad(3), quaternion_reference);
+			Quaternion_eul2quat_zyx(deg2rad(0), deg2rad(0), deg2rad(5), quaternion_reference); // rpy = 3,0,0
 		}
 		else if (ReferenceGenerationStep < 6*params.controller.SampleRate) { // from 4-6 seconds
-			Quaternion_eul2quat_zyx(0, 0, deg2rad(0), quaternion_reference);
+			Quaternion_eul2quat_zyx(deg2rad(0), deg2rad(0), deg2rad(0), quaternion_reference); // rpy = 0,0,0
 		}
 		else if (ReferenceGenerationStep < 8*params.controller.SampleRate) { // from 6-8 seconds
-			Quaternion_eul2quat_zyx(0, 0, deg2rad(-3), quaternion_reference);
+			Quaternion_eul2quat_zyx(deg2rad(0), deg2rad(5), deg2rad(0), quaternion_reference); // rpy = 0,3,0
+		}
+		else if (ReferenceGenerationStep < 10*params.controller.SampleRate) { // from 8-10 seconds
+			Quaternion_eul2quat_zyx(deg2rad(0), deg2rad(0), deg2rad(0), quaternion_reference); // rpy = 0,0,0
+		}
+		else if (ReferenceGenerationStep < 12*params.controller.SampleRate) { // from 10-12 seconds
+			Quaternion_eul2quat_zyx(deg2rad(0), deg2rad(5), deg2rad(-5), quaternion_reference); // rpy = -3,3,0
+		}
+		else if (ReferenceGenerationStep < 14*params.controller.SampleRate) { // from 12-14 seconds
+			Quaternion_eul2quat_zyx(deg2rad(0), deg2rad(0), deg2rad(0), quaternion_reference); // rpy = 0,0,0
+		}
+		else if (ReferenceGenerationStep < 18*params.controller.SampleRate) { // from 14-18 seconds
+			Quaternion_eul2quat_zyx(deg2rad(45), deg2rad(0), deg2rad(0), quaternion_reference); // rpy = 0,0,45
+		}
+		else if (ReferenceGenerationStep < 20*params.controller.SampleRate) { // from 18-20 seconds
+			Quaternion_eul2quat_zyx(deg2rad(0), deg2rad(0), deg2rad(0), quaternion_reference); // rpy = 0,0,0
 		}
 
 		if (xSemaphoreTake( BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for updating
@@ -1072,21 +1055,29 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 			xSemaphoreGive( BalanceReference.semaphore ); // give semaphore back
 		}
     }
-	else if (params.behavioural.SineTestEnabled) {
+	else if (params.behavioural.SineTestEnabled) { // sine test with increasing frequency
 			float quaternion_reference[4];
-			const float SineFrequency = 0.5; // hz
-			Quaternion_eul2quat_zyx(0, deg2rad(1) * cosf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate), deg2rad(3) * sinf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate), quaternion_reference);
-	    	ReferenceGenerationStep++;
+			float Amplitude = deg2rad(2);
+			const float BaseFrequency = 0.5; // hz
+			const float freqRate = 0.01; // hz pr. second
+			float t = (float)ReferenceGenerationStep / params.controller.SampleRate;
+			float freq = (BaseFrequency + freqRate*t);
+			float g = 2*M_PI*freq*t;
+			float f = Amplitude * sin(g);
+			float dgdt = 2*M_PI* (freqRate*t + freq);
+			float dfdt = Amplitude * cos(g) * dgdt;
+			// Roll only
+			Quaternion_eul2quat_zyx(0, 0, f, quaternion_reference);
+			// Combined roll (sine wave) and pitch (cosine wave)
+			//Quaternion_eul2quat_zyx(0, deg2rad(1) * cosf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate), deg2rad(3) * sinf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate), quaternion_reference);
+			ReferenceGenerationStep++;
 
-	    	if ((float)ReferenceGenerationStep * SineFrequency >= params.controller.SampleRate) {
-	    		ReferenceGenerationStep = 0;
-	    	}
 
 			if (xSemaphoreTake( BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for updating
 				/* Update references with input values from message */
 				BalanceReference.time = microsTimer.GetTime();
-				BalanceReference.omega[0] = deg2rad(3) * 2*M_PI*SineFrequency * cosf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate);
-				BalanceReference.omega[1] = deg2rad(1) * 2*M_PI*SineFrequency * -sinf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate);
+				BalanceReference.omega[0] = dfdt; // deg2rad(3) * 2*M_PI*SineFrequency * cosf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate);
+				BalanceReference.omega[1] = 0; //deg2rad(0) * 2*M_PI*SineFrequency * -sinf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate);
 				BalanceReference.omega[2] = 0;
 				BalanceReference.q[0] = quaternion_reference[0];
 				BalanceReference.q[1] = quaternion_reference[1];
@@ -1096,7 +1087,54 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 				BalanceReference.angularVelocityOnly = false;
 				xSemaphoreGive( BalanceReference.semaphore ); // give semaphore back
 			}
-	    }
+		}
+	else if (params.behavioural.CircleTestEnabled) { // constant inclination rotating in a circle around inertial z-axis with an increasing angular velocity
+			float quaternion_reference_tmp[4];
+			float Amplitude = deg2rad(3);
+			float rotationIncreaseRate = 2*M_PI * 0.02; // rad/s^2
+			float t = (float)ReferenceGenerationStep / params.controller.SampleRate;
+			float psi = 0.5 * rotationIncreaseRate * t * t;
+			float psi_dot = rotationIncreaseRate * t;
+			quaternion_reference_tmp[0]	= cos(Amplitude/2);
+			quaternion_reference_tmp[1]	= sin(Amplitude/2);
+			quaternion_reference_tmp[2]	= 0;
+			quaternion_reference_tmp[3]	= 0;
+
+			float quaternion_reference[4];
+			quaternion_reference[0] = quaternion_reference_tmp[0];
+			quaternion_reference[1] = cosf(psi)*quaternion_reference_tmp[1] - sinf(psi)*quaternion_reference_tmp[2];
+			quaternion_reference[2] = sinf(psi)*quaternion_reference_tmp[1] + cosf(psi)*quaternion_reference_tmp[2];
+			quaternion_reference[3] = 0;
+
+			float qdot_ref[4];
+			qdot_ref[0] = 0;
+			qdot_ref[1] = psi_dot * (-sinf(psi)*quaternion_reference_tmp[1] - cosf(psi)*quaternion_reference_tmp[2]);
+			qdot_ref[2] = psi_dot * (cosf(psi)*quaternion_reference_tmp[1] - sinf(psi)*quaternion_reference_tmp[2]);
+			qdot_ref[3] = 0;
+
+			float omega_ref_body[3];
+			Quaternion_GetAngularVelocity_Body(quaternion_reference, qdot_ref, omega_ref_body);
+
+			ReferenceGenerationStep++;
+
+			if (xSemaphoreTake( BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for updating
+				/* Update references with input values from message */
+				BalanceReference.time = microsTimer.GetTime();
+				BalanceReference.omega[0] = omega_ref_body[0];
+				BalanceReference.omega[1] = omega_ref_body[1];
+				BalanceReference.omega[2] = omega_ref_body[2];
+				BalanceReference.q[0] = quaternion_reference[0];
+				BalanceReference.q[1] = quaternion_reference[1];
+				BalanceReference.q[2] = quaternion_reference[2];
+				BalanceReference.q[3] = quaternion_reference[3];
+				BalanceReference.frame = lspc::ParameterTypes::BODY_FRAME;
+				BalanceReference.angularVelocityOnly = false;
+				xSemaphoreGive( BalanceReference.semaphore ); // give semaphore back
+			}
+	}
+	else {
+		ReferenceGenerationStep = 0; // reset reference generation step such that we are ready when enabled
+	}
 }
 
 void BalanceController::SendEstimates(void)

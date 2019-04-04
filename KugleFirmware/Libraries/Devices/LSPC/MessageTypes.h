@@ -60,6 +60,7 @@ namespace lspc
             YawVelocityBraking,
             StepTestEnabled,
             SineTestEnabled,
+			CircleTestEnabled,
             PowerButtonMode
         } behavioural_t;
 
@@ -70,6 +71,7 @@ namespace lspc
             mode,
             EnableTorqueLPF,
             TorqueLPFtau,
+			MotorFailureDetection,
             EnableTorqueSaturation,
             TorqueMax,
             TorqueRampUp,

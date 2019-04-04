@@ -48,7 +48,8 @@ class Parameters
 			bool YawVelocityBraking = false; // if independent heading is enabled and q_dot is used, then yaw velocity will be counteracted by enabling this
 			bool StepTestEnabled = false;
 			bool SineTestEnabled = false;
-			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_VELOCITY_CONTROL;
+			bool CircleTestEnabled = false;
+			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_QUATERNION_CONTROL;
 			/* Behavioural parameters end */
 		} behavioural;
 		
@@ -91,11 +92,14 @@ class Parameters
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
 			// With a maximum torque of 0.8
-			//#define AGGRESSIVE_SLIDING_MODE // OBS! Requires at least "DisableOmegaXYInEquivalentControl" to be true
+			//#define AGGRESSIVE_SLIDING_MODE // OBS! Requires at least "DisableOmegaXYInEquivalentControl" to be true and CAN NOT be used in Velocity Controller mode
 			#ifdef AGGRESSIVE_SLIDING_MODE
 			float K[3] = {15, 15, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
 			float eta[3] = {6, 6, 3}; // {5, 5, 10}  switching gain
 			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
+			//float K[3] = {15, 15, 3}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
+			//float eta[3] = {6, 6, 8}; // {5, 5, 10}  switching gain
+			//float epsilon[3] = {0.5, 0.5, 0.1}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 			#else
 
 			// The gains below are much more sluggish/slow than the above but works well with the Velocity LQR controller settings both angle (q_ref) and angular velocity (omega_ref) references
