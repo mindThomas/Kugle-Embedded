@@ -49,7 +49,7 @@ class Parameters
 			bool StepTestEnabled = false;
 			bool SineTestEnabled = false;
 			bool CircleTestEnabled = false;
-			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_QUATERNION_CONTROL;
+			lspc::ParameterTypes::powerButtonMode_t PowerButtonMode = lspc::ParameterTypes::START_STOP_VELOCITY_CONTROL;
 			/* Behavioural parameters end */
 		} behavioural;
 		
