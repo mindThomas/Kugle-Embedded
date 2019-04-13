@@ -325,10 +325,10 @@ void ADC::ConfigureADCGPIO()
 
 	if (_hRes->adc == ADC_1)
 	{
-	    /**ADC1 GPIO Configuration
-	    PC5     ------> ADC1_INP8
-	    PF11     ------> ADC1_INP2
-	    */
+		/**ADC1 GPIO Configuration
+		PC5     ------> ADC1_INP8
+		PF11     ------> ADC1_INP2
+		*/
 		if (_channel == ADC_CHANNEL_8) {
 			GPIO_InitStruct.Pin = GPIO_PIN_5;
 			__HAL_RCC_GPIOC_CLK_ENABLE();
@@ -347,10 +347,10 @@ void ADC::ConfigureADCGPIO()
 	}
 	else if (_hRes->adc == ADC_2)
 	{
-	    /**ADC2 GPIO Configuration
-	    PC0     ------> ADC2_INP10
-	    PC1     ------> ADC2_INP11
-	    */
+		/**ADC2 GPIO Configuration
+		PC0     ------> ADC2_INP10
+		PC1     ------> ADC2_INP11
+		*/
 		if (_channel == ADC_CHANNEL_10) {
 			GPIO_InitStruct.Pin = GPIO_PIN_0;
 			__HAL_RCC_GPIOC_CLK_ENABLE();
@@ -369,13 +369,13 @@ void ADC::ConfigureADCGPIO()
 	}
 	else if (_hRes->adc == ADC_3)
 	{
-	    /**ADC3 GPIO Configuration
-	    PF3     ------> ADC3_INP5
-	    PF4     ------> ADC3_INP9
-	    PF5     ------> ADC3_INP4
-	    PF10     ------> ADC3_INP6
-	    PC2_C     ------> ADC3_INP0
-	    */
+		/**ADC3 GPIO Configuration
+		PF3     ------> ADC3_INP5
+		PF4     ------> ADC3_INP9
+		PF5     ------> ADC3_INP4
+		PF10     ------> ADC3_INP6
+		PC2_C     ------> ADC3_INP0
+		*/
 		if (_channel == ADC_CHANNEL_5) {
 			GPIO_InitStruct.Pin = GPIO_PIN_3;
 			__HAL_RCC_GPIOF_CLK_ENABLE();
@@ -459,9 +459,9 @@ void ADC::ConfigureADCChannels()
 	  /* ### - 4 - Start conversion in DMA mode ################################# */
 	  //if (StartDMA(&_hRes->handle,
 	  if (HAL_ADC_Start_DMA(&_hRes->handle,
-	                        (uint32_t *)_hRes->buffer,
+							(uint32_t *)_hRes->buffer,
 							_hRes->numberOfConfiguredChannels  // just sample the number of channels into the buffer
-	                       ) != HAL_OK)
+						   ) != HAL_OK)
 	  {
 			_hRes = 0;
 			ERROR("Could not start ADC");

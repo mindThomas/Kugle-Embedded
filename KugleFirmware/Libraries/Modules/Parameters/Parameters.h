@@ -118,10 +118,10 @@ class Parameters
 			float BalanceLQR_MaxYawError = 10.0; // yaw error clamp [degrees]
 			/* LQR gains generated with "LQR_ErrorDynamicsBased.m" based on:
 				Q = diag([1000, 1000, ... % q2, q3  (roll, pitch)
-			          	  1, ...    % q4  (yaw)
-			          	  0.1, 0.1, ... % dq2, dq3
-			          	  0.01, ...    % dq4
-			             ]);
+					  	  1, ...    % q4  (yaw)
+					  	  0.1, 0.1, ... % dq2, dq3
+					  	  0.01, ...    % dq4
+						 ]);
 				R = 0.05 * diag([1 1 1]); % torque outputs
 			*/
 			float BalanceLQR_K[3*8] = {
@@ -258,22 +258,22 @@ class Parameters
 			#else
 				// LPF off
 				float cov_gyro_mpu[9] = {0.000496942754176,   0.000020107488666,   0.000003512802761,
-						   	   	   	     0.000020107488666,   0.000174919150389,  -0.000025989121108,
+						   	   	   		 0.000020107488666,   0.000174919150389,  -0.000025989121108,
 										 0.000003512802761,  -0.000025989121108,   0.001396990425282};
-			    // LPF off
+				// LPF off
 				float cov_acc_mpu[9] = {0.394508786413515E-03,   0.000603648730082E-03,  -0.023365964974750E-03,
-						   	   	   	    0.000603648730082E-03,   0.392207026988784E-03,  -0.003560872957017E-03,
+						   	   	   		0.000603648730082E-03,   0.392207026988784E-03,  -0.003560872957017E-03,
 									   -0.023365964974750E-03,  -0.003560872957017E-03,   0.994086382318077E-03};
 			#endif
 
 			// MTI sample rate configured to 400 Hz but samples used for covariance estimation only captured at 200 Hz (hence downsampled)
 			float cov_gyro_mti[9] = {0.767838569550055E-05,  -0.001550044758582E-05,   0.006121206040185E-05,
-					  	  	  	    -0.001550044758582E-05,   0.744576444194164E-05,  -0.003516953093983E-05,
+					  	  	  		-0.001550044758582E-05,   0.744576444194164E-05,  -0.003516953093983E-05,
 									 0.006121206040185E-05,  -0.003516953093983E-05,   0.795201715550991E-05};
 			// MTI sample rate configured to 400 Hz but samples used for covariance estimation only captured at 200 Hz (hence downsampled)
 			float cov_acc_mti[9] = {0.143168418480867E-03,   0.025720201380381E-03,   0.013511303535437E-03,
-					   	   	   	    0.025720201380381E-03,   0.132103665088956E-03,   0.025679048752216E-03,
-							   	    0.013511303535437E-03,   0.025679048752216E-03,   0.141723092884984E-03};
+					   	   	   		0.025720201380381E-03,   0.132103665088956E-03,   0.025679048752216E-03,
+							   		0.013511303535437E-03,   0.025679048752216E-03,   0.141723092884984E-03};
 
 			/* Estimator initialization covariances */
 			float COMEstimator_P_init_diagonal[2] = {1E-12, 1E-12}; // initialize COM estimator covariance

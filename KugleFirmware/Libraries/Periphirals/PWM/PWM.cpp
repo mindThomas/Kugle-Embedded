@@ -163,7 +163,7 @@ void PWM::InitPeripheral(timer_t timer, pwm_channel_t channel, uint32_t frequenc
 
 	// Ensure that frequency and maxValue matches
 	if (!(frequency == 0 && maxValue == 0) && // frequency and maxValue undefined
-	    (frequency != _hRes->frequency || maxValue != _hRes->maxValue))
+		(frequency != _hRes->frequency || maxValue != _hRes->maxValue))
 	{
 		_hRes = 0;
 		ERROR("Timer already configured with different frequency and/or max value");
@@ -303,11 +303,11 @@ void PWM::ConfigureTimerGPIO()
 		*/
 		__HAL_RCC_GPIOE_CLK_ENABLE();
 		if (_channel == CH1)
-		    GPIO_InitStruct.Pin = GPIO_PIN_9;
+			GPIO_InitStruct.Pin = GPIO_PIN_9;
 		else if (_channel == CH2)
-		    GPIO_InitStruct.Pin = GPIO_PIN_11;
+			GPIO_InitStruct.Pin = GPIO_PIN_11;
 		else if (_channel == CH3)
-		    GPIO_InitStruct.Pin = GPIO_PIN_13;
+			GPIO_InitStruct.Pin = GPIO_PIN_13;
 		else
 			return;
 
@@ -338,24 +338,24 @@ void PWM::ConfigureTimerGPIO()
 	else if(_hRes->timer == TIMER15)
 	{
 		GPIO_InitStruct.Alternate = GPIO_AF4_TIM15;
-	    /**TIM15 GPIO Configuration
-	    PE5     ------> TIM15_CH1
-	    */
+		/**TIM15 GPIO Configuration
+		PE5     ------> TIM15_CH1
+		*/
 		__HAL_RCC_GPIOE_CLK_ENABLE();
-	    GPIO_InitStruct.Pin = GPIO_PIN_5;
-	    HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-	    _complementaryOutput = false;
+		GPIO_InitStruct.Pin = GPIO_PIN_5;
+		HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+		_complementaryOutput = false;
 	}
 	else if(_hRes->timer == TIMER17)
 	{
 		GPIO_InitStruct.Alternate = GPIO_AF1_TIM17;
-	    /**TIM17 GPIO Configuration
-	    PB7     ------> TIM17_CH1N
-	    */
+		/**TIM17 GPIO Configuration
+		PB7     ------> TIM17_CH1N
+		*/
 		__HAL_RCC_GPIOB_CLK_ENABLE();
-	    GPIO_InitStruct.Pin = GPIO_PIN_7;
-	    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-	    _complementaryOutput = true;
+		GPIO_InitStruct.Pin = GPIO_PIN_7;
+		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+		_complementaryOutput = true;
 	}
 }
 

@@ -329,17 +329,17 @@ void UART::TransmitBlocking(uint8_t * buffer, uint32_t bufLen)
 	do {
 		xSemaphoreTake( _transmitByteFinished, ( TickType_t ) portMAX_DELAY ); // block until it has finished sending the byte
 		_handle.Instance->TDR = *buffer++;
-	    /* Enable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
-	       Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
-	    */
-	    if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
-	    {
-	      SET_BIT(_handle.Instance->CR3, USART_CR3_TXFTIE);
-	    }
-	    else
-	    {
-	      SET_BIT(_handle.Instance->CR1, USART_CR1_TXEIE);
-	    }
+		/* Enable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
+		   Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
+		*/
+		if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
+		{
+		  SET_BIT(_handle.Instance->CR3, USART_CR3_TXFTIE);
+		}
+		else
+		{
+		  SET_BIT(_handle.Instance->CR1, USART_CR1_TXEIE);
+		}
 	} while (--bufLen > 0);
 
     /* Disable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
@@ -668,17 +668,17 @@ void UART::UART_Interrupt(port_t port)
 	|| ((cr3its & USART_CR3_TXFTIE) != RESET)) )
 	{
 		//UART_Transmit_IT(huart);
-	    /* Disable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
-	       Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
-	    */
-	    if (READ_BIT(uart->_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
-	    {
-	      CLEAR_BIT(uart->_handle.Instance->CR3, USART_CR3_TXFTIE);
-	    }
-	    else
-	    {
-	      CLEAR_BIT(uart->_handle.Instance->CR1, USART_CR1_TXEIE);
-	    }
+		/* Disable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
+		   Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
+		*/
+		if (READ_BIT(uart->_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
+		{
+		  CLEAR_BIT(uart->_handle.Instance->CR3, USART_CR3_TXFTIE);
+		}
+		else
+		{
+		  CLEAR_BIT(uart->_handle.Instance->CR1, USART_CR1_TXEIE);
+		}
 
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		xSemaphoreGiveFromISR( uart->_transmitByteFinished, &xHigherPriorityTaskWoken );

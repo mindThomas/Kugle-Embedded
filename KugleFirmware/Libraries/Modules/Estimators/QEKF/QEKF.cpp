@@ -115,7 +115,7 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
  * @brief 	Estimate attitude quaternion given accelerometer, gyroscope measurements, a heading input/estimate and passed time
  * @param	accelerometer[3]   Input: acceleration measurement in body frame [m/s^2]
  * @param	gyroscope[3]       Input: angular velocity measurement in body frame [rad/s]
- * @param	heading		       Input: heading angle in inertial frame [rad]
+ * @param	heading			   Input: heading angle in inertial frame [rad]
  * @param   EstimateBias       Input: flag to control if gyroscope bias should be estimated
  */
 void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const float heading, const bool EstimateBias)
@@ -148,7 +148,7 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const bo
  * @brief 	Estimate attitude quaternion given accelerometer, gyroscope measurements, a heading input/estimate and passed time
  * @param	accelerometer[3]   Input: acceleration measurement in body frame [m/s^2]
  * @param	gyroscope[3]       Input: angular velocity measurement in body frame [rad/s]
- * @param	heading		       Input: heading angle in inertial frame [rad]
+ * @param	heading			   Input: heading angle in inertial frame [rad]
  * @param   EstimateBias       Input: flag to control if gyroscope bias should be estimated
  * @param	dt    			   Input: time passed since last estimate
  */

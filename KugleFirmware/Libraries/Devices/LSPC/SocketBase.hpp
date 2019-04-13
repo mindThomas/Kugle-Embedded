@@ -138,19 +138,19 @@ public:
 
   bool unregisterCallback(uint8_t type)
   {
-	    if (type == 0x00)
-	    {
-	      return false;
-	    }
+		if (type == 0x00)
+		{
+		  return false;
+		}
 
-	    auto handler_it = type_handlers.find(type);
-	    if (handler_it == type_handlers.end()) {
-	    	return false; // callback not registered already registered - this ensures that we can not overwrite an existing registered callback
-	    }
+		auto handler_it = type_handlers.find(type);
+		if (handler_it == type_handlers.end()) {
+			return false; // callback not registered already registered - this ensures that we can not overwrite an existing registered callback
+		}
 
-	    type_handlers.erase(handler_it); // remove/unregister the callback
+		type_handlers.erase(handler_it); // remove/unregister the callback
 
-	    return true;
+		return true;
   }
 };
 

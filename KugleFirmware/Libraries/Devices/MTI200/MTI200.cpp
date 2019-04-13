@@ -198,9 +198,9 @@ void MTI200::mtMessageHandler(void * param, struct XbusMessage const* message)
 		deallocateMessageData(message->data);
 	} else { // other type of message, put into response queue
 		XbusMessage * msgPtr = (XbusMessage *)pvPortMalloc(sizeof(XbusMessage));
-	    if (msgPtr) {
-	    	memcpy(msgPtr, message, sizeof(XbusMessage));
-	    	if (xQueueSend(mti200->_responseQueue, (void *)&msgPtr, (TickType_t) 0) != pdPASS ) {
+		if (msgPtr) {
+			memcpy(msgPtr, message, sizeof(XbusMessage));
+			if (xQueueSend(mti200->_responseQueue, (void *)&msgPtr, (TickType_t) 0) != pdPASS ) {
 				deallocateMessageData(message->data); // failed putting message into queue - deallocate message data memory
 			}
 		} else {

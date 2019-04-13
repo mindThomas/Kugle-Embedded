@@ -117,15 +117,15 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float eta_encoder, c
 	}
 
 	VelocityEstimator(X_prev, P_prev,
-	      EncoderDiffMeas, eta_encoder,
+		  EncoderDiffMeas, eta_encoder,
 		  Accelerometer, Cov_Accelerometer, eta_accelerometer,
 		  eta_acc_bias,
 		  qEst, Cov_qEst, q_dot,
 		  eta_acceleration,
-	      dt,
-	      _params.model.TicksPrRev,
+		  dt,
+		  _params.model.TicksPrRev,
 		  _params.model.rk, _params.model.rw, _params.model.g,
-	      X, P);
+		  X, P);
 
 	Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));
 

@@ -112,48 +112,48 @@ void SPI::DeInitPeripheral()
 {
 	if (!_hRes) return;
 	if (_hRes->port == PORT_SPI3) {
-	    /* Peripheral clock disable */
-	    __HAL_RCC_SPI3_CLK_DISABLE();
+		/* Peripheral clock disable */
+		__HAL_RCC_SPI3_CLK_DISABLE();
 
-	    /**SPI3 GPIO Configuration
-	    PC10     ------> SPI3_SCK
-	    PC11     ------> SPI3_MISO
-	    PC12     ------> SPI3_MOSI
-	    */
-	    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12);
+		/**SPI3 GPIO Configuration
+		PC10     ------> SPI3_SCK
+		PC11     ------> SPI3_MISO
+		PC12     ------> SPI3_MOSI
+		*/
+		HAL_GPIO_DeInit(GPIOC, GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12);
 
-	    /* SPI3 interrupt DeInit */
-	    HAL_NVIC_DisableIRQ(SPI3_IRQn);
+		/* SPI3 interrupt DeInit */
+		HAL_NVIC_DisableIRQ(SPI3_IRQn);
 	}
 	else if (_hRes->port == PORT_SPI5)
 	{
-	    /* Peripheral clock disable */
-	    __HAL_RCC_SPI5_CLK_DISABLE();
+		/* Peripheral clock disable */
+		__HAL_RCC_SPI5_CLK_DISABLE();
 
-	    /**SPI6 GPIO Configuration
-	    PG12     ------> SPI6_MISO
-	    PG13     ------> SPI6_SCK
-	    PG14     ------> SPI6_MOSI
-	    */
-	    HAL_GPIO_DeInit(GPIOF, GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9);
+		/**SPI6 GPIO Configuration
+		PG12     ------> SPI6_MISO
+		PG13     ------> SPI6_SCK
+		PG14     ------> SPI6_MOSI
+		*/
+		HAL_GPIO_DeInit(GPIOF, GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9);
 
-	    /* SPI6 interrupt DeInit */
-	    HAL_NVIC_DisableIRQ(SPI5_IRQn);
+		/* SPI6 interrupt DeInit */
+		HAL_NVIC_DisableIRQ(SPI5_IRQn);
 	}
 	else if (_hRes->port == PORT_SPI6)
 	{
-	    /* Peripheral clock disable */
-	    __HAL_RCC_SPI6_CLK_DISABLE();
+		/* Peripheral clock disable */
+		__HAL_RCC_SPI6_CLK_DISABLE();
 
-	    /**SPI6 GPIO Configuration
-	    PG12     ------> SPI6_MISO
-	    PG13     ------> SPI6_SCK
-	    PG14     ------> SPI6_MOSI
-	    */
-	    HAL_GPIO_DeInit(GPIOG, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14);
+		/**SPI6 GPIO Configuration
+		PG12     ------> SPI6_MISO
+		PG13     ------> SPI6_SCK
+		PG14     ------> SPI6_MOSI
+		*/
+		HAL_GPIO_DeInit(GPIOG, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14);
 
-	    /* SPI6 interrupt DeInit */
-	    HAL_NVIC_DisableIRQ(SPI6_IRQn);
+		/* SPI6 interrupt DeInit */
+		HAL_NVIC_DisableIRQ(SPI6_IRQn);
 	}
 }
 
@@ -283,24 +283,24 @@ void SPI::InitPeripheral(port_t port, uint32_t frequency)
 		}
 		else if (port == PORT_SPI6)
 		{
-		    /* Peripheral clock enable */
-		    __HAL_RCC_SPI6_CLK_ENABLE();
-		    /**SPI6 GPIO Configuration
-		    PG12     ------> SPI6_MISO
-		    PG13     ------> SPI6_SCK
-		    PG14     ------> SPI6_MOSI
-		    */
-		    __HAL_RCC_GPIOG_CLK_ENABLE();
-		    GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14;
-		    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-		    GPIO_InitStruct.Pull = GPIO_NOPULL;
-		    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-		    GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
-		    HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+			/* Peripheral clock enable */
+			__HAL_RCC_SPI6_CLK_ENABLE();
+			/**SPI6 GPIO Configuration
+			PG12     ------> SPI6_MISO
+			PG13     ------> SPI6_SCK
+			PG14     ------> SPI6_MOSI
+			*/
+			__HAL_RCC_GPIOG_CLK_ENABLE();
+			GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14;
+			GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+			GPIO_InitStruct.Pull = GPIO_NOPULL;
+			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+			GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
+			HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
-		    /* SPI6 interrupt Init */
-		    HAL_NVIC_SetPriority(SPI6_IRQn, SPI_INTERRUPT_PRIORITY, 0);
-		    HAL_NVIC_EnableIRQ(SPI6_IRQn);
+			/* SPI6 interrupt Init */
+			HAL_NVIC_SetPriority(SPI6_IRQn, SPI_INTERRUPT_PRIORITY, 0);
+			HAL_NVIC_EnableIRQ(SPI6_IRQn);
 		}
 	}
 
@@ -331,20 +331,20 @@ void SPI::InitChipSelect()
 		HAL_GPIO_WritePin(_csPort, _csPin, GPIO_PIN_SET); // set pin high after configuration = chip is NOT selected
 
 		GPIO_InitTypeDef GPIO_InitStruct = {0};
-	    GPIO_InitStruct.Pin = _csPin;
-	    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	    GPIO_InitStruct.Pull = GPIO_NOPULL;
-	    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	    HAL_GPIO_Init(_csPort, &GPIO_InitStruct);
+		GPIO_InitStruct.Pin = _csPin;
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		HAL_GPIO_Init(_csPort, &GPIO_InitStruct);
 
 	}
 	else { // hardware chip select configuration
 		if (!_hRes) return;
 		GPIO_InitTypeDef GPIO_InitStruct = {0};
-	    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-	    GPIO_InitStruct.Pull = GPIO_NOPULL;
-	    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	    GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
+		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+		GPIO_InitStruct.Alternate = GPIO_AF5_SPI6;
 
 		switch (_hRes->port) {
 			case PORT_SPI3: // hardware SPI not defined (for now)

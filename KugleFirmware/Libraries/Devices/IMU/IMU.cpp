@@ -37,7 +37,7 @@ void MPU9250_Sampling(void const * argument)
 
 	while (1) {
 		imu->WaitForNewData();
-	    imu->getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+		imu->getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
 	}
 }
 #endif
@@ -114,11 +114,11 @@ void IMU::ValidateCalibrationMatrix(void)
 		for (int j = 0; j < 3; j++) {
 			if (i == j) { // diagonal element, should be close to 1
 				if (Math_Round(I1[3*i+j], ValidationPrecision) != 1.0 ||
-				    Math_Round(I2[3*i+j], ValidationPrecision) != 1.0)
+					Math_Round(I2[3*i+j], ValidationPrecision) != 1.0)
 					return;
 			} else { // off-diagonal element
 				if (Math_Round(I1[3*i+j], ValidationPrecision) != 0.0 ||
-				    Math_Round(I2[3*i+j], ValidationPrecision) != 0.0)
+					Math_Round(I2[3*i+j], ValidationPrecision) != 0.0)
 					return;
 			}
 		}

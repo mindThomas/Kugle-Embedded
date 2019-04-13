@@ -76,7 +76,7 @@ void WheelSlipDetector::Step(const float motorAngle[3])
  * @param	motorAngle[3]   				Input: latest encoder angle measurement [rad]
  * @param	slipAccelerationThreshold       Input: acceleration threshold being detected as a slip [rad/s^2]
  * @param   slipTimeThreshold      			Input: amount of time which the slip acceleration should occur for a slip to be defined as "detected" [s]
- * @param   slipIdleTime	      			Input: amount of time which no slip should be detected before the wheel slip detection flag is removed [s]
+ * @param   slipIdleTime		  			Input: amount of time which no slip should be detected before the wheel slip detection flag is removed [s]
  * @param	dt    			   				Input: time passed since last estimate
  */
 void WheelSlipDetector::Step(const float motorAngle[3], const float slipAccelerationThreshold, const float slipTimeThreshold, const float slipIdleTime, const float dt)

@@ -49,7 +49,7 @@ void enbit(uint8_t value) {
 
 int main(int argc, char *argv[]) {
 	int                i, j, err, size, first=' ', last='~',
-	                   bitmapOffset = 0, x, y, byte;
+					   bitmapOffset = 0, x, y, byte;
 	char              *fontName, c, *ptr;
 	FT_Library         library;
 	FT_Face            face;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 	// Allocate space for font name and glyph table
 	if((!(fontName = malloc(strlen(ptr) + 20))) ||
 	   (!(table = (GFXglyph *)malloc((last - first + 1) *
-	    sizeof(GFXglyph))))) {
+		sizeof(GFXglyph))))) {
 		fprintf(stderr, "Malloc error\n");
 		return 1;
 	}

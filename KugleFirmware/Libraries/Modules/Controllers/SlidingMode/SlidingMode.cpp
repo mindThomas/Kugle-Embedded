@@ -425,10 +425,10 @@ void SlidingMode::Step(const float q[4], const float dq_in[4], const float xy[2]
     	arm_add_f32(devec_dq_err, S, S, 3); // S += devec*dq_err  -->  S = devec*dq_err + K*devec*q_err
 	}
 	else if (manifoldType == lspc::ParameterTypes::OMEGA_BODY_MANIFOLD || manifoldType == lspc::ParameterTypes::OMEGA_INERTIAL_MANIFOLD) {
-	    /* S = omega - omega_ref + K*devec*q_err */
-	    arm_mult_f32(devec(q_err), (float*)K, S, 3); // S = K*devec*q_err
-	    arm_add_f32(omega, S, S, 3); // S += omega  -->  S = omega + K*devec*q_err
-	    arm_sub_f32(S, (float*)omega_ref, S, 3); // S -= omega_ref  -->  S = omega - omega_ref + K*devec*q_err
+		/* S = omega - omega_ref + K*devec*q_err */
+		arm_mult_f32(devec(q_err), (float*)K, S, 3); // S = K*devec*q_err
+		arm_add_f32(omega, S, S, 3); // S += omega  -->  S = omega + K*devec*q_err
+		arm_sub_f32(S, (float*)omega_ref, S, 3); // S -= omega_ref  -->  S = omega - omega_ref + K*devec*q_err
 	}
 
     /* Compute switching law */

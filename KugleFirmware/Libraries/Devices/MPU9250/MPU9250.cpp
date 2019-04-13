@@ -336,10 +336,10 @@ int MPU9250::setFilt(mpu9250_dlpf_bandwidth accel_bandwidth, mpu9250_dlpf_bandwi
             break;
 
 					case DLPF_BANDWIDTH_OFF:
-	            if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_OFF) ){ // setting accel bandwidth to 460Hz
-	                return -1;
-	            }
-	            break;
+				if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_OFF) ){ // setting accel bandwidth to 460Hz
+					return -1;
+				}
+				break;
 
 					case DLPF_BANDWIDTH_250HZ: // incorrect setting
 							return -1;
@@ -440,17 +440,17 @@ int MPU9250::enableInt(bool enable)
 
 	if(enable){
 		/* setting the interrupt */
-	    if( !_bus->writeRegister(INT_PIN_CFG, 0) ){ // setup interrupt, 50 us pulse, active high level, push-pull configuration
-	        return -1;
-	    }
-	    if( !_bus->writeRegister(INT_ENABLE,INT_RAW_RDY_EN) ){ // set to data ready
-	        return -1;
-	    }
+		if( !_bus->writeRegister(INT_PIN_CFG, 0) ){ // setup interrupt, 50 us pulse, active high level, push-pull configuration
+			return -1;
+		}
+		if( !_bus->writeRegister(INT_ENABLE,INT_RAW_RDY_EN) ){ // set to data ready
+			return -1;
+		}
 	}
 	else{
-	    if( !_bus->writeRegister(INT_ENABLE,INT_DISABLE) ){ // disable interrupt
-	        return -1;
-	    }
+		if( !_bus->writeRegister(INT_ENABLE,INT_DISABLE) ){ // disable interrupt
+			return -1;
+		}
 	}
 
 	_bus->setBusHighSpeed();
@@ -917,12 +917,12 @@ void MPU9250::CalibrateMagnetometer(float * dest1, float * dest2)
   sample_count = 1500;  // at 100 Hz ODR, new mag data is available every 10 ms
   for(ii = 0; ii < sample_count; ii++) {
 			getMagCounts(&mag_temp[0], &mag_temp[1], &mag_temp[2]); // Read the mag data
-	    for (int jj = 0; jj < 3; jj++) {
-	      if(mag_temp[jj] > mag_max[jj]) mag_max[jj] = mag_temp[jj];
-	      if(mag_temp[jj] < mag_min[jj]) mag_min[jj] = mag_temp[jj];
-	    }
-	    //osDelay(135);  // at 8 Hz ODR, new mag data is available every 125 ms
-	    osDelay(12);  // at 100 Hz ODR, new mag data is available every 10 ms
+		for (int jj = 0; jj < 3; jj++) {
+		  if(mag_temp[jj] > mag_max[jj]) mag_max[jj] = mag_temp[jj];
+		  if(mag_temp[jj] < mag_min[jj]) mag_min[jj] = mag_temp[jj];
+		}
+		//osDelay(135);  // at 8 Hz ODR, new mag data is available every 125 ms
+		osDelay(12);  // at 100 Hz ODR, new mag data is available every 10 ms
   }
 
 //    Serial.println("mag x min/max:"); Serial.println(mag_max[0]); Serial.println(mag_min[0]);

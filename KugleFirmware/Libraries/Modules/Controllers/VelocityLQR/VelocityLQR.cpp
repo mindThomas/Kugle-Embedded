@@ -168,7 +168,7 @@ void VelocityLQR::Step(const float xy[2], const float q[4], const float dxy[2], 
 	}
 	else if (VelocityIntegralAfterPowerup) {
 		if (velocityRef[0] != 0 || velocityRef[1] != 0 ||
-		    (dxy[0]*dxy[0] + dxy[1]*dxy[1] > StabilizationDetectionVelocity*StabilizationDetectionVelocity)) { // manual movement of velocity reference requires the initialization integral to be disabled
+			(dxy[0]*dxy[0] + dxy[1]*dxy[1] > StabilizationDetectionVelocity*StabilizationDetectionVelocity)) { // manual movement of velocity reference requires the initialization integral to be disabled
 			VelocityIntegralInitializationTime = 0;
 			VelocityIntegralAfterPowerup = false;
 		}
