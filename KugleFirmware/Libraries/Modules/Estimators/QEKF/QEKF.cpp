@@ -207,12 +207,12 @@ void QEKF::Step(const float accelerometer[3], const float gyroscope[3], const fl
 
 	Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));
 
-    if (CreateQdotFromDifference) {
-      X[4] = (X[0] - X_prev[0]) / dt; // dq[0]
-      X[5] = (X[1] - X_prev[1]) / dt; // dq[1]
-      X[6] = (X[2] - X_prev[2]) / dt; // dq[2]
-      X[7] = (X[3] - X_prev[3]) / dt; // dq[3]
-    }
+	if (CreateQdotFromDifference) {
+	  X[4] = (X[0] - X_prev[0]) / dt; // dq[0]
+	  X[5] = (X[1] - X_prev[1]) / dt; // dq[1]
+	  X[6] = (X[2] - X_prev[2]) / dt; // dq[2]
+	  X[7] = (X[3] - X_prev[3]) / dt; // dq[3]
+	}
 }
 
 /**
@@ -233,11 +233,11 @@ void QEKF::GetQuaternion(float q[4])
  */
 void QEKF::GetQuaternionDerivative(float dq[4])
 {
-    /* Body angular velocity */
-    /* dq = 1/2 * Phi(q) * [0;omega]; */
+	/* Body angular velocity */
+	/* dq = 1/2 * Phi(q) * [0;omega]; */
 	float omega_q[4] = { 0, X[4], X[5], X[6] };
-    Quaternion_Phi(&X[0], omega_q, dq); // Phi(q) * [0;omega]
-    arm_scale_f32(dq, 0.5f, dq, 4);
+	Quaternion_Phi(&X[0], omega_q, dq); // Phi(q) * [0;omega]
+	arm_scale_f32(dq, 0.5f, dq, 4);
 
 	/*dq[0] = X[4];
 	dq[1] = X[5];
@@ -262,11 +262,11 @@ void QEKF::GetGyroBias(float bias[3])
  */
 void QEKF::GetQuaternionCovariance(float Cov_q[4*4])
 {
-    for (int m = 0; m < 4; m++) {
-      for (int n = 0; n < 4; n++) {
-        Cov_q[4*m + n] = P[10*m + n];
-      }
-    }
+	for (int m = 0; m < 4; m++) {
+	  for (int n = 0; n < 4; n++) {
+	    Cov_q[4*m + n] = P[10*m + n];
+	  }
+	}
 }
 
 /**
@@ -275,11 +275,11 @@ void QEKF::GetQuaternionCovariance(float Cov_q[4*4])
  */
 void QEKF::GetQuaternionDerivativeCovariance(float Cov_dq[4*4])
 {
-    /*for (int m = 0; m < 4; m++) {
-      for (int n = 0; n < 4; n++) {
-        Cov_dq[4*m + n] = P[10*m + n + (10*4 + 4)];
-      }
-    }*/
+	/*for (int m = 0; m < 4; m++) {
+	  for (int n = 0; n < 4; n++) {
+	    Cov_dq[4*m + n] = P[10*m + n + (10*4 + 4)];
+	  }
+	}*/
 
 	// OBS. The covariance of the quaternion derivative estimate is not stored in the estimator covariance, since it is not part of the state vector
 	// Hence we need to transform the covariance of the angular velocity estimate into a covariance of the quaternion derivative estimate
@@ -315,11 +315,11 @@ void QEKF::GetQuaternionDerivativeCovariance(float Cov_dq[4*4])
  */
 void QEKF::GetAngularVelocityCovariance(float Cov_omega[3*3])
 {
-    for (int m = 0; m < 3; m++) {
-      for (int n = 0; n < 3; n++) {
-    	  Cov_omega[3*m + n] = P[10*m + n + (10*4 + 4)];
-      }
-    }
+	for (int m = 0; m < 3; m++) {
+	  for (int n = 0; n < 3; n++) {
+		  Cov_omega[3*m + n] = P[10*m + n + (10*4 + 4)];
+	  }
+	}
 }
 
 /**
@@ -328,11 +328,11 @@ void QEKF::GetAngularVelocityCovariance(float Cov_omega[3*3])
  */
 void QEKF::GetBiasCovariance(float Cov_bias[3*3])
 {
-    for (int m = 0; m < 3; m++) {
-      for (int n = 0; n < 3; n++) {
-    	  Cov_bias[3*m + n] = P[10*m + n + (10*7 + 7)];
-      }
-    }
+	for (int m = 0; m < 3; m++) {
+	  for (int n = 0; n < 3; n++) {
+		  Cov_bias[3*m + n] = P[10*m + n + (10*7 + 7)];
+	  }
+	}
 }
 
 bool QEKF::UnitTest(void)

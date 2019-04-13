@@ -86,22 +86,22 @@ void COMEKF::Step(const float dxyEst[2], const float Cov_dxy[2*2], const float q
 		dxyEst[1] - _prevVelocity[1]
 	};
 
-    COMEstimator(X_prev, P_prev,
-      qEst, Cov_qEst, qDotEst,
-      dxyEst, VelocityDiff, Cov_dxy,
-      dt,
-      _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jw, _params.model.rw, _params.model.l, _params.model.g,
+	COMEstimator(X_prev, P_prev,
+	  qEst, Cov_qEst, qDotEst,
+	  dxyEst, VelocityDiff, Cov_dxy,
+	  dt,
+	  _params.model.Jk, _params.model.Mk, _params.model.rk, _params.model.Mb, _params.model.Jw, _params.model.rw, _params.model.l, _params.model.g,
 	  _params.model.CoR,
-      X, P);
+	  X, P);
 
-    Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));
+	Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));
 
-    _prevVelocity[0] = dxyEst[0];
-    _prevVelocity[1] = dxyEst[1];
+	_prevVelocity[0] = dxyEst[0];
+	_prevVelocity[1] = dxyEst[1];
 
-    /* Limit/clamp COM estimate */
-    X[0] = fmaxf(fminf(X[0], _params.estimator.MaxCOMDeviation), -_params.estimator.MaxCOMDeviation);
-    X[1] = fmaxf(fminf(X[1], _params.estimator.MaxCOMDeviation), -_params.estimator.MaxCOMDeviation);
+	/* Limit/clamp COM estimate */
+	X[0] = fmaxf(fminf(X[0], _params.estimator.MaxCOMDeviation), -_params.estimator.MaxCOMDeviation);
+	X[1] = fmaxf(fminf(X[1], _params.estimator.MaxCOMDeviation), -_params.estimator.MaxCOMDeviation);
 }
 
 /**

@@ -37,50 +37,50 @@ public:
 protected:
   void processIncomingByte(uint8_t incoming_byte)
   {
-    switch (fsr_state)
-    {
-      case LookingFor::header:
-        if (incoming_byte == 0x00)
-        {
-          incoming_data.push_back(incoming_byte);
-          fsr_state = LookingFor::type;
-        }
-        break;
-      case LookingFor::type:
-        if (incoming_byte != 0x00)
-        {
-          incoming_data.push_back(incoming_byte);
-          fsr_state = LookingFor::length;
-        }
-        break;
-      case LookingFor::length:
-        incoming_length = incoming_byte;
-        incoming_data.push_back(incoming_byte);
-        fsr_state = LookingFor::data;
-        break;
-      case LookingFor::data:
-        // Record the data
-        incoming_data.push_back(incoming_byte);
+	switch (fsr_state)
+	{
+	  case LookingFor::header:
+	    if (incoming_byte == 0x00)
+	    {
+	      incoming_data.push_back(incoming_byte);
+	      fsr_state = LookingFor::type;
+	    }
+	    break;
+	  case LookingFor::type:
+	    if (incoming_byte != 0x00)
+	    {
+	      incoming_data.push_back(incoming_byte);
+	      fsr_state = LookingFor::length;
+	    }
+	    break;
+	  case LookingFor::length:
+	    incoming_length = incoming_byte;
+	    incoming_data.push_back(incoming_byte);
+	    fsr_state = LookingFor::data;
+	    break;
+	  case LookingFor::data:
+	    // Record the data
+	    incoming_data.push_back(incoming_byte);
 
-        // If we got it all, decode it and invoke the handler
-        if (size_t(incoming_length + 3) == incoming_data.size())
-        {
-          Packet inPacket(incoming_data);
-          auto handler_it = type_handlers.find(inPacket.packetType());
-          if (handler_it != type_handlers.end())
-          {
-            handler_it->second.handler(handler_it->second.param, inPacket.payload());
-          }
-          else
-          {
-            // We didn't find the handler.
-          }
-          // Reset to receive the next.
-          fsr_state = LookingFor::header;
-          incoming_data.clear();
-        }
-        break;
-    }
+	    // If we got it all, decode it and invoke the handler
+	    if (size_t(incoming_length + 3) == incoming_data.size())
+	    {
+	      Packet inPacket(incoming_data);
+	      auto handler_it = type_handlers.find(inPacket.packetType());
+	      if (handler_it != type_handlers.end())
+	      {
+	        handler_it->second.handler(handler_it->second.param, inPacket.payload());
+	      }
+	      else
+	      {
+	        // We didn't find the handler.
+	      }
+	      // Reset to receive the next.
+	      fsr_state = LookingFor::header;
+	      incoming_data.clear();
+	    }
+	    break;
+	}
   }
 
 public:
@@ -104,7 +104,7 @@ public:
   // @return True if the object was sent.
   bool send(const lspc::Serializable & obj)
   {
-    return send(obj.type(), obj.serialize());
+	return send(obj.type(), obj.serialize());
   }
 
   // Register a callback to handle incoming messages
@@ -118,22 +118,22 @@ public:
   // @return True if the registration succeeded.
   bool registerCallback(uint8_t type, void (*handler)(void * param, const std::vector<uint8_t>&), void * parameter = 0)
   {
-    if (type == 0x00)
-    {
-      return false;
-    }
+	if (type == 0x00)
+	{
+	  return false;
+	}
 
-    if (type_handlers.find(type) != type_handlers.end()) {
-    	return false; // callback already registered - this ensures that we can not overwrite an existing registered callback
-    }
+	if (type_handlers.find(type) != type_handlers.end()) {
+		return false; // callback already registered - this ensures that we can not overwrite an existing registered callback
+	}
 
-    callback_t callback;
-    callback.handler = handler;
-    callback.param = parameter;
+	callback_t callback;
+	callback.handler = handler;
+	callback.param = parameter;
 
-    type_handlers[type] = callback;
+	type_handlers[type] = callback;
 
-    return true;
+	return true;
   }
 
   bool unregisterCallback(uint8_t type)

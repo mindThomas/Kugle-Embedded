@@ -70,8 +70,8 @@ class MPU9250_SPI : public MPU9250_Bus
 
 		void setBusHighSpeed();
 
-    private:
-        SPI * _bus;    
+	private:
+	    SPI * _bus;
 };
 
 #endif

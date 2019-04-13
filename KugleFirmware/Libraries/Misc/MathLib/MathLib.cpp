@@ -40,11 +40,11 @@ void Math_SymmetrizeSquareMatrix(float * mat, unsigned int rows)
 
 	memcpy(in, mat, sizeof(float) * rows * rows);
 
-    for (unsigned int i = 0; i < rows; i++) {
+	for (unsigned int i = 0; i < rows; i++) {
 		for (unsigned int j = 0; j < rows; j++) {
 			mat[rows*i + j] = (in[rows*i + j] + in[rows*j + i]) / 2.0;
 		}
-    }
+	}
 
 	vPortFree(in);
 }

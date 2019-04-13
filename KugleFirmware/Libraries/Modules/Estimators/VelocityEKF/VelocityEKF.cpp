@@ -134,9 +134,9 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float eta_encoder, c
 
 	Math_SymmetrizeSquareMatrix(P, sizeof(X)/sizeof(float));
 
-    _prevEncoderTicks[0] = encoderTicks[0];
-    _prevEncoderTicks[1] = encoderTicks[1];
-    _prevEncoderTicks[2] = encoderTicks[2];
+	_prevEncoderTicks[0] = encoderTicks[0];
+	_prevEncoderTicks[1] = encoderTicks[1];
+	_prevEncoderTicks[2] = encoderTicks[2];
 }
 
 /**
@@ -155,9 +155,9 @@ void VelocityEKF::GetVelocity(float dxy[2])
  */
 void VelocityEKF::GetVelocityCovariance(float Cov_dxy[2*2])
 {
-    for (int m = 0; m < 2; m++) {
-      for (int n = 0; n < 2; n++) {
-    	  Cov_dxy[2*m + n] = P[7*m + n];
-      }
-    }
+	for (int m = 0; m < 2; m++) {
+	  for (int n = 0; n < 2; n++) {
+		  Cov_dxy[2*m + n] = P[7*m + n];
+	  }
+	}
 }

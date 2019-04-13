@@ -119,9 +119,9 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 	// q_err = Phi(q_ref)^T * q
 	Quaternion_PhiT(q_ref, q, q_err);
 
-    /* Invert quaternion if the scalar is negative to get the shortest path */
+	/* Invert quaternion if the scalar is negative to get the shortest path */
 	if (q_err[0] < 0)
-      arm_negate_f32(q_err, q_err, 4);
+	  arm_negate_f32(q_err, q_err, 4);
 
 	/* Clamp "yaw" error - this is possibly a crude way of doing it */
 	// ToDo: Consider to clamp the yaw error by converting the quaternion error into roll, pitch and yaw components, then clamp the yaw component and reassemble into quaternion error

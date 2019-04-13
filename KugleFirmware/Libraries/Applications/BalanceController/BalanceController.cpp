@@ -422,12 +422,12 @@ void BalanceController::Thread(void * pvParameters)
 
 		/* Compute kinematics-based velocity and update position estimate by trapezoidal integration */
 		float dxy_kinematics[2];
-    	// compute velocity from encoder-based motor velocities and forward kinematics
-    	kinematics.EstimateMotorVelocity(EncoderAngle);
-    	kinematics.ForwardKinematics(balanceController->q, balanceController->dq, dxy_kinematics);
-    	if (params.estimator.PositionEstimateDefinedInCoR) {
-    		kinematics.ConvertBallToCoRvelocity(dxy_kinematics, balanceController->q, balanceController->dq, dxy_kinematics);
-    	}
+		// compute velocity from encoder-based motor velocities and forward kinematics
+		kinematics.EstimateMotorVelocity(EncoderAngle);
+		kinematics.ForwardKinematics(balanceController->q, balanceController->dq, dxy_kinematics);
+		if (params.estimator.PositionEstimateDefinedInCoR) {
+			kinematics.ConvertBallToCoRvelocity(dxy_kinematics, balanceController->q, balanceController->dq, dxy_kinematics);
+		}
 		// Update position estimate by trapezoidal integration of kinematics-based velocity estimate
 		balanceController->xy[0] += (dxy_kinematics_old[0] + dxy_kinematics[0]) / (2.0f * params.controller.SampleRate);
 		balanceController->xy[1] += (dxy_kinematics_old[1] + dxy_kinematics[1]) / (2.0f * params.controller.SampleRate);
@@ -655,9 +655,9 @@ void BalanceController::Thread(void * pvParameters)
 
 		/* Clamp the torque between configurable limits less than or equal to max output torque */
 		float saturationTorque = params.model.SaturationTorqueOfMaxOutputTorque * params.model.MaxOutputTorque;
-    	Torque[0] = fmaxf(fminf(Torque[0], saturationTorque), -saturationTorque);
-    	Torque[1] = fmaxf(fminf(Torque[1], saturationTorque), -saturationTorque);
-    	Torque[2] = fmaxf(fminf(Torque[2], saturationTorque), -saturationTorque);
+		Torque[0] = fmaxf(fminf(Torque[0], saturationTorque), -saturationTorque);
+		Torque[1] = fmaxf(fminf(Torque[1], saturationTorque), -saturationTorque);
+		Torque[2] = fmaxf(fminf(Torque[2], saturationTorque), -saturationTorque);
 
 		/* Initial Torque ramp up */
 		if (params.controller.TorqueRampUp) {
@@ -935,7 +935,7 @@ void BalanceController::Thread(void * pvParameters)
 	delete(&lqr);
 	delete(&sm);
 	delete(&velocityController);
-        delete(&velocityLQR);
+	    delete(&velocityLQR);
 	delete(&qEKF);
 	delete(&madgwick);
 	delete(&velocityEKF);
@@ -998,7 +998,7 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 {
 	if (params.behavioural.StepTestEnabled) {
 		float quaternion_reference[4];
-    	ReferenceGenerationStep++;
+		ReferenceGenerationStep++;
 		if (ReferenceGenerationStep >= 20*params.controller.SampleRate) // reset after 20 seconds
 			ReferenceGenerationStep = 0;
 
@@ -1043,7 +1043,7 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 			BalanceReference.angularVelocityOnly = false;
 			xSemaphoreGive( BalanceReference.semaphore ); // give semaphore back
 		}
-    }
+	}
 	else if (params.behavioural.SineTestEnabled) { // sine test with increasing frequency
 			float quaternion_reference[4];
 			float Amplitude = deg2rad(2);

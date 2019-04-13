@@ -141,9 +141,9 @@ void Kinematics::EstimateMotorVelocity(const int32_t encoderTicks[3], const floa
 	_dpsi[1] = EncoderConversionRatio * EncoderDiffMeas[1];
 	_dpsi[2] = EncoderConversionRatio * EncoderDiffMeas[2];
 
-    _prevEncoderTicks[0] = encoderTicks[0];
-    _prevEncoderTicks[1] = encoderTicks[1];
-    _prevEncoderTicks[2] = encoderTicks[2];
+	_prevEncoderTicks[0] = encoderTicks[0];
+	_prevEncoderTicks[1] = encoderTicks[1];
+	_prevEncoderTicks[2] = encoderTicks[2];
 }
 
 void Kinematics::ForwardKinematics(const float q[4], const float dq[4], float xy_velocity[2])
