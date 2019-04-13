@@ -64,10 +64,10 @@ void VelocityEKF::Reset(const int32_t encoderTicks[3])
 /**
  * @brief 	Estimate 2L velocity given measured encoder ticks and estimated quaternion, quaternion derivative and possibly COM
  * @param	encoderTicks[3]  	Input: encoder ticks (raw ticks)
+ * @param	Accelerometer[3]  	Input: accelerometer measurement [m/s^2]
  * @param	qEst[4]        		Input: estimated attitude quaternion
  * @param	Cov_qEst[4*4]       Input: covariance of quaternion estimate, output from QEKF
  * @param	qDotEst[4]       	Input: estimated quaternion derivative
- * @param	COMest[3]       	Input: estimated center of mass (COM)
  */
 void VelocityEKF::Step(const int32_t encoderTicks[3], const float Accelerometer[3], const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4])
 {
@@ -86,10 +86,15 @@ void VelocityEKF::Step(const int32_t encoderTicks[3], const float Accelerometer[
 /**
  * @brief 	Estimate 2L velocity given measured encoder ticks and estimated quaternion, quaternion derivative and possibly COM
  * @param	encoderTicks[3]  	Input: encoder ticks (raw ticks)
+ * @param	eta_encoder		   	Input: tuning factor for encoder measurement trust - decrease value to trust the encoder measurements more
+ * @param	Accelerometer[3]  	Input: accelerometer measurement [m/s^2]
+ * @param	Cov_Accelerometer[3*3] Input: covariance of accelerometer measurements
+ * @param	eta_accelerometer  	Input: tuning factor for accelerometer trust - increase value to put less trust in accelerometer measurements
+ * @param	eta_acc_bias	  	Input: bias process variance related to rate of random-walk of accelerometer bias
  * @param	qEst[4]        		Input: estimated attitude quaternion
  * @param	Cov_qEst[4*4]       Input: covariance of quaternion estimate, output from QEKF
  * @param	qDotEst[4]       	Input: estimated quaternion derivative
- * @param	COMest[3]       	Input: estimated center of mass (COM)
+ * @param	eta_acceleration	Input: smoothing factor of velocity estimate in terms of process variance on acceleration
  * @param	dt    			   	Input: time passed since last estimate
  */
 void VelocityEKF::Step(const int32_t encoderTicks[3], const float eta_encoder, const float Accelerometer[3], const float Cov_Accelerometer[3*3], const float eta_accelerometer, const float eta_acc_bias, const float qEst[4], const float Cov_qEst[4*4], const float qDotEst[4], const float eta_acceleration, const float dt)
@@ -146,7 +151,7 @@ void VelocityEKF::GetVelocity(float dxy[2])
 
 /**
  * @brief 	Get covariance matrix of estimated velocity
- * @param	Cov_dxy[2*2]		Output: velocity estimate covariance
+ * @param	Cov_dxy[2*2]	Output: velocity estimate covariance
  */
 void VelocityEKF::GetVelocityCovariance(float Cov_dxy[2*2])
 {

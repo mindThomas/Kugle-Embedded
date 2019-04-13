@@ -128,7 +128,7 @@ void BalanceController::Thread(void * pvParameters)
 	BalanceController * balanceController = (BalanceController *)pvParameters;
 	TickType_t xLastWakeTime;
 	uint32_t prevTimerValue; // used for measuring dt
-	float timestamp;
+	float timestamp, dt_compute, dt_compute2;
 	balanceController->isRunning_ = true;
 
 	/* Load initialized objects */
@@ -311,16 +311,6 @@ void BalanceController::Thread(void * pvParameters)
 	MotorDriverFailureCounts[2] = 0;
 	EquivalentControlPct = 1.0;
 	WheelSlipRampGain = 1.0;
-
-	float volatile dt_compute, dt_compute2;
-
-/*#pragma GCC push_options
-#pragma GCC optimize("O0")
-// Code here
-#pragma GCC pop_options*/
-/* For functions the following post attribute to the function declaration (in C/C++ file) can be made to disable optimization
-__attribute__((optimize("O0")))
-*/
 
 	/* Main control loop */
 	xLastWakeTime = xTaskGetTickCount();
@@ -1041,7 +1031,6 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 		}
 
 		if (xSemaphoreTake( BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for updating
-			/* Update references with input values from message */
 			BalanceReference.time = microsTimer.GetTime();
 			BalanceReference.omega[0] = 0;
 			BalanceReference.omega[1] = 0;
@@ -1074,7 +1063,6 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 
 
 			if (xSemaphoreTake( BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for updating
-				/* Update references with input values from message */
 				BalanceReference.time = microsTimer.GetTime();
 				BalanceReference.omega[0] = dfdt; // deg2rad(3) * 2*M_PI*SineFrequency * cosf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate);
 				BalanceReference.omega[1] = 0; //deg2rad(0) * 2*M_PI*SineFrequency * -sinf(2*M_PI *  (float)ReferenceGenerationStep * SineFrequency / params.controller.SampleRate);
@@ -1118,7 +1106,6 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 			ReferenceGenerationStep++;
 
 			if (xSemaphoreTake( BalanceReference.semaphore, ( TickType_t ) 1) == pdTRUE) { // lock for updating
-				/* Update references with input values from message */
 				BalanceReference.time = microsTimer.GetTime();
 				BalanceReference.omega[0] = omega_ref_body[0];
 				BalanceReference.omega[1] = omega_ref_body[1];

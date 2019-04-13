@@ -91,7 +91,6 @@ class Parameters
 			// tau_switching = -eta * sat(S/epsilon)
 			// In linear region (|S| < epsilon) this turns into
 			// tau_switching_linear = -eta/epsilon * S
-			// With a maximum torque of 0.8
 			//#define AGGRESSIVE_SLIDING_MODE // OBS! Requires at least "DisableOmegaXYInEquivalentControl" to be true and CAN NOT be used in Velocity Controller mode
 			#ifdef AGGRESSIVE_SLIDING_MODE
 			float K[3] = {15, 15, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
@@ -116,7 +115,7 @@ class Parameters
 
 			/* Balance LQR parameters */
 			float BalanceLQR_MaxYawError = 10.0; // yaw error clamp [degrees]
-			/* LQR gains generated with "LQR_ErrorDynamicsBased.m" based on:
+			/* LQR gains generated with "Kugle-MATLAB/Controllers/BalanceLQR/GainComputation_UsingLinearizedMatrices.m" based on:
 				Q = diag([1000, 1000, ... % q2, q3  (roll, pitch)
 					  	  1, ...    % q4  (yaw)
 					  	  0.1, 0.1, ... % dq2, dq3
@@ -150,7 +149,7 @@ class Parameters
 			float VelocityLQR_PositionControlAtZeroVelocityReference_MaximumKickinVelocity = 0.1;
 			float VelocityLQR_IntegratorPowerupStabilizeTime = 3.0; // wait 3 seconds in the beginning for integrator to settle (and before allowing manual movement)
 			float VelocityController_StabilizationDetectionVelocity = 0.2; // if the robot is pushed with a velocity of more than 0.2 m/s after the initialization time the initialization integrator will be disabled allowing manual movement
-			/* LQR gains generated with "LQR_VelocityController_basedOnSimulinkLinearization.m" based on:
+			/* LQR gains generated with "Kugle-MATLAB/Controllers/VelocityLQR/GainComputation.m" based on:
 			   Q = diag([20, 20, ... % x, y
             			 0.01, 0.01, ... % q2, q3
           	  	  	  	 10, 10, ... % dx, dy
@@ -188,16 +187,16 @@ class Parameters
 			bool SensorDrivenQEKF = false;
 			bool EstimateBias = true; // estimate gyroscope bias as part of QEKF - it is not recommended to enable this when using the Xsens IMU since it has internal bias correction
 			bool CreateQdotFromQDifference = false;
-			float sigma2_bias = 1E-10; // for MPU9250 use 1E-6 or 1E-7 works well, for MTI-200 use 1E-9 or disable bias estimation completely!
-			float sigma2_omega = 3.16228e-07; //  (10^(-6.5)) for MPU9250 use 1E-5, for MTI-200 use 1E-2 due to the smaller gyroscope noise magnitude
-			float sigma2_heading = 3.3846e-05; // 3*sigma == 1 degree
+			float sigma2_bias = 1E-10; // bias estimation variance related to rate of random-walk
+			float sigma2_omega = 3.16228e-07; //  (10^(-6.5))  smoothing coefficient for angular velocity estimate
+			float sigma2_heading = 3.3846e-05; // (3*sigma == 1 degree)  variance on heading input
 			float GyroscopeTrustFactor = 2.0; // the higher value the more trust is put into the gyroscope measurements by increasing the accelerometer covariance
 			bool AccelerometerVibration_DetectionEnabled = false;
 			float AccelerometerVibration_NormLPFtau = 0.5; // seconds
 			float AccelerometerVibration_CovarianceVaryFactor = 2.0; // vary/scale the accelerometer covariance depending on exaggerated accelerations (above 'AccelerometerVibration_DetectionAmount') based on VaryFactor=exp(AccelerometerCovarianceVaryFactor*norm_difference)
 			float AccelerometerVibration_MaxVaryFactor = 10000; // vary/scale the accelerometer covariance with maximum this value
-			// X = {q0, q1, q2, q3,   dq0, dq1, dq2, dq3,   gyro_bias_x, gyro_bias_y}
-			float QEKF_P_init_diagonal[11] = {1E-7, 1E-7, 1E-7, 1E-9,   1E-7, 1E-7, 1E-9,   1E-8, 1E-8, 1E-8}; // initialize q3 variance lower than others, since yaw can not be estimated so we are more certain on the initial value to let gyro integration (dead-reckoning) dominate the "yaw" estimate
+			// X = {q0, q1, q2, q3,   omega_body_x,omega_body_y,omega_body_z,   gyro_bias_x, gyro_bias_y}
+			float QEKF_P_init_diagonal[10] = {1E-7, 1E-7, 1E-7, 1E-9,   1E-7, 1E-7, 1E-9,   1E-8, 1E-8, 1E-8}; // initialize q3 variance lower than others, since yaw can not be estimated so we are more certain on the initial value to let gyro integration (dead-reckoning) dominate the "yaw" estimate
 
 			/* Position estimate configuration */
 			bool PositionEstimateDefinedInCoR = false; // at default the position estimate is defined in the center of the ball - enabling this flag will move it to the Center of Rotation (CoR)
@@ -208,10 +207,10 @@ class Parameters
 			/* Velocity estimator parameters */
 			bool UseVelocityEstimator = true;
 			bool UseQdotInVelocityEstimator = true;
-			float eta_encoder = 1.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurement more
-			float eta_accelerometer = 5;
-			float var_acc_bias = 1E-9;
-			float var_acceleration = 1E-5;
+			float eta_encoder = 1.0f; // tuning factor for encoder measurement trust - decrease value to trust the encoder measurements more
+			float eta_accelerometer = 5; //  tuning factor for accelerometer trust - increase value to put less trust in accelerometer measurements
+			float var_acc_bias = 1E-9; //
+			float var_acceleration = 1E-5; // smoothing factor of velocity estimate in terms of process variance on acceleration
 			// X = {dx, dy, ddx, ddy, acc_bias_x, acc_bias_y, acc_bias_z}
 			float VelocityEstimator_P_init_diagonal[7] = {1E-1,1E-1, 1E-2,1E-2, 1E-9,1E-9,1E-9}; // initialize velocity estimator covariance
 
