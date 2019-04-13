@@ -1048,7 +1048,7 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 			float quaternion_reference[4];
 			float Amplitude = deg2rad(2);
 			const float BaseFrequency = 0.5; // hz
-			const float freqRate = 0.01; // hz pr. second
+			const float freqRate = 0.02; // hz pr. second
 			float t = (float)ReferenceGenerationStep / params.controller.SampleRate;
 			float freq = (BaseFrequency + freqRate*t);
 			float g = 2*M_PI*freq*t;
@@ -1075,7 +1075,7 @@ void BalanceController::ReferenceGeneration(Parameters& params)
 				BalanceReference.angularVelocityOnly = false;
 				xSemaphoreGive( BalanceReference.semaphore ); // give semaphore back
 			}
-		}
+	}
 	else if (params.behavioural.CircleTestEnabled) { // constant inclination rotating in a circle around inertial z-axis with an increasing angular velocity
 			float quaternion_reference_tmp[4];
 			float Amplitude = deg2rad(3);
