@@ -506,7 +506,7 @@ static void USBD_SetConfig(USBD_HandleTypeDef *pdev ,
     {
     case USBD_STATE_ADDRESSED:
       if (cfgidx) 
-      {                                			   							   							   				
+      {
         pdev->dev_config = cfgidx;
         pdev->dev_state = USBD_STATE_CONFIGURED;
         if(USBD_SetClassConfig(pdev , cfgidx) == USBD_FAIL)

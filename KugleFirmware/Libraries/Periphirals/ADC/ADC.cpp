@@ -571,68 +571,68 @@ HAL_StatusTypeDef ADC::StartDMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32
 	  /* Start conversion if ADC is effectively enabled */
 	  if (tmp_hal_status == HAL_OK)
 	  {
-	    /* State machine update: Check if an injected conversion is ongoing */
-	    if (HAL_IS_BIT_SET(hadc->State, HAL_ADC_STATE_INJ_BUSY))
-	    {
-	      /* Reset ADC error code fields related to regular conversions only */
-	      CLEAR_BIT(hadc->ErrorCode, (HAL_ADC_ERROR_OVR | HAL_ADC_ERROR_DMA));
-	    }
-	    else
-	    {
-	      /* Set ADC error code to none */
-	      ADC_CLEAR_ERRORCODE(hadc);
-	    }
-	    /* Clear HAL_ADC_STATE_READY and regular conversion results bits, set HAL_ADC_STATE_REG_BUSY bit */
-	    ADC_STATE_CLR_SET(hadc->State,
-	                      (HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR | HAL_ADC_STATE_REG_EOSMP),
-	                      HAL_ADC_STATE_REG_BUSY);
+		/* State machine update: Check if an injected conversion is ongoing */
+		if (HAL_IS_BIT_SET(hadc->State, HAL_ADC_STATE_INJ_BUSY))
+		{
+		  /* Reset ADC error code fields related to regular conversions only */
+		  CLEAR_BIT(hadc->ErrorCode, (HAL_ADC_ERROR_OVR | HAL_ADC_ERROR_DMA));
+		}
+		else
+		{
+		  /* Set ADC error code to none */
+		  ADC_CLEAR_ERRORCODE(hadc);
+		}
+		/* Clear HAL_ADC_STATE_READY and regular conversion results bits, set HAL_ADC_STATE_REG_BUSY bit */
+		ADC_STATE_CLR_SET(hadc->State,
+			              (HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR | HAL_ADC_STATE_REG_EOSMP),
+			              HAL_ADC_STATE_REG_BUSY);
 
-	    /* Reset HAL_ADC_STATE_MULTIMODE_SLAVE bit
-	       - by default if ADC is Master or Independent or if multimode feature is not available
-	       - if multimode setting is set to independent mode (no dual regular or injected conversions are configured) */
-	    if (ADC12_NONMULTIMODE_OR_MULTIMODEMASTER(hadc))
-	    {
-	      CLEAR_BIT(hadc->State, HAL_ADC_STATE_MULTIMODE_SLAVE);
-	    }
+		/* Reset HAL_ADC_STATE_MULTIMODE_SLAVE bit
+		   - by default if ADC is Master or Independent or if multimode feature is not available
+		   - if multimode setting is set to independent mode (no dual regular or injected conversions are configured) */
+		if (ADC12_NONMULTIMODE_OR_MULTIMODEMASTER(hadc))
+		{
+		  CLEAR_BIT(hadc->State, HAL_ADC_STATE_MULTIMODE_SLAVE);
+		}
 
-	    /* Set the DMA transfer complete callback */
-	    hadc->DMA_Handle->XferCpltCallback = ADC_DMAConvCplt;
+		/* Set the DMA transfer complete callback */
+		hadc->DMA_Handle->XferCpltCallback = ADC_DMAConvCplt;
 
-	    /* Set the DMA half transfer complete callback */
-	    hadc->DMA_Handle->XferHalfCpltCallback = ADC_DMAHalfConvCplt;
+		/* Set the DMA half transfer complete callback */
+		hadc->DMA_Handle->XferHalfCpltCallback = ADC_DMAHalfConvCplt;
 
-	    /* Set the DMA error callback */
-	    hadc->DMA_Handle->XferErrorCallback = ADC_DMAError;
+		/* Set the DMA error callback */
+		hadc->DMA_Handle->XferErrorCallback = ADC_DMAError;
 
 
-	    /* Manage ADC and DMA start: ADC overrun interruption, DMA start,     */
-	    /* ADC start (in case of SW start):                                   */
+		/* Manage ADC and DMA start: ADC overrun interruption, DMA start,     */
+		/* ADC start (in case of SW start):                                   */
 
-	    /* Clear regular group conversion flag and overrun flag               */
-	    /* (To ensure of no unknown state from potential previous ADC         */
-	    /* operations)                                                        */
-	    __HAL_ADC_CLEAR_FLAG(hadc, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
+		/* Clear regular group conversion flag and overrun flag               */
+		/* (To ensure of no unknown state from potential previous ADC         */
+		/* operations)                                                        */
+		__HAL_ADC_CLEAR_FLAG(hadc, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
 
-	    /* With DMA, overrun event is always considered as an error even if
-	       hadc->Init.Overrun is set to ADC_OVR_DATA_OVERWRITTEN. Therefore,
-	       ADC_IT_OVR is enabled.  */
-	    __HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
+		/* With DMA, overrun event is always considered as an error even if
+		   hadc->Init.Overrun is set to ADC_OVR_DATA_OVERWRITTEN. Therefore,
+		   ADC_IT_OVR is enabled.  */
+		__HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
 
-	    /* Start the DMA channel */
-	    HAL_DMA_Start_IT(hadc->DMA_Handle, (uint32_t)&hadc->Instance->DR, (uint32_t)pData, Length);
+		/* Start the DMA channel */
+		HAL_DMA_Start_IT(hadc->DMA_Handle, (uint32_t)&hadc->Instance->DR, (uint32_t)pData, Length);
 
-	    /* Enable conversion of regular group.                                  */
-	    /* Process unlocked */
-	    __HAL_UNLOCK(hadc);
-	    /* If software start has been selected, conversion starts immediately.  */
-	    /* If external trigger has been selected, conversion will start at next */
-	    /* trigger event.                                                       */
-	    SET_BIT(hadc->Instance->CR, ADC_CR_ADSTART);
+		/* Enable conversion of regular group.                                  */
+		/* Process unlocked */
+		__HAL_UNLOCK(hadc);
+		/* If software start has been selected, conversion starts immediately.  */
+		/* If external trigger has been selected, conversion will start at next */
+		/* trigger event.                                                       */
+		SET_BIT(hadc->Instance->CR, ADC_CR_ADSTART);
 	  }
 	  else
 	  {
-	    /* Process unlocked */
-	    __HAL_UNLOCK(hadc);
+		/* Process unlocked */
+		__HAL_UNLOCK(hadc);
 	  }  /* if (tmp_hal_status == HAL_OK) */
 	}
 	else

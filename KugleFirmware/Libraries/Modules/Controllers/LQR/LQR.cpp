@@ -43,12 +43,12 @@ LQR::~LQR()
 
 /**
  * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
  * @param	UseSteadyStateTorque   Input: boolean to control whether to add steady state torque calculated at the reference state using the nominal model
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
@@ -60,14 +60,14 @@ void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const 
 
 /**
  * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
+ * @param	dxy[2]        Input: current ball (center) velocity defined in inertial frame
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
  * @param	UseSteadyStateTorque   Input: boolean to control whether to add steady state torque calculated at the reference state using the nominal model
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
@@ -77,13 +77,13 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 
 /**
  * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
- * @param	COM[3]    	  Input: current estimate of COM
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
+ * @param	COM[3]        Input: current estimate of COM
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
  * @param	UseSteadyStateTorque   Input: boolean to control whether to add steady state torque calculated at the reference state using the nominal model
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
@@ -92,16 +92,16 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 
 /**
  * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
- * @param	COM[3]    	  Input: current estimate of COM
+ * @param	dxy[2]        Input: current ball (center) velocity defined in inertial frame
+ * @param	COM[3]        Input: current estimate of COM
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
  * @param   gainMatrix    Input: LQR gain matrix array
  * @param	UseSteadyStateTorque   Input: boolean to control whether to add steady state torque calculated at the reference state using the nominal model
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], const float * gainMatrix, const bool UseSteadyStateTorque, float tau[3])
 {

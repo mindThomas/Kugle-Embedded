@@ -46,9 +46,9 @@ float invSqrt(float x) {
 void Quaternion_Phi(const float q[4], const float p[4], float result[4])
 {
 	/*Phi = @(q)[q(0) -q(1) -q(2) -q(3);     % for q o p = Phi(q) * p
-	             q(1) q(0)  -q(3) q(2);
-	             q(2) q(3)  q(0)  -q(1);
-	             q(3) -q(2) q(1)  q(0)];
+				 q(1) q(0)  -q(3) q(2);
+				 q(2) q(3)  q(0)  -q(1);
+				 q(3) -q(2) q(1)  q(0)];
 	*/
 	result[0] = q[0]*p[0] - q[1]*p[1] - q[2]*p[2] - q[3]*p[3];
 	result[1] = q[1]*p[0] + q[0]*p[1] - q[3]*p[2] + q[2]*p[3];
@@ -59,11 +59,11 @@ void Quaternion_Phi(const float q[4], const float p[4], float result[4])
 /* result = V * q o p = V*Phi(q)*p */
 void Quaternion_devecPhi(const float q[4], const float p[4], float result[3])
 {
-		// V (devec) removes the first row of the result
+	// V (devec) removes the first row of the result
 	/*Phi = @(q)[q(0) -q(1) -q(2) -q(3);     % for q o p = Phi(q) * p
-	             q(1) q(0)  -q(3) q(2);
-	             q(2) q(3)  q(0)  -q(1);
-	             q(3) -q(2) q(1)  q(0)];
+				 q(1) q(0)  -q(3) q(2);
+				 q(2) q(3)  q(0)  -q(1);
+				 q(3) -q(2) q(1)  q(0)];
 	*/
 	result[0] = q[1]*p[0] + q[0]*p[1] - q[3]*p[2] + q[2]*p[3];
 	result[1] = q[2]*p[0] + q[3]*p[1] + q[0]*p[2] - q[1]*p[3];
@@ -74,9 +74,9 @@ void Quaternion_devecPhi(const float q[4], const float p[4], float result[3])
 void Quaternion_PhiT(const float q[4], const float p[4], float result[4])
 {
 	/*Phi^T = @(q)[q(0) q(1) q(2) q(3);     % for q o p = Phi(q) * p
-	             -q(1) q(0)  q(3) -q(2);
-	             -q(2) -q(3)  q(0)  q(1);
-	             -q(3) q(2) -q(1)  q(0)];
+				 -q(1) q(0)  q(3) -q(2);
+				 -q(2) -q(3)  q(0)  q(1);
+				 -q(3) q(2) -q(1)  q(0)];
 	*/
 	result[0] = q[0]*p[0] + q[1]*p[1] + q[2]*p[2] + q[3]*p[3];
 	result[1] = -q[1]*p[0] + q[0]*p[1] + q[3]*p[2] - q[2]*p[3];
@@ -89,9 +89,9 @@ void Quaternion_devecPhiT(const float q[4], const float p[4], float result[3])
 {
 		// V (devec) removes the first row of the result
 	/*Phi^T = @(q)[q(0) q(1) q(2) q(3);     % for q o p = Phi(q) * p
-	             -q(1) q(0)  q(3) -q(2);
-	             -q(2) -q(3)  q(0)  q(1);
-	             -q(3) q(2) -q(1)  q(0)];
+				 -q(1) q(0)  q(3) -q(2);
+				 -q(2) -q(3)  q(0)  q(1);
+				 -q(3) q(2) -q(1)  q(0)];
 	*/
 	result[0] = -q[1]*p[0] + q[0]*p[1] + q[3]*p[2] - q[2]*p[3];
 	result[1] = -q[2]*p[0] - q[3]*p[1] + q[0]*p[2] + q[1]*p[3];
@@ -144,9 +144,9 @@ void Quaternion_mat_PhiT(const float q[4], float mat[4*4])
 void Quaternion_mat_devecPhiT(const float q[4], float mat[3*4])
 {
 	/*Gamma^T = @(p)[p(0) p(1) p(2) p(3);   % for q o p = Gamma(p) * q
-	                -p(1) p(0) -p(3) p(2);
-	                -p(2) p(3) p(0) -p(1);
-	                -p(3) -p(2) p(1) p(0)];
+					-p(1) p(0) -p(3) p(2);
+					-p(2) p(3) p(0) -p(1);
+					-p(3) -p(2) p(1) p(0)];
 	*/
 	mat[0]  = -q[1];  mat[1]  = q[0];   mat[2]  = q[3];  mat[3]  = -q[2];
 	mat[4]  = -q[2];  mat[5]  = -q[3];   mat[6] = q[0];   mat[7] = q[1];
@@ -157,9 +157,9 @@ void Quaternion_mat_devecPhiT(const float q[4], float mat[3*4])
 void Quaternion_Gamma(const float p[4], const float q[4], float result[4])
 {
 	/*Gamma = @(p)[p(0) -p(1) -p(2) -p(3);   % for q o p = Gamma(p) * q
-	               p(1) p(0) p(3) -p(2);
-	               p(2) -p(3) p(0) p(1);
-	               p(3) p(2) -p(1) p(0)];
+				   p(1) p(0) p(3) -p(2);
+				   p(2) -p(3) p(0) p(1);
+				   p(3) p(2) -p(1) p(0)];
 	*/
 	result[0] = p[0]*q[0] - p[1]*q[1] - p[2]*q[2] - p[3]*q[3];
 	result[1] = p[1]*q[0] + p[0]*q[1] + p[3]*q[2] - p[2]*q[3];
@@ -171,9 +171,9 @@ void Quaternion_Gamma(const float p[4], const float q[4], float result[4])
 void Quaternion_GammaT(const float p[4], const float q[4], float result[4])
 {
 	/*Gamma^T = @(p)[p(0) p(1) p(2) p(3);   % for q o p = Gamma(p) * q
-	                -p(1) p(0) -p(3) p(2);
-	                -p(2) p(3) p(0) -p(1);
-	                -p(3) -p(2) p(1) p(0)];
+					-p(1) p(0) -p(3) p(2);
+					-p(2) p(3) p(0) -p(1);
+					-p(3) -p(2) p(1) p(0)];
 	*/
 	result[0] = p[0]*q[0] + p[1]*q[1] + p[2]*q[2] + p[3]*q[3];
 	result[1] = -p[1]*q[0] + p[0]*q[1] - p[3]*q[2] + p[2]*q[3];
@@ -185,9 +185,9 @@ void Quaternion_GammaT(const float p[4], const float q[4], float result[4])
 void Quaternion_devecGammaT(const float p[4], const float q[4], float result[3])
 {
 	/*Gamma^T = @(p)[p(0) p(1) p(2) p(3);   % for q o p = Gamma(p) * q
-	                -p(1) p(0) -p(3) p(2);
-	                -p(2) p(3) p(0) -p(1);
-	                -p(3) -p(2) p(1) p(0)];
+					-p(1) p(0) -p(3) p(2);
+					-p(2) p(3) p(0) -p(1);
+					-p(3) -p(2) p(1) p(0)];
 	*/
 	result[0] = -p[1]*q[0] + p[0]*q[1] - p[3]*q[2] + p[2]*q[3];
 	result[1] = -p[2]*q[0] + p[3]*q[1] + p[0]*q[2] - p[1]*q[3];
@@ -198,9 +198,9 @@ void Quaternion_devecGammaT(const float p[4], const float q[4], float result[3])
 void Quaternion_mat_Gamma(const float p[4], float mat[4*4])
 {
 	/*Gamma = @(p)[p(0) -p(1) -p(2) -p(3);   % for q o p = Gamma(p) * q
-	               p(1) p(0) p(3) -p(2);
-	               p(2) -p(3) p(0) p(1);
-	               p(3) p(2) -p(1) p(0)];
+				   p(1) p(0) p(3) -p(2);
+				   p(2) -p(3) p(0) p(1);
+				   p(3) p(2) -p(1) p(0)];
 	*/
 	mat[0]  = p[0];  mat[1]  = -p[1];  mat[2]  = -p[2];  mat[3]  = -p[3];
 	mat[4]  = p[1];  mat[5]  = p[0];   mat[6]  = p[3];   mat[7]  = -p[2];
@@ -212,9 +212,9 @@ void Quaternion_mat_Gamma(const float p[4], float mat[4*4])
 void Quaternion_mat_GammaT(const float p[4], float mat[4*4])
 {
 	/*Gamma^T = @(p)[p(0) p(1) p(2) p(3);   % for q o p = Gamma(p) * q
-	                -p(1) p(0) -p(3) p(2);
-	                -p(2) p(3) p(0) -p(1);
-	                -p(3) -p(2) p(1) p(0)];
+					-p(1) p(0) -p(3) p(2);
+					-p(2) p(3) p(0) -p(1);
+					-p(3) -p(2) p(1) p(0)];
 	*/
 	mat[0]  = p[0];   mat[1]  = p[1];   mat[2]  = p[2];   mat[3]  = p[3];
 	mat[4]  = -p[1];  mat[5]  = p[0];   mat[6]  = -p[3];  mat[7]  = p[2];
@@ -226,9 +226,9 @@ void Quaternion_mat_GammaT(const float p[4], float mat[4*4])
 void Quaternion_mat_devecGammaT(const float p[4], float mat[3*4])
 {
 	/*Gamma^T = @(p)[p(0) p(1) p(2) p(3);   % for q o p = Gamma(p) * q
-	                -p(1) p(0) -p(3) p(2);
-	                -p(2) p(3) p(0) -p(1);
-	                -p(3) -p(2) p(1) p(0)];
+					-p(1) p(0) -p(3) p(2);
+					-p(2) p(3) p(0) -p(1);
+					-p(3) -p(2) p(1) p(0)];
 	*/
 	mat[0]  = -p[1];  mat[1]  = p[0];   mat[2]  = -p[3];  mat[3]  = p[2];
 	mat[4]  = -p[2];  mat[5]  = p[3];   mat[6]  = p[0];   mat[7]  = -p[1];
@@ -418,16 +418,16 @@ void Quaternion_Integration_Body(const float q[4], const float omega_body[3], co
 
 	if (omega_norm > 0) {
 		float sinOmeg = sinf(0.5f * dt * omega_norm);
-	    q_exp[0] = cosf(0.5f * dt * omega_norm); // scalar part
-	    q_exp[1] = sinOmeg * omega_body[0] / omega_norm;
-	    q_exp[2] = sinOmeg * omega_body[1] / omega_norm;
-	    q_exp[3] = sinOmeg * omega_body[2] / omega_norm;
+		q_exp[0] = cosf(0.5f * dt * omega_norm); // scalar part
+		q_exp[1] = sinOmeg * omega_body[0] / omega_norm;
+		q_exp[2] = sinOmeg * omega_body[1] / omega_norm;
+		q_exp[3] = sinOmeg * omega_body[2] / omega_norm;
 	} else {
-	    // unit quaternion since the angular velocity is zero (no movement)
-	    q_exp[0] = 1.0f;
-	    q_exp[1] = 0.0f;
-	    q_exp[2] = 0.0f;
-	    q_exp[3] = 0.0f;
+		// unit quaternion since the angular velocity is zero (no movement)
+		q_exp[0] = 1.0f;
+		q_exp[1] = 0.0f;
+		q_exp[2] = 0.0f;
+		q_exp[3] = 0.0f;
 	}
 
 	// q_out = Phi(q) o q_exp
@@ -445,16 +445,16 @@ void Quaternion_Integration_Inertial(const float q[4], const float omega_inertia
 
 	if (omega_norm > 0) {
 		float sinOmeg = sinf(0.5f * dt * omega_norm);
-	    q_exp[0] = cosf(0.5f * dt * omega_norm); // scalar part
-	    q_exp[1] = sinOmeg * omega_inertial[0] / omega_norm;
-	    q_exp[2] = sinOmeg * omega_inertial[1] / omega_norm;
-	    q_exp[3] = sinOmeg * omega_inertial[2] / omega_norm;
+		q_exp[0] = cosf(0.5f * dt * omega_norm); // scalar part
+		q_exp[1] = sinOmeg * omega_inertial[0] / omega_norm;
+		q_exp[2] = sinOmeg * omega_inertial[1] / omega_norm;
+		q_exp[3] = sinOmeg * omega_inertial[2] / omega_norm;
 	} else {
-	    // unit quaternion since the angular velocity is zero (no movement)
-	    q_exp[0] = 1.0f;
-	    q_exp[1] = 0.0f;
-	    q_exp[2] = 0.0f;
-	    q_exp[3] = 0.0f;
+		// unit quaternion since the angular velocity is zero (no movement)
+		q_exp[0] = 1.0f;
+		q_exp[1] = 0.0f;
+		q_exp[2] = 0.0f;
+		q_exp[3] = 0.0f;
 	}
 
 	// q_out = Gamma(q) o q_exp

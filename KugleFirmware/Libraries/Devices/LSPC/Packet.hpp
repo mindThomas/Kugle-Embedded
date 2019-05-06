@@ -35,13 +35,13 @@ class Packet
 	{
 	  if (0x00 == input[b])
 	  {
-	    encoded_buffer_[code_idx] = code;
-	    code_idx = b + 1 + output_offset;
-	    code = 0;
+		encoded_buffer_[code_idx] = code;
+		code_idx = b + 1 + output_offset;
+		code = 0;
 	  }
 	  else
 	  {
-	    encoded_buffer_[b + 1 + output_offset] = input[b];
+		encoded_buffer_[b + 1 + output_offset] = input[b];
 	  }
 	}
 	encoded_buffer_[code_idx] = code;
@@ -73,10 +73,10 @@ class Packet
 	{
 	  for (int i = 1; i < code && out_index < dec_payload_size; ++i, ++out_index, ++in_index)
 	  {
-	    output[out_index] = encoded_buffer_[in_index];
+		output[out_index] = encoded_buffer_[in_index];
 	  }
 	  if (out_index >= dec_payload_size)
-	    break;
+		break;
 	  output[out_index] = 0x00;
 	  code = encoded_buffer_[in_index];
 	  code_accumulator += code;
@@ -101,7 +101,7 @@ class Packet
 	{
 	  degenerate_ = true;
 	  #ifdef __EXCEPTIONS
-	    throw std::length_error("Encoded buffer too small.");
+		throw std::length_error("Encoded buffer too small.");
 	  #endif
 	}
 
@@ -109,7 +109,7 @@ class Packet
 	{
 	  degenerate_ = true;
 	  #ifdef __EXCEPTIONS
-	    throw std::length_error("Encoded buffer too big.");
+		throw std::length_error("Encoded buffer too big.");
 	  #endif
 	}
 
@@ -118,7 +118,7 @@ class Packet
 	{
 	  degenerate_ = true;
 	  #ifdef __EXCEPTIONS
-	    throw std::runtime_error("Received packet with type 0x00.");
+		throw std::runtime_error("Received packet with type 0x00.");
 	  #endif
 	}
 
@@ -126,7 +126,7 @@ class Packet
 	{
 	  degenerate_ = true;
 	  #ifdef __EXCEPTIONS
-	    throw std::runtime_error("Packet length field does not match buffer size.");
+		throw std::runtime_error("Packet length field does not match buffer size.");
 	  #endif
 	}
 
@@ -134,7 +134,7 @@ class Packet
 	{
 	  degenerate_ = true;
 	  #ifdef __EXCEPTIONS
-	    throw std::runtime_error("Decoding failed.");
+		throw std::runtime_error("Decoding failed.");
 	  #endif
 	}
   }
@@ -156,7 +156,7 @@ class Packet
 	{
 	  degenerate_ = true;
 	  #ifdef __EXCEPTIONS
-	    throw std::runtime_error("Constructed LSPC packet with type 0x00.");
+		throw std::runtime_error("Constructed LSPC packet with type 0x00.");
 	  #endif
 	}
 	encoded_buffer_[1] = package_type;
@@ -169,7 +169,7 @@ class Packet
 	  encoded_buffer_[2] = 255;
 	  degenerate_ = true;
 	  #ifdef __EXCEPTIONS
-	    throw std::length_error("Payload longer than 254 bytes.");
+		throw std::length_error("Payload longer than 254 bytes.");
 	  #endif
 	}
 	else

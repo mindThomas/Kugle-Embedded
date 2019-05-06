@@ -45,9 +45,9 @@ void Matrix_Extract(const float * in, const int in_rows, const int in_cols, cons
 	assert((in_col + out_cols) < in_cols);*/
 	for (int m = 0; m < out_rows; m++)
 	{
-	    for (int n = 0; n < out_cols; n++) {
-	        out[m*out_cols + n] = in[(in_row+m)*in_cols + (in_col+n)];
-	    }
+		for (int n = 0; n < out_cols; n++) {
+			out[m*out_cols + n] = in[(in_row+m)*in_cols + (in_col+n)];
+		}
 	}
 }
 
@@ -57,7 +57,7 @@ void Matrix_Round(float * matrix, int rows, int cols)
 	for (int n = 0; n < cols; n++) {
 	  matrix[cols*m + n] = roundf(matrix[cols*m + n] * 10) / 10;
 	  if (matrix[cols*m + n] == -0.f) {
-	    matrix[cols*m + n] = 0.f;
+		matrix[cols*m + n] = 0.f;
 	  }
 	}
   }

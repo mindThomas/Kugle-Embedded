@@ -113,23 +113,23 @@ int MPU9250::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRa
 
 	// select clock source to gyro
 	if( !_bus->writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) ){
-	    return -1;
+		return -1;
 	}
 
 	// enable I2C master mode
 	if( !_bus->writeRegister(USER_CTRL,I2C_MST_EN) ){
-	    return -1;
+		return -1;
 	}
 
 	// set the I2C bus speed to 400 kHz
 	if( !_bus->writeRegister(I2C_MST_CTRL,I2C_MST_CLK) ){
-	    return -1;
+		return -1;
 	}
 
 	// set AK8963 to Power Down
 	writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN);
 	/*if( !writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) ){
-	    return -1;
+		return -1;
 	}*/
 
 	// reset the MPU9250
@@ -143,17 +143,17 @@ int MPU9250::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRa
 
 	// select clock source to gyro
 	if( !_bus->writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) ){
-	    return -1;
+		return -1;
 	}
 
 	// check the WHO AM I byte, expected value is 0x71 (decimal 113)
 	if( whoAmI() != 113 ){
-	    return -1;
+		return -1;
 	}
 
 	// enable accelerometer and gyro
 	if( !_bus->writeRegister(PWR_MGMNT_2,SEN_ENABLE) ){
-	    return -1;
+		return -1;
 	}
 
 	/*float SelfTestResult[6];
@@ -163,71 +163,71 @@ int MPU9250::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRa
 	/* setup the accel and gyro ranges */
 	switch(accelRange) {
 
-	    case ACCEL_RANGE_2G:
-	        // setting the accel range to 2G
-	        if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_2G) ){
-	            return -1;
-	        }
-	        _accelScale = G * 2.0f/32767.5f; // setting the accel scale to 2G
-	        break;
+		case ACCEL_RANGE_2G:
+			// setting the accel range to 2G
+			if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_2G) ){
+				return -1;
+			}
+			_accelScale = G * 2.0f/32767.5f; // setting the accel scale to 2G
+			break;
 
-	    case ACCEL_RANGE_4G:
-	        // setting the accel range to 4G
-	        if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_4G) ){
-	            return -1;
-	        }
-	        _accelScale = G * 4.0f/32767.5f; // setting the accel scale to 4G
-	        break;
+		case ACCEL_RANGE_4G:
+			// setting the accel range to 4G
+			if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_4G) ){
+				return -1;
+			}
+			_accelScale = G * 4.0f/32767.5f; // setting the accel scale to 4G
+			break;
 
-	    case ACCEL_RANGE_8G:
-	        // setting the accel range to 8G
-	        if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_8G) ){
-	            return -1;
-	        }
-	        _accelScale = G * 8.0f/32767.5f; // setting the accel scale to 8G
-	        break;
+		case ACCEL_RANGE_8G:
+			// setting the accel range to 8G
+			if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_8G) ){
+				return -1;
+			}
+			_accelScale = G * 8.0f/32767.5f; // setting the accel scale to 8G
+			break;
 
-	    case ACCEL_RANGE_16G:
-	        // setting the accel range to 16G
-	        if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_16G) ){
-	            return -1;
-	        }
-	        _accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
-	        break;
+		case ACCEL_RANGE_16G:
+			// setting the accel range to 16G
+			if( !_bus->writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_16G) ){
+				return -1;
+			}
+			_accelScale = G * 16.0f/32767.5f; // setting the accel scale to 16G
+			break;
 	}
 
 	switch(gyroRange) {
-	    case GYRO_RANGE_250DPS:
-	        // setting the gyro range to 250DPS
-	        if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_250DPS) ){
-	            return -1;
-	        }
-	        _gyroScale = 250.0f/32767.5f * _d2r; // setting the gyro scale to 250DPS
-	        break;
+		case GYRO_RANGE_250DPS:
+			// setting the gyro range to 250DPS
+			if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_250DPS) ){
+				return -1;
+			}
+			_gyroScale = 250.0f/32767.5f * _d2r; // setting the gyro scale to 250DPS
+			break;
 
-	    case GYRO_RANGE_500DPS:
-	        // setting the gyro range to 500DPS
-	        if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_500DPS) ){
-	            return -1;
-	        }
-	        _gyroScale = 500.0f/32767.5f * _d2r; // setting the gyro scale to 500DPS
-	        break;
+		case GYRO_RANGE_500DPS:
+			// setting the gyro range to 500DPS
+			if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_500DPS) ){
+				return -1;
+			}
+			_gyroScale = 500.0f/32767.5f * _d2r; // setting the gyro scale to 500DPS
+			break;
 
-	    case GYRO_RANGE_1000DPS:
-	        // setting the gyro range to 1000DPS
-	        if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_1000DPS) ){
-	            return -1;
-	        }
-	        _gyroScale = 1000.0f/32767.5f * _d2r; // setting the gyro scale to 1000DPS
-	        break;
+		case GYRO_RANGE_1000DPS:
+			// setting the gyro range to 1000DPS
+			if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_1000DPS) ){
+				return -1;
+			}
+			_gyroScale = 1000.0f/32767.5f * _d2r; // setting the gyro scale to 1000DPS
+			break;
 
-	    case GYRO_RANGE_2000DPS:
-	        // setting the gyro range to 2000DPS
-	        if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS) ){
-	            return -1;
-	        }
-	        _gyroScale = 2000.0f/32767.5f * _d2r; // setting the gyro scale to 2000DPS
-	        break;
+		case GYRO_RANGE_2000DPS:
+			// setting the gyro range to 2000DPS
+			if( !_bus->writeRegister(GYRO_CONFIG,GYRO_FS_SEL_2000DPS) ){
+				return -1;
+			}
+			_gyroScale = 2000.0f/32767.5f * _d2r; // setting the gyro scale to 2000DPS
+			break;
 	}
 
 	// enable I2C master mode
@@ -242,20 +242,20 @@ int MPU9250::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRa
 
 	// check AK8963 WHO AM I register, expected value is 0x48 (decimal 72)
 	if( whoAmIAK8963() != 72 ){
-	    return -1;
+		return -1;
 	}
 
 	/* get the magnetometer calibration */
 
 	// set AK8963 to Power Down
 	if( !writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) ){
-	    return -1;
+		return -1;
 	}
 	osDelay(100); // long wait between AK8963 mode changes
 
 	// set AK8963 to FUSE ROM access
 	if( !writeAK8963Register(AK8963_CNTL1,AK8963_FUSE_ROM) ){
-	    return -1;
+		return -1;
 	}
 	osDelay(100); // long wait between AK8963 mode changes
 
@@ -267,19 +267,19 @@ int MPU9250::Configure(mpu9250_accel_range accelRange, mpu9250_gyro_range gyroRa
 
 	// set AK8963 to Power Down
 	if( !writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) ){
-	    return -1;
+		return -1;
 	}
 	osDelay(100); // long wait between AK8963 mode changes
 
 	// set AK8963 to 16 bit resolution, 100 Hz update rate
 	if( !writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS2) ){
-	    return -1;
+		return -1;
 	}
 	osDelay(100); // long wait between AK8963 mode changes
 
 	// select clock source to gyro
 	if( !_bus->writeRegister(PWR_MGMNT_1,CLOCK_SEL_PLL) ){
-	    return -1;
+		return -1;
 	}
 
 	// instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
@@ -299,41 +299,41 @@ int MPU9250::setFilt(mpu9250_dlpf_bandwidth accel_bandwidth, mpu9250_dlpf_bandwi
 	_bus->setBusLowSpeed();
 
 	switch(accel_bandwidth) {
-	    case DLPF_BANDWIDTH_184HZ:
-	        if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_184) ){ // setting accel bandwidth to 184Hz
-	            return -1;
-	        }
-	        break;
+		case DLPF_BANDWIDTH_184HZ:
+			if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_184) ){ // setting accel bandwidth to 184Hz
+				return -1;
+			}
+			break;
 
-	    case DLPF_BANDWIDTH_92HZ:
-	        if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_92) ){ // setting accel bandwidth to 92Hz
-	            return -1;
-	        }
-	        break;
+		case DLPF_BANDWIDTH_92HZ:
+			if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_92) ){ // setting accel bandwidth to 92Hz
+				return -1;
+			}
+			break;
 
-	    case DLPF_BANDWIDTH_41HZ:
-	        if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_41) ){ // setting accel bandwidth to 41Hz
-	            return -1;
-	        }
-	        break;
+		case DLPF_BANDWIDTH_41HZ:
+			if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_41) ){ // setting accel bandwidth to 41Hz
+				return -1;
+			}
+			break;
 
-	    case DLPF_BANDWIDTH_20HZ:
-	        if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_20) ){ // setting accel bandwidth to 20Hz
-	            return -1;
-	        }
-	        break;
+		case DLPF_BANDWIDTH_20HZ:
+			if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_20) ){ // setting accel bandwidth to 20Hz
+				return -1;
+			}
+			break;
 
-	    case DLPF_BANDWIDTH_10HZ:
-	        if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_10) ){ // setting accel bandwidth to 10Hz
-	            return -1;
-	        }
-	        break;
+		case DLPF_BANDWIDTH_10HZ:
+			if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_10) ){ // setting accel bandwidth to 10Hz
+				return -1;
+			}
+			break;
 
-	    case DLPF_BANDWIDTH_5HZ:
-	        if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_5) ){ // setting accel bandwidth to 5Hz
-	            return -1;
-	        }
-	        break;
+		case DLPF_BANDWIDTH_5HZ:
+			if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_5) ){ // setting accel bandwidth to 5Hz
+				return -1;
+			}
+			break;
 
 					case DLPF_BANDWIDTH_OFF:
 				if( !_bus->writeRegister(ACCEL_CONFIG2,ACCEL_DLPF_OFF) ){ // setting accel bandwidth to 460Hz
@@ -398,33 +398,33 @@ int MPU9250::setFilt(mpu9250_dlpf_bandwidth accel_bandwidth, mpu9250_dlpf_bandwi
 
 	/* setting the sample rate divider */
 	if( !_bus->writeRegister(SMPDIV,SRD) ){ // setting the sample rate divider
-	    return -1;
+		return -1;
 	}
 
 	if(SRD > 9){
 
-	    // set AK8963 to Power Down
-	    if( !writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) ){
-	        return -1;
-	    }
-	    osDelay(100); // long wait between AK8963 mode changes
+		// set AK8963 to Power Down
+		if( !writeAK8963Register(AK8963_CNTL1,AK8963_PWR_DOWN) ){
+			return -1;
+		}
+		osDelay(100); // long wait between AK8963 mode changes
 
-	    // set AK8963 to 16 bit resolution, 8 Hz update rate
-	    if( !writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS1) ){
-	        return -1;
-	    }
-	    osDelay(100); // long wait between AK8963 mode changes
+		// set AK8963 to 16 bit resolution, 8 Hz update rate
+		if( !writeAK8963Register(AK8963_CNTL1,AK8963_CNT_MEAS1) ){
+			return -1;
+		}
+		osDelay(100); // long wait between AK8963 mode changes
 
-	    // instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
-	    readAK8963Registers(AK8963_HXL,sizeof(data),&data[0]);
+		// instruct the MPU9250 to get 7 bytes of data from the AK8963 at the sample rate
+		readAK8963Registers(AK8963_HXL,sizeof(data),&data[0]);
 	}
 
 	/* setting the interrupt */
 	/*if( !_bus->writeRegister(INT_PIN_CFG,INT_PULSE_50US) ){ // setup interrupt, 50 us pulse
-	    return -1;
+		return -1;
 	}
 	if( !_bus->writeRegister(INT_ENABLE,INT_RAW_RDY_EN) ){ // set to data ready
-	    return -1;
+		return -1;
 	}*/
 
 	_bus->setBusHighSpeed();
@@ -524,14 +524,14 @@ void MPU9250::getMagCounts(int16_t* hx, int16_t* hy, int16_t* hz){
 	_bus->readRegisters(EXT_SENS_DATA_00,sizeof(buff),&buff[0]);
 
 	if( buff[6] == 0x10 ) { // check for overflow
-	    *hx = (((int16_t)buff[1]) << 8) | buff[0];  // combine into 16 bit values
-	    *hy = (((int16_t)buff[3]) << 8) | buff[2];
-	    *hz = (((int16_t)buff[5]) << 8) | buff[4];
+		*hx = (((int16_t)buff[1]) << 8) | buff[0];  // combine into 16 bit values
+		*hy = (((int16_t)buff[3]) << 8) | buff[2];
+		*hz = (((int16_t)buff[5]) << 8) | buff[4];
 	}
 	else{
-	    *hx = 0;
-	    *hy = 0;
-	    *hz = 0;
+		*hx = 0;
+		*hy = 0;
+		*hz = 0;
 	}
 }
 

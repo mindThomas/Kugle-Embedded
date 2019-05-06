@@ -45,14 +45,14 @@ SlidingMode::~SlidingMode()
 
 /**
  * @brief 	Compute control output with Sliding mode controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
+ * @param	dxy[2]        Input: current ball (center) velocity defined in inertial frame
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in inertial frame
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
- * @param	S[3]      	  Output: sliding manifold values for the three surfaces used for the attitude control
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	S[3]          Output: sliding manifold values for the three surfaces used for the attitude control
  */
 void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3], float S[3])
 {
@@ -61,15 +61,15 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
 
 /**
  * @brief 	Compute control output with Sliding mode controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
- * @param	COM[3]    	  Input: current estimate of COM
+ * @param	dxy[2]        Input: current ball (center) velocity defined in inertial frame
+ * @param	COM[3]        Input: current estimate of COM
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in inertial frame
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
- * @param	S[3]      	  Output: sliding manifold values for the three surfaces used for the attitude control
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	S[3]          Output: sliding manifold values for the three surfaces used for the attitude control
  */
 void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], float tau[3], float S[3])
 {
@@ -78,16 +78,16 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
 
 /**
  * @brief 	Compute control output with Sliding mode controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
- * @param	COM[3]    	  Input: current estimate of COM
+ * @param	dxy[2]        Input: current ball (center) velocity defined in inertial frame
+ * @param	COM[3]        Input: current estimate of COM
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in inertial frame
  * @param	equivalentControlPct  Input: percentage (0-1) of equivalent control torque to apply
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
- * @param	S[3]      	  Output: sliding manifold values for the three surfaces used for the attitude control
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	S[3]          Output: sliding manifold values for the three surfaces used for the attitude control
  */
 void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], const float equivalentControlPct, float tau[3], float S[3])
 {
@@ -96,17 +96,17 @@ void SlidingMode::Step(const float q[4], const float dq[4], const float xy[2], c
 
 /**
  * @brief 	Compute control output with Sliding mode controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
+ * @param	dxy[2]        Input: current ball (center) velocity defined in inertial frame
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in either inertial frame or body frame, depending on the BodyFrame flag
  * @param   model params       Input: Different mixed model constants
  * @param   controller params  Input: Different tunable Sliding mode controller parameters
  * @param   manifoldType  Input: defines which specific manifold type/definition to use, including the choice of quaternion error and angular velocity reference frame
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
- * @param	S[3]      	  Output: sliding manifold values for the three surfaces used for the attitude control
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	S[3]          Output: sliding manifold values for the three surfaces used for the attitude control
  */
 void SlidingMode::Step(const float q[4], const float dq_in[4], const float xy[2], const float dxy[2], const float q_ref_in[4], const float omega_ref_body[3], const float Jk, const float Mk, const float rk, const float Mb, const float Jbx, const float Jby, const float Jbz, const float Jw, const float rw, const float Bvk, const float Bvm, const float Bvb, const float l, const float g_const, const float COM_X, const float COM_Y, const float COM_Z, const float K[3], const float eta[3], const float epsilon[3], const bool continuousSwitching, const bool IncludeEquivalentControl, const float equivalentControlPct, const bool DisableQdotInEquivalentControl, const bool DisableOmegaXYInEquivalentControl, const lspc::ParameterTypes::slidingManifoldType_t manifoldType, float tau[3], float S[3])
 {
@@ -239,28 +239,28 @@ void SlidingMode::Step(const float q[4], const float dq_in[4], const float xy[2]
 	float InputInv[3*3]; arm_matrix_instance_f32 InputInv_; arm_mat_init_f32(&InputInv_, 3, 3, InputInv);
 
 	if (manifoldType == lspc::ParameterTypes::Q_DOT_INERTIAL_MANIFOLD) {
-	    /* Inertial angular velocity */
-	    /* InputInv = inv(devec*Gamma(q_ref)' * gq) */
-	    arm_mat_mult_f32(&devecGammaQref_T_, &gq_, &Input_);
+		/* Inertial angular velocity */
+		/* InputInv = inv(devec*Gamma(q_ref)' * gq) */
+		arm_mat_mult_f32(&devecGammaQref_T_, &gq_, &Input_);
 	}
 	if (manifoldType == lspc::ParameterTypes::Q_DOT_BODY_MANIFOLD) {
-	    /* Body angular velocity */
-	    /* InputInv = inv(devec*Phi(q_ref)' * gq) */
-	    arm_mat_mult_f32(&devecPhiQref_T_, &gq_, &Input_);
+		/* Body angular velocity */
+		/* InputInv = inv(devec*Phi(q_ref)' * gq) */
+		arm_mat_mult_f32(&devecPhiQref_T_, &gq_, &Input_);
 	}
 	else if (manifoldType == lspc::ParameterTypes::OMEGA_BODY_MANIFOLD) {
-	    /* Body angular velocity */
-	    /* InputInv = inv(2 * devec*Phi(q)' * gq) */
-	    Quaternion_mat_devecPhiT(q, devecPhiQ_T);
-	    arm_mat_mult_f32(&devecPhiQ_T_, &gq_, &Input_);
-	    arm_scale_f32(Input, 2.f, Input, 3*3);
+		/* Body angular velocity */
+		/* InputInv = inv(2 * devec*Phi(q)' * gq) */
+		Quaternion_mat_devecPhiT(q, devecPhiQ_T);
+		arm_mat_mult_f32(&devecPhiQ_T_, &gq_, &Input_);
+		arm_scale_f32(Input, 2.f, Input, 3*3);
 	}
 	else if (manifoldType == lspc::ParameterTypes::OMEGA_INERTIAL_MANIFOLD) {
-	    /* Inertial angular velocity */
-	    /* InputInv = inv(2 * devec*Gamma(q)' * gq) */
-	    Quaternion_mat_devecGammaT(q, devecGammaQ_T);
-	    arm_mat_mult_f32(&devecGammaQ_T_, &gq_, &Input_);
-	    arm_scale_f32(Input, 2.f, Input, 3*3);
+		/* Inertial angular velocity */
+		/* InputInv = inv(2 * devec*Gamma(q)' * gq) */
+		Quaternion_mat_devecGammaT(q, devecGammaQ_T);
+		arm_mat_mult_f32(&devecGammaQ_T_, &gq_, &Input_);
+		arm_scale_f32(Input, 2.f, Input, 3*3);
 	}
 	inv3x3(Input, InputInv);
 

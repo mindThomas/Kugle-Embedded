@@ -88,10 +88,10 @@ void VelocityLQR::Step(const float xy[2], const float q[4], const float dxy[2], 
 
 /**
  * @brief 	Compute quaternion and angular velocity reference given a desired velocity reference
- * @param	q[4]      	   Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	   Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]           Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]          Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	   Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	   Input: current ball (center) velocity defined in inertial frame
+ * @param	dxy[2]         Input: current ball (center) velocity defined in inertial frame
  * @param	velocityRef[2] Input: desired velocity defined in either inertial frame or heading frame  (specified with the flag 'velocityRefGivenInHeadingFrame')   [m/s]
  * @param	velocityRefGivenInHeadingFrame    Input: specified which frame 'velocityRef' is defined in
  * @param	headingRef     Input: desired heading [rad]

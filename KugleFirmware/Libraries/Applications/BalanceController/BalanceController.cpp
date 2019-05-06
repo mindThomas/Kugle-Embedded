@@ -361,14 +361,14 @@ void BalanceController::Thread(void * pvParameters)
 			madgwick.getQuaternion(balanceController->q);
 			madgwick.getQuaternionDerivative(balanceController->dq);
 			// Hack for Madgwick quaternion estimate covariance
-		    for (int m = 0; m < 4; m++) {
-		      for (int n = 0; n < 4; n++) {
-		    	  Cov_q[4*m + n] = 0;
-		      }
-		    }
-		    for (int d = 0; d < 4; d++) {
-		    	Cov_q[4*d + d] = 3*1E-7; // set q covariance when MADGWICK is used
-		    }
+			for (int m = 0; m < 4; m++) {
+			  for (int n = 0; n < 4; n++) {
+				  Cov_q[4*m + n] = 0;
+			  }
+			}
+			for (int d = 0; d < 4; d++) {
+				Cov_q[4*d + d] = 3*1E-7; // set q covariance when MADGWICK is used
+			}
 		} else { // use QEKF
 			if (params.estimator.UseHeadingEstimateFromXsensIMU && balanceController->mti) {
 				balanceController->mti->GetEstimates(imuEstimates);
@@ -935,7 +935,7 @@ void BalanceController::Thread(void * pvParameters)
 	delete(&lqr);
 	delete(&sm);
 	delete(&velocityController);
-	    delete(&velocityLQR);
+	delete(&velocityLQR);
 	delete(&qEKF);
 	delete(&madgwick);
 	delete(&velocityEKF);

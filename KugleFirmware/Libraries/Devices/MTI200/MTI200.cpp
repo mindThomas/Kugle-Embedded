@@ -277,23 +277,23 @@ XbusMessage const * MTI200::doTransaction(XbusMessage const* m)
 class XbusMessageMemoryManager
 {
 	public:
-	    XbusMessageMemoryManager(XbusMessage const* message)
-	        : m_message(message)
-	    {
-	    }
+		XbusMessageMemoryManager(XbusMessage const* message)
+			: m_message(message)
+		{
+		}
 
-	    ~XbusMessageMemoryManager()
-	    {
-	        if (m_message)
-	        {
-	            if (m_message->data)
-	            	vPortFree((void *)m_message->data);
-	            vPortFree((void *)m_message);
-	        }
-	    }
+		~XbusMessageMemoryManager()
+		{
+			if (m_message)
+			{
+				if (m_message->data)
+					vPortFree((void *)m_message->data);
+				vPortFree((void *)m_message);
+			}
+		}
 
 	private:
-	    XbusMessage const* m_message;
+		XbusMessage const* m_message;
 };
 
 /*!
@@ -303,25 +303,25 @@ void MTI200::dumpResponse(XbusMessage const* response)
 {
 	switch (response->mid)
 	{
-	    case XMID_GotoConfigAck:
-	    	Debug::print("MTI200 went to config mode.\r\n");
-	        break;
+		case XMID_GotoConfigAck:
+			Debug::print("MTI200 went to config mode.\r\n");
+			break;
 
-	    case XMID_GotoMeasurementAck:
-	    	Debug::print("MTI200 went to measurement mode.\r\n");
-	        break;
+		case XMID_GotoMeasurementAck:
+			Debug::print("MTI200 went to measurement mode.\r\n");
+			break;
 
-	    case XMID_ResetAck:
-	    	Debug::print("MTI200 has been reset.\r\n");
-	        break;
+		case XMID_ResetAck:
+			Debug::print("MTI200 has been reset.\r\n");
+			break;
 
-	    case XMID_Error:
-	    	Debug::print("MTI200 error!\r\n");
-	        break;
+		case XMID_Error:
+			Debug::print("MTI200 error!\r\n");
+			break;
 
-	    default:
-	        Debug::printf("MTI200 response MID=%X, length=%d\r\n", response->mid, response->length);
-	        break;
+		default:
+			Debug::printf("MTI200 response MID=%X, length=%d\r\n", response->mid, response->length);
+			break;
 	}
 }
 
@@ -339,8 +339,8 @@ bool MTI200::sendCommand(XsMessageId cmdId)
 
 	if (response)
 	{
-	    dumpResponse(response);
-	    return true;
+		dumpResponse(response);
+		return true;
 	}
 	else
 	{
@@ -360,10 +360,10 @@ uint32_t MTI200::readDeviceId(void)
 	uint32_t deviceId = 0;
 	if (didRsp)
 	{
-	    if (didRsp->mid == XMID_DeviceId)
-	    {
-	        deviceId = *(uint32_t*)didRsp->data;
-	    }
+		if (didRsp->mid == XMID_DeviceId)
+		{
+			deviceId = *(uint32_t*)didRsp->data;
+		}
 	}
 	return deviceId;
 }
@@ -385,21 +385,21 @@ bool MTI200::setOutputConfiguration(OutputConfiguration const* conf, uint8_t ele
 	XbusMessageMemoryManager janitor(outputConfRsp);
 	if (outputConfRsp)
 	{
-	    if (outputConfRsp->mid == XMID_OutputConfig)
-	    {
-	        Debug::print("Output configuration set to:\r\n");
-	        OutputConfiguration* conf = (OutputConfiguration*)outputConfRsp->data;
-	        for (int i = 0; i < outputConfRsp->length; ++i)
-	        {
-	        	Debug::printf("\t%s: %d Hz\r\n", XbusMessage_dataDescription(conf->dtype), conf->freq);
-	            ++conf;
-	        }
-	        return true;
-	    }
-	    else
-	    {
-	        dumpResponse(outputConfRsp);
-	    }
+		if (outputConfRsp->mid == XMID_OutputConfig)
+		{
+			Debug::print("Output configuration set to:\r\n");
+			OutputConfiguration* conf = (OutputConfiguration*)outputConfRsp->data;
+			for (int i = 0; i < outputConfRsp->length; ++i)
+			{
+				Debug::printf("\t%s: %d Hz\r\n", XbusMessage_dataDescription(conf->dtype), conf->freq);
+				++conf;
+			}
+			return true;
+		}
+		else
+		{
+			dumpResponse(outputConfRsp);
+		}
 	}
 	else
 	{
@@ -426,13 +426,13 @@ bool MTI200::configureMotionTracker(uint32_t SampleRate)
 	{
 		Debug::printf("Found device with ID: %08X.\r\n", deviceId);
 
-	    DeviceFunction function = XsDeviceId_getFunction(deviceId);
-	    Debug::printf("Device is an MTi-%d: %s.\r\n", function, XsDeviceId_functionDescription(function));
+		DeviceFunction function = XsDeviceId_getFunction(deviceId);
+		Debug::printf("Device is an MTi-%d: %s.\r\n", function, XsDeviceId_functionDescription(function));
 
-	    if (function == DF_IMU) {
-	    	Debug::print("Detected MTI device do not support estimate output!\n");
-	    	return 0;
-	    }
+		if (function == DF_IMU) {
+			Debug::print("Detected MTI device do not support estimate output!\n");
+			return 0;
+		}
 
 		if ((968 * SampleRate) > _uart->BaudRate) Debug::print("Note: MTI sample rate might be too high to ensure consistent sampling without data loss\n");
 		OutputConfiguration conf[] = {
@@ -474,8 +474,8 @@ bool MTI200::waitForWakeup(uint32_t timeout)
 
 	if (msgPtr)
 	{
-	    XbusMessageMemoryManager janitor(msgPtr);
-	    return msgPtr->mid == XMID_Wakeup;
+		XbusMessageMemoryManager janitor(msgPtr);
+		return msgPtr->mid == XMID_Wakeup;
 	}
 	return false;
 }
@@ -501,7 +501,7 @@ void MTI200::sendWakeupAck(void)
 void MTI200::printMessageData(XbusMessage const* message)
 {
 	if (!message)
-	    return;
+		return;
 
 	Debug::print("MTData2:");
 	uint16_t counter;
@@ -520,7 +520,7 @@ void MTI200::printMessageData(XbusMessage const* message)
 	if (XbusMessage_getDataItem(ori, XDI_Quaternion, message))
 	{
 		Debug::printf(" Orientation: (% .3f, % .3f, % .3f, % .3f)", ori[0], ori[1],
-	            ori[2], ori[3]);
+				ori[2], ori[3]);
 	}
 	float acc[3];
 	if (XbusMessage_getDataItem(acc, XDI_Acceleration, message))
@@ -584,32 +584,32 @@ void MTI200::parseMTData2Message(XbusMessage const* message)
 	/* Note that measurements and estimates has to be rotated 180 degrees due to the mount/orientation of the Xsens IMU */
 	if (XbusMessage_getDataItem(tmp.Quaternion, XDI_Quaternion, message)) {
 		memcpy(LastMeasurement.Quaternion, tmp.Quaternion, sizeof(tmp.Quaternion));
-	    LastMeasurement.Quaternion[1] = -LastMeasurement.Quaternion[1];
-	    LastMeasurement.Quaternion[2] = -LastMeasurement.Quaternion[2];
+		LastMeasurement.Quaternion[1] = -LastMeasurement.Quaternion[1];
+		LastMeasurement.Quaternion[2] = -LastMeasurement.Quaternion[2];
 	}
 
 	if (XbusMessage_getDataItem(tmp.DeltaQ, XDI_DeltaQ, message)) {
 		memcpy(LastMeasurement.DeltaQ, tmp.DeltaQ, sizeof(tmp.DeltaQ));
-	    LastMeasurement.DeltaQ[1] = -LastMeasurement.DeltaQ[1];
-	    LastMeasurement.DeltaQ[2] = -LastMeasurement.DeltaQ[2];
+		LastMeasurement.DeltaQ[1] = -LastMeasurement.DeltaQ[1];
+		LastMeasurement.DeltaQ[2] = -LastMeasurement.DeltaQ[2];
 	}
 
 	if (XbusMessage_getDataItem(tmp.Accelerometer, XDI_Acceleration, message)) {
 		memcpy(LastMeasurement.Accelerometer, tmp.Accelerometer, sizeof(tmp.Accelerometer));
-	    LastMeasurement.Accelerometer[0] = -LastMeasurement.Accelerometer[0];
-	    LastMeasurement.Accelerometer[1] = -LastMeasurement.Accelerometer[1];
+		LastMeasurement.Accelerometer[0] = -LastMeasurement.Accelerometer[0];
+		LastMeasurement.Accelerometer[1] = -LastMeasurement.Accelerometer[1];
 	}
 
 	if (XbusMessage_getDataItem(tmp.Gyroscope, XDI_RateOfTurn, message)) {
 		memcpy(LastMeasurement.Gyroscope, tmp.Gyroscope, sizeof(tmp.Gyroscope));
-	    LastMeasurement.Gyroscope[0] = -LastMeasurement.Gyroscope[0];
-	    LastMeasurement.Gyroscope[1] = -LastMeasurement.Gyroscope[1];
+		LastMeasurement.Gyroscope[0] = -LastMeasurement.Gyroscope[0];
+		LastMeasurement.Gyroscope[1] = -LastMeasurement.Gyroscope[1];
 	}
 
 	if (XbusMessage_getDataItem(tmp.Magnetometer, XDI_MagneticField, message)) {
 		memcpy(LastMeasurement.Magnetometer, tmp.Magnetometer, sizeof(tmp.Magnetometer));
-	    LastMeasurement.Magnetometer[0] = -LastMeasurement.Magnetometer[0];
-	    LastMeasurement.Magnetometer[1] = -LastMeasurement.Magnetometer[1];
+		LastMeasurement.Magnetometer[0] = -LastMeasurement.Magnetometer[0];
+		LastMeasurement.Magnetometer[1] = -LastMeasurement.Magnetometer[1];
 	}
 
 	if (XbusMessage_getDataItem(&tmp.Status, XDI_StatusWord, message)) {

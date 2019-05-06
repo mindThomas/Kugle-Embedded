@@ -151,11 +151,11 @@ class Parameters
 			float VelocityController_StabilizationDetectionVelocity = 0.2; // if the robot is pushed with a velocity of more than 0.2 m/s after the initialization time the initialization integrator will be disabled allowing manual movement
 			/* LQR gains generated with "Kugle-MATLAB/Controllers/VelocityLQR/GainComputation.m" based on:
 			   Q = diag([20, 20, ... % x, y
-	        			 0.01, 0.01, ... % q2, q3
-	      	  	  	  	 10, 10, ... % dx, dy
-	      	  	  	  	 0.1, 0.1, ... % dq2, dq3
-	      	  	  	  	 0.01, 0.01, ... % q2_ref, q3_ref
-	      	  	  	 	]);
+						 0.01, 0.01, ... % q2, q3
+	  		  	  	  	 10, 10, ... % dx, dy
+	  		  	  	  	 0.1, 0.1, ... % dq2, dq3
+	  		  	  	  	 0.01, 0.01, ... % q2_ref, q3_ref
+	  		  	  	 	]);
 			   R = 20 * diag([1 1]); % omega_ref_x, omega_ref_y
 			*/
 			float VelocityLQR_K[2*10] = {

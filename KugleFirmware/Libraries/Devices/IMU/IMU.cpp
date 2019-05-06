@@ -332,8 +332,8 @@ float IMU::vector_length(const float v[3])
 }
 
 void IMU::calibrateImu(const float desired_acc_vector[3],
-	              const float actual_acc_vector[3],
-	              float calibration_matrix[9])
+				  const float actual_acc_vector[3],
+				  float calibration_matrix[9])
 {
   // Scale vectors to unity
   // arm_scale_f32 does not take a const vector, but it does not modify the
@@ -360,8 +360,8 @@ void IMU::calibrateImu(const float desired_acc_vector[3],
 
   // Cross product: v = a x d
   float v[3] = {a[1]*d[2]-a[2]*d[1],
-	            a[2]*d[0]-a[0]*d[2],
-	            a[0]*d[1]-a[1]*d[0]};
+				a[2]*d[0]-a[0]*d[2],
+				a[0]*d[1]-a[1]*d[0]};
   Debug::print("v:\t"); Debug::printf("%f", v[0]); Debug::print("\t");
   Debug::printf("%f", v[1]); Debug::print("\t"); Debug::printf("%f", v[2]); Debug::print("\n");
   // Sine between vectors: s = ||v||
@@ -376,13 +376,13 @@ void IMU::calibrateImu(const float desired_acc_vector[3],
   // It is not applicable if a and b point into exactly opposite directions,
   // which is unlikely so we do not handle it.
   float R[9] = {1.f, 0.f, 0.f,
-	                 0.f, 1.f, 0.f,
-	                 0.f, 0.f, 1.f,};
+					 0.f, 1.f, 0.f,
+					 0.f, 0.f, 1.f,};
   arm_matrix_instance_f32 R_;
   arm_mat_init_f32(&R_, 3, 3, R);
   float v_x_data[9] = { 0.f, -v[2],  v[1],
-	                   v[2],   0.f, -v[0],
-	                  -v[1],  v[0],   0.f};
+					   v[2],   0.f, -v[0],
+					  -v[1],  v[0],   0.f};
   arm_matrix_instance_f32 temp;
   arm_mat_init_f32(&temp, 3, 3, v_x_data);
   arm_mat_add_f32(&R_, &temp, &R_);
@@ -411,8 +411,8 @@ void IMU::calibrateImu(const float desired_acc_vector[3],
 }
 
 void IMU::rotateImuMeasurement(float& gx, float& gy, float& gz,
-	                      float& ax, float& ay, float& az,
-	                      const float calibration_matrix[9])
+						  float& ax, float& ay, float& az,
+						  const float calibration_matrix[9])
 {
   arm_matrix_instance_f32 R;
   arm_mat_init_f32(&R, 3, 3, const_cast<float*>(calibration_matrix));

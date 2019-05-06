@@ -87,10 +87,10 @@ class ThreadSafeParameter
 	    //
 	    ThreadSafeParameter operator++(int)
 	    {
-	    	Lock();
-	    	T old = _value;
-	    	_value++;                // Now use the prefix version (same as function above) to do the work
-	    	Unlock();
+			Lock();
+			T old = _value;
+			_value++;                // Now use the prefix version (same as function above) to do the work
+			Unlock();
 
 			ThreadSafeParameter result(old);   // make a copy for result
 			return result;          // return the copy (the old) value.
@@ -111,10 +111,10 @@ class ThreadSafeParameter
 	    //
 	    ThreadSafeParameter operator--(int)
 	    {
-	    	Lock();
-	    	T old = _value;
-	    	_value--;                // Now use the prefix version (same as function above) to do the work
-	    	Unlock();
+			Lock();
+			T old = _value;
+			_value--;                // Now use the prefix version (same as function above) to do the work
+			Unlock();
 
 			ThreadSafeParameter result(old);   // make a copy for result
 			return result;          // return the copy (the old) value.
@@ -123,33 +123,33 @@ class ThreadSafeParameter
 	    ThreadSafeParameter& operator+= (const T& value)
 		{
 			Lock();
-	    	_value += value;
-	    	Unlock();
-	    	return *this;
+			_value += value;
+			Unlock();
+			return *this;
 		};
 
 	    ThreadSafeParameter& operator-= (const T& value)
 		{
-	    	Lock();
-	    	_value -= value;
-	    	Unlock();
-	    	return *this;
+			Lock();
+			_value -= value;
+			Unlock();
+			return *this;
 		};
 
 	    ThreadSafeParameter& operator*= (const T& value)
 		{
-	    	Lock();
-	    	_value *= value;
-	    	Unlock();
-	    	return *this;
+			Lock();
+			_value *= value;
+			Unlock();
+			return *this;
 		}
 
 	    ThreadSafeParameter& operator/= (const T& value)
 		{
-	    	Lock();
-	    	_value /= value;
-	    	Unlock();
-	    	return *this;
+			Lock();
+			_value /= value;
+			Unlock();
+			return *this;
 		};
 
 	private:

@@ -40,46 +40,46 @@ protected:
 	switch (fsr_state)
 	{
 	  case LookingFor::header:
-	    if (incoming_byte == 0x00)
-	    {
-	      incoming_data.push_back(incoming_byte);
-	      fsr_state = LookingFor::type;
-	    }
-	    break;
+		if (incoming_byte == 0x00)
+		{
+		  incoming_data.push_back(incoming_byte);
+		  fsr_state = LookingFor::type;
+		}
+		break;
 	  case LookingFor::type:
-	    if (incoming_byte != 0x00)
-	    {
-	      incoming_data.push_back(incoming_byte);
-	      fsr_state = LookingFor::length;
-	    }
-	    break;
+		if (incoming_byte != 0x00)
+		{
+		  incoming_data.push_back(incoming_byte);
+		  fsr_state = LookingFor::length;
+		}
+		break;
 	  case LookingFor::length:
-	    incoming_length = incoming_byte;
-	    incoming_data.push_back(incoming_byte);
-	    fsr_state = LookingFor::data;
-	    break;
+		incoming_length = incoming_byte;
+		incoming_data.push_back(incoming_byte);
+		fsr_state = LookingFor::data;
+		break;
 	  case LookingFor::data:
-	    // Record the data
-	    incoming_data.push_back(incoming_byte);
+		// Record the data
+		incoming_data.push_back(incoming_byte);
 
-	    // If we got it all, decode it and invoke the handler
-	    if (size_t(incoming_length + 3) == incoming_data.size())
-	    {
-	      Packet inPacket(incoming_data);
-	      auto handler_it = type_handlers.find(inPacket.packetType());
-	      if (handler_it != type_handlers.end())
-	      {
-	        handler_it->second.handler(handler_it->second.param, inPacket.payload());
-	      }
-	      else
-	      {
-	        // We didn't find the handler.
-	      }
-	      // Reset to receive the next.
-	      fsr_state = LookingFor::header;
-	      incoming_data.clear();
-	    }
-	    break;
+		// If we got it all, decode it and invoke the handler
+		if (size_t(incoming_length + 3) == incoming_data.size())
+		{
+		  Packet inPacket(incoming_data);
+		  auto handler_it = type_handlers.find(inPacket.packetType());
+		  if (handler_it != type_handlers.end())
+		  {
+			handler_it->second.handler(handler_it->second.param, inPacket.payload());
+		  }
+		  else
+		  {
+			// We didn't find the handler.
+		  }
+		  // Reset to receive the next.
+		  fsr_state = LookingFor::header;
+		  incoming_data.clear();
+		}
+		break;
 	}
   }
 
