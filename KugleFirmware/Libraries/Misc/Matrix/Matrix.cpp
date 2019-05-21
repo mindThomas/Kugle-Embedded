@@ -39,37 +39,37 @@ Matrix::~Matrix()
 
 void Matrix_Extract(const float * in, const int in_rows, const int in_cols, const int in_row, const int in_col, const int out_rows, const int out_cols, float * out)
 {
-    /*assert(out_rows <= in_rows);
-    assert(out_cols <= in_cols);
-    assert((in_row + out_rows) < in_rows);
-    assert((in_col + out_cols) < in_cols);*/
-    for (int m = 0; m < out_rows; m++)
-    {
-        for (int n = 0; n < out_cols; n++) {
-            out[m*out_cols + n] = in[(in_row+m)*in_cols + (in_col+n)];
-        }
-    }
+	/*assert(out_rows <= in_rows);
+	assert(out_cols <= in_cols);
+	assert((in_row + out_rows) < in_rows);
+	assert((in_col + out_cols) < in_cols);*/
+	for (int m = 0; m < out_rows; m++)
+	{
+		for (int n = 0; n < out_cols; n++) {
+			out[m*out_cols + n] = in[(in_row+m)*in_cols + (in_col+n)];
+		}
+	}
 }
 
 void Matrix_Round(float * matrix, int rows, int cols)
 {
   for (int m = 0; m < rows; m++) {
-    for (int n = 0; n < cols; n++) {
-      matrix[cols*m + n] = roundf(matrix[cols*m + n] * 10) / 10;
-      if (matrix[cols*m + n] == -0.f) {
-        matrix[cols*m + n] = 0.f;
-      }
-    }
+	for (int n = 0; n < cols; n++) {
+	  matrix[cols*m + n] = roundf(matrix[cols*m + n] * 10) / 10;
+	  if (matrix[cols*m + n] == -0.f) {
+		matrix[cols*m + n] = 0.f;
+	  }
+	}
   }
 }
 
 void Matrix_Print(float * matrix, int rows, int cols)
 {
   for (int m = 0; m < rows; m++) {
-    Debug::print(" ");
-    for (int n = 0; n < cols; n++) {
-    	Debug::printf("%8.4f ", matrix[cols*m + n]);
-    }
-    Debug::print("\n");
+	Debug::print(" ");
+	for (int n = 0; n < cols; n++) {
+		Debug::printf("%8.4f ", matrix[cols*m + n]);
+	}
+	Debug::print("\n");
   }
 }

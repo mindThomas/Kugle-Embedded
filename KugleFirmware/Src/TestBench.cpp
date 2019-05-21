@@ -131,8 +131,8 @@ void TestBench(void * pvParameters)
 		imu->WaitForNewData();
 		imu->WaitForNewData();
 		imu->WaitForNewData();
-	    imu->getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-	    osDelay(100);
+		imu->getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+		osDelay(100);
 	}
 }
 #endif

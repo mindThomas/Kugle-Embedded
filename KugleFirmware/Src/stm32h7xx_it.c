@@ -183,7 +183,7 @@ void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
     psr = pulFaultStackAddress[ 7 ];
 
     if (lr == 0) // no return address, probably a hard-fault due to reset back from DFU bootloader
-    	NVIC_SystemReset();
+		NVIC_SystemReset();
 
     /* When the following line is hit, the variables contain the register values. */
     for( ;; );

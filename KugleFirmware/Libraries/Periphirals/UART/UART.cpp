@@ -139,27 +139,27 @@ void UART::ConfigurePeripheral()
 	}
 	vQueueAddToRegistry(_RXdataAvailable, "UART RX Available");
 
-    /* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
-    SET_BIT(_handle.Instance->CR3, USART_CR3_EIE);
+	/* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
+	SET_BIT(_handle.Instance->CR3, USART_CR3_EIE);
 
-    /* Enable the UART Parity Error interupt and RX FIFO Threshold interrupt
-       (if FIFO mode is enabled) or Data Register Not Empty interrupt
-       (if FIFO mode is disabled).
-    */
-    if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
-    {
-      SET_BIT(_handle.Instance->CR1, USART_CR1_PEIE);
-      SET_BIT(_handle.Instance->CR3, USART_CR3_RXFTIE);
-    }
-    else
-    {
-      SET_BIT(_handle.Instance->CR1, USART_CR1_PEIE | USART_CR1_RXNEIE);
-    }
+	/* Enable the UART Parity Error interupt and RX FIFO Threshold interrupt
+	   (if FIFO mode is enabled) or Data Register Not Empty interrupt
+	   (if FIFO mode is disabled).
+	*/
+	if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
+	{
+	  SET_BIT(_handle.Instance->CR1, USART_CR1_PEIE);
+	  SET_BIT(_handle.Instance->CR3, USART_CR3_RXFTIE);
+	}
+	else
+	{
+	  SET_BIT(_handle.Instance->CR1, USART_CR1_PEIE | USART_CR1_RXNEIE);
+	}
 
-    /* Disable the UART Transmit Complete Interrupt */
-    CLEAR_BIT(_handle.Instance->CR1, USART_CR1_TCIE);
+	/* Disable the UART Transmit Complete Interrupt */
+	CLEAR_BIT(_handle.Instance->CR1, USART_CR1_TCIE);
 
-    __HAL_UART_CLEAR_OREFLAG(&_handle);
+	__HAL_UART_CLEAR_OREFLAG(&_handle);
 }
 
 void UART::InitPeripheral()
@@ -235,45 +235,45 @@ void UART::DeInitPeripheral()
 {
   if(_port == PORT_UART3)
   {
-    /* Peripheral clock disable */
-    __HAL_RCC_UART4_CLK_DISABLE();
+	/* Peripheral clock disable */
+	__HAL_RCC_UART4_CLK_DISABLE();
 
-    /**UART4 GPIO Configuration
-    PD0     ------> UART4_RX
-    PD1     ------> UART4_TX
-    */
-    HAL_GPIO_DeInit(GPIOD, GPIO_PIN_0|GPIO_PIN_1);
+	/**UART4 GPIO Configuration
+	PD0     ------> UART4_RX
+	PD1     ------> UART4_TX
+	*/
+	HAL_GPIO_DeInit(GPIOD, GPIO_PIN_0|GPIO_PIN_1);
 
-    /* UART4 interrupt DeInit */
-    HAL_NVIC_DisableIRQ(UART4_IRQn);
+	/* UART4 interrupt DeInit */
+	HAL_NVIC_DisableIRQ(UART4_IRQn);
   }
   else if(_port == PORT_UART7)
   {
-    /* Peripheral clock disable */
-    __HAL_RCC_UART7_CLK_DISABLE();
+	/* Peripheral clock disable */
+	__HAL_RCC_UART7_CLK_DISABLE();
 
-    /**UART7 GPIO Configuration
-    PE7     ------> UART7_RX
-    PE8     ------> UART7_TX
-    */
-    HAL_GPIO_DeInit(GPIOE, GPIO_PIN_7|GPIO_PIN_8);
+	/**UART7 GPIO Configuration
+	PE7     ------> UART7_RX
+	PE8     ------> UART7_TX
+	*/
+	HAL_GPIO_DeInit(GPIOE, GPIO_PIN_7|GPIO_PIN_8);
 
-    /* UART7 interrupt DeInit */
-    HAL_NVIC_DisableIRQ(UART7_IRQn);
+	/* UART7 interrupt DeInit */
+	HAL_NVIC_DisableIRQ(UART7_IRQn);
   }
   else if(_port == PORT_UART3)
   {
-    /* Peripheral clock disable */
-    __HAL_RCC_USART3_CLK_DISABLE();
+	/* Peripheral clock disable */
+	__HAL_RCC_USART3_CLK_DISABLE();
 
-    /**USART3 GPIO Configuration
-    PB10     ------> USART3_TX
-    PB11     ------> USART3_RX
-    */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_10|GPIO_PIN_11);
+	/**USART3 GPIO Configuration
+	PB10     ------> USART3_TX
+	PB11     ------> USART3_RX
+	*/
+	HAL_GPIO_DeInit(GPIOB, GPIO_PIN_10|GPIO_PIN_11);
 
-    /* USART3 interrupt DeInit */
-    HAL_NVIC_DisableIRQ(USART3_IRQn);
+	/* USART3 interrupt DeInit */
+	HAL_NVIC_DisableIRQ(USART3_IRQn);
   }
 
 }
@@ -314,45 +314,45 @@ void UART::DeregisterCallback()
 
 void UART::TransmitBlocking(uint8_t * buffer, uint32_t bufLen)
 {
-    /* Enable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
-       Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
-    */
-    if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
-    {
-      SET_BIT(_handle.Instance->CR3, USART_CR3_TXFTIE);
-    }
-    else
-    {
-      SET_BIT(_handle.Instance->CR1, USART_CR1_TXEIE);
-    }
+	/* Enable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
+	   Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
+	*/
+	if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
+	{
+	  SET_BIT(_handle.Instance->CR3, USART_CR3_TXFTIE);
+	}
+	else
+	{
+	  SET_BIT(_handle.Instance->CR1, USART_CR1_TXEIE);
+	}
 
 	do {
 		xSemaphoreTake( _transmitByteFinished, ( TickType_t ) portMAX_DELAY ); // block until it has finished sending the byte
 		_handle.Instance->TDR = *buffer++;
-	    /* Enable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
-	       Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
-	    */
-	    if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
-	    {
-	      SET_BIT(_handle.Instance->CR3, USART_CR3_TXFTIE);
-	    }
-	    else
-	    {
-	      SET_BIT(_handle.Instance->CR1, USART_CR1_TXEIE);
-	    }
+		/* Enable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
+		   Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
+		*/
+		if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
+		{
+		  SET_BIT(_handle.Instance->CR3, USART_CR3_TXFTIE);
+		}
+		else
+		{
+		  SET_BIT(_handle.Instance->CR1, USART_CR1_TXEIE);
+		}
 	} while (--bufLen > 0);
 
-    /* Disable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
-       Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
-    */
-    if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
-    {
-      CLEAR_BIT(_handle.Instance->CR3, USART_CR3_TXFTIE);
-    }
-    else
-    {
-      CLEAR_BIT(_handle.Instance->CR1, USART_CR1_TXEIE);
-    }
+	/* Disable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
+	   Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
+	*/
+	if (READ_BIT(_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
+	{
+	  CLEAR_BIT(_handle.Instance->CR3, USART_CR3_TXFTIE);
+	}
+	else
+	{
+	  CLEAR_BIT(_handle.Instance->CR1, USART_CR1_TXEIE);
+	}
 }
 
 void UART::TransmitBlockingHard(uint8_t * buffer, uint32_t bufLen)
@@ -470,8 +470,8 @@ void UART::UART_IncomingDataInterrupt(UART * uart)
 
 	uint16_t uhdata = (uint16_t) READ_REG(uart->_handle.Instance->RDR);
 	uart->rxByte = uhdata & 0x00FF;
-    /* Clear RXNE interrupt flag */
-    //__HAL_UART_SEND_REQ(huart, UART_RXDATA_FLUSH_REQUEST); // should already have been cleared by reading
+	/* Clear RXNE interrupt flag */
+	//__HAL_UART_SEND_REQ(huart, UART_RXDATA_FLUSH_REQUEST); // should already have been cleared by reading
 
 	uart->BufferPush(uart->rxByte); // push into local buffer
 	if (uart->_RXcallback && uart->_callbackTaskHandle)
@@ -668,17 +668,17 @@ void UART::UART_Interrupt(port_t port)
 	|| ((cr3its & USART_CR3_TXFTIE) != RESET)) )
 	{
 		//UART_Transmit_IT(huart);
-	    /* Disable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
-	       Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
-	    */
-	    if (READ_BIT(uart->_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
-	    {
-	      CLEAR_BIT(uart->_handle.Instance->CR3, USART_CR3_TXFTIE);
-	    }
-	    else
-	    {
-	      CLEAR_BIT(uart->_handle.Instance->CR1, USART_CR1_TXEIE);
-	    }
+		/* Disable the TX FIFO threshold interrupt (if FIFO mode is enabled) or
+		   Transmit Data Register Empty interrupt (if FIFO mode is Disabled).
+		*/
+		if (READ_BIT(uart->_handle.Instance->CR1, USART_CR1_FIFOEN) != RESET)
+		{
+		  CLEAR_BIT(uart->_handle.Instance->CR3, USART_CR3_TXFTIE);
+		}
+		else
+		{
+		  CLEAR_BIT(uart->_handle.Instance->CR1, USART_CR1_TXEIE);
+		}
 
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		xSemaphoreGiveFromISR( uart->_transmitByteFinished, &xHigherPriorityTaskWoken );

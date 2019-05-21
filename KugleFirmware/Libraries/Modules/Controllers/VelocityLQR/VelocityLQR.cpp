@@ -88,10 +88,10 @@ void VelocityLQR::Step(const float xy[2], const float q[4], const float dxy[2], 
 
 /**
  * @brief 	Compute quaternion and angular velocity reference given a desired velocity reference
- * @param	q[4]      	   Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	   Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]           Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]          Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	   Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	   Input: current ball (center) velocity defined in inertial frame
+ * @param	dxy[2]         Input: current ball (center) velocity defined in inertial frame
  * @param	velocityRef[2] Input: desired velocity defined in either inertial frame or heading frame  (specified with the flag 'velocityRefGivenInHeadingFrame')   [m/s]
  * @param	velocityRefGivenInHeadingFrame    Input: specified which frame 'velocityRef' is defined in
  * @param	headingRef     Input: desired heading [rad]
@@ -168,7 +168,7 @@ void VelocityLQR::Step(const float xy[2], const float q[4], const float dxy[2], 
 	}
 	else if (VelocityIntegralAfterPowerup) {
 		if (velocityRef[0] != 0 || velocityRef[1] != 0 ||
-		    (dxy[0]*dxy[0] + dxy[1]*dxy[1] > StabilizationDetectionVelocity*StabilizationDetectionVelocity)) { // manual movement of velocity reference requires the initialization integral to be disabled
+			(dxy[0]*dxy[0] + dxy[1]*dxy[1] > StabilizationDetectionVelocity*StabilizationDetectionVelocity)) { // manual movement of velocity reference requires the initialization integral to be disabled
 			VelocityIntegralInitializationTime = 0;
 			VelocityIntegralAfterPowerup = false;
 		}
@@ -176,29 +176,29 @@ void VelocityLQR::Step(const float xy[2], const float q[4], const float dxy[2], 
 
 	/* Compute position error */
 	float pos_err[2];
-    pos_err[0] = xy[0] - position_reference[0];
-    pos_err[1] = xy[1] - position_reference[1];
+	pos_err[0] = xy[0] - position_reference[0];
+	pos_err[1] = xy[1] - position_reference[1];
 
-    /* Rotate position error from inertial frame into heading frame */
-    Math_Rotate2D(pos_err, -heading, pos_err_heading);
+	/* Rotate position error from inertial frame into heading frame */
+	Math_Rotate2D(pos_err, -heading, pos_err_heading);
 
-    /* Compute velocity error */
-    float vel_err[2];
-    vel_err[0] = dxy[0];
-    vel_err[1] = dxy[1];
+	/* Compute velocity error */
+	float vel_err[2];
+	vel_err[0] = dxy[0];
+	vel_err[1] = dxy[1];
 
-    if (!velocityRefGivenInHeadingFrame) {
-    	vel_err[0] -= velocityRef[0];
-    	vel_err[1] -= velocityRef[1];
-    }
+	if (!velocityRefGivenInHeadingFrame) {
+		vel_err[0] -= velocityRef[0];
+		vel_err[1] -= velocityRef[1];
+	}
 
-    /* Rotation velocity error from inertial frame into heading frame */
-    Math_Rotate2D(vel_err, -heading, vel_err_heading);
+	/* Rotation velocity error from inertial frame into heading frame */
+	Math_Rotate2D(vel_err, -heading, vel_err_heading);
 
-    if (velocityRefGivenInHeadingFrame) {
-    	vel_err_heading[0] -= velocityRef[0];
-    	vel_err_heading[1] -= velocityRef[1];
-    }
+	if (velocityRefGivenInHeadingFrame) {
+		vel_err_heading[0] -= velocityRef[0];
+		vel_err_heading[1] -= velocityRef[1];
+	}
 
 	/* Compute reference in different frames for debugging */
 	if (velocityRefGivenInHeadingFrame) {
@@ -212,19 +212,19 @@ void VelocityLQR::Step(const float xy[2], const float q[4], const float dxy[2], 
 	}
 
 	/* Clamp velocity error */
-    vel_err_heading[0] = fminf(fmaxf(vel_err_heading[0], -velocity_error_clamp), velocity_error_clamp);
-    vel_err_heading[1] = fminf(fmaxf(vel_err_heading[1], -velocity_error_clamp), velocity_error_clamp);
+	vel_err_heading[0] = fminf(fmaxf(vel_err_heading[0], -velocity_error_clamp), velocity_error_clamp);
+	vel_err_heading[1] = fminf(fmaxf(vel_err_heading[1], -velocity_error_clamp), velocity_error_clamp);
 
-    /* Include integral term as current integral value */
-    vel_err_integral_heading[0] += velocity_error_integral[0];
-    vel_err_integral_heading[1] += velocity_error_integral[1];
+	/* Include integral term as current integral value */
+	vel_err_integral_heading[0] += velocity_error_integral[0];
+	vel_err_integral_heading[1] += velocity_error_integral[1];
 
-    /* Update integral */
-    if (VelocityIntegralEnabled || VelocityIntegralAfterPowerup) {
-    	// Rate limit the integration
-    	velocity_error_integral[0] += dt * fmaxf(fminf(vel_err_heading[0], 0.05), -0.05);
-    	velocity_error_integral[1] += dt * fmaxf(fminf(vel_err_heading[1], 0.05), -0.05);
-    }
+	/* Update integral */
+	if (VelocityIntegralEnabled || VelocityIntegralAfterPowerup) {
+		// Rate limit the integration
+		velocity_error_integral[0] += dt * fmaxf(fminf(vel_err_heading[0], 0.05), -0.05);
+		velocity_error_integral[1] += dt * fmaxf(fminf(vel_err_heading[1], 0.05), -0.05);
+	}
 
 	/* Compute angular velocity reference by matrix multiplication with LQR gain */
 	arm_matrix_instance_f32 LQR_K_; arm_mat_init_f32(&LQR_K_, 2, 10, (float32_t *)gainMatrix);

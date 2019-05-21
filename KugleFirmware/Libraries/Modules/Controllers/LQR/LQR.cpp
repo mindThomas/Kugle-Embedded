@@ -43,12 +43,12 @@ LQR::~LQR()
 
 /**
  * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
  * @param	UseSteadyStateTorque   Input: boolean to control whether to add steady state torque calculated at the reference state using the nominal model
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
@@ -60,14 +60,14 @@ void LQR::Step(const float q[4], const float dq[4], const float q_ref[4], const 
 
 /**
  * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
+ * @param	dxy[2]        Input: current ball (center) velocity defined in inertial frame
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
  * @param	UseSteadyStateTorque   Input: boolean to control whether to add steady state torque calculated at the reference state using the nominal model
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
@@ -77,13 +77,13 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 
 /**
  * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
- * @param	COM[3]    	  Input: current estimate of COM
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
+ * @param	COM[3]        Input: current estimate of COM
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
  * @param	UseSteadyStateTorque   Input: boolean to control whether to add steady state torque calculated at the reference state using the nominal model
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], float tau[3])
 {
@@ -92,16 +92,16 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 
 /**
  * @brief 	Compute control output with LQR controller given a quaternion attitude reference and angular velocity reference
- * @param	q[4]      	  Input: current quaternion state estimate defined in inertial frame
- * @param	dq[4]     	  Input: current quaternion derivative estimate defined in inertial frame
+ * @param	q[4]          Input: current quaternion state estimate defined in inertial frame
+ * @param	dq[4]         Input: current quaternion derivative estimate defined in inertial frame
  * @param	xy[2]	  	  Input: current ball (center) position defined in inertial frame
- * @param	dxy[2]    	  Input: current ball (center) velocity defined in inertial frame
- * @param	COM[3]    	  Input: current estimate of COM
+ * @param	dxy[2]        Input: current ball (center) velocity defined in inertial frame
+ * @param	COM[3]        Input: current estimate of COM
  * @param	q_ref[4]  	  Input: desired/reference quaternion defined in inertial frame
  * @param	omega_ref[3]  Input: desired/reference angular velocity defined in body frame   (OBS. Notice this is body frame)
  * @param   gainMatrix    Input: LQR gain matrix array
  * @param	UseSteadyStateTorque   Input: boolean to control whether to add steady state torque calculated at the reference state using the nominal model
- * @param	tau[3]    	  Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
+ * @param	tau[3]        Output: motor torque outputs [Nm] where tau[0] is the motor placed along the x-axis of the robot-centric frame
  */
 void LQR::Step(const float q[4], const float dq[4], const float xy[2], const float dxy[2], const float COM[3], const float q_ref[4], const float omega_ref[3], const float * gainMatrix, const bool UseSteadyStateTorque, float tau[3])
 {
@@ -119,9 +119,9 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 	// q_err = Phi(q_ref)^T * q
 	Quaternion_PhiT(q_ref, q, q_err);
 
-    /* Invert quaternion if the scalar is negative to get the shortest path */
+	/* Invert quaternion if the scalar is negative to get the shortest path */
 	if (q_err[0] < 0)
-      arm_negate_f32(q_err, q_err, 4);
+	  arm_negate_f32(q_err, q_err, 4);
 
 	/* Clamp "yaw" error - this is possibly a crude way of doing it */
 	// ToDo: Consider to clamp the yaw error by converting the quaternion error into roll, pitch and yaw components, then clamp the yaw component and reassemble into quaternion error
@@ -146,15 +146,15 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 	/* Compute equillibrium/linearized/steady state torque */
 	float tau_ss[3] = {0, 0, 0}; // steady state torque
 	if (UseSteadyStateTorque) {
-	    /* Body angular velocity */
-	    /* omega = 2*devec*Phi(q)'*dq */
+		/* Body angular velocity */
+		/* omega = 2*devec*Phi(q)'*dq */
 		/* omega = 2*devec*  q* o dq */
 		/* dq = 1/2*  q o vec*omega */
-	    /* dq_ref = 1/2 * Phi(q_ref) * [0;omega_ref]; */
-	    float dq_ref[4]; arm_matrix_instance_f32 dq_ref_; arm_mat_init_f32(&dq_ref_, 4, 1, (float32_t *)dq_ref);
-	    float omega_ref_q[4] = {0, omega_ref[0], omega_ref[1], omega_ref[2]};
-	    Quaternion_Phi(q_ref, omega_ref_q, dq_ref); // Phi(q_ref) * [0;omega_ref]
-	    arm_scale_f32(dq_ref, 0.5f, dq_ref, 4);
+		/* dq_ref = 1/2 * Phi(q_ref) * [0;omega_ref]; */
+		float dq_ref[4]; arm_matrix_instance_f32 dq_ref_; arm_mat_init_f32(&dq_ref_, 4, 1, (float32_t *)dq_ref);
+		float omega_ref_q[4] = {0, omega_ref[0], omega_ref[1], omega_ref[2]};
+		Quaternion_Phi(q_ref, omega_ref_q, dq_ref); // Phi(q_ref) * [0;omega_ref]
+		arm_scale_f32(dq_ref, 0.5f, dq_ref, 4);
 
 		float chi_ss[6] = {xy[0], xy[1], q_ref[0], q_ref[1], q_ref[2], q_ref[3]}; arm_matrix_instance_f32 chi_ss_; arm_mat_init_f32(&chi_ss_, 6, 1, (float32_t *)chi_ss);
 		float dchi_ss[6] = {dxy[0], dxy[1], dq_ref[0], dq_ref[1], dq_ref[2], dq_ref[3]}; arm_matrix_instance_f32 dchi_ss_; arm_mat_init_f32(&dchi_ss_, 6, 1, (float32_t *)dchi_ss);
@@ -174,51 +174,51 @@ void LQR::Step(const float q[4], const float dq[4], const float xy[2], const flo
 		float Minv[6*6]; arm_matrix_instance_f32 Minv_; arm_mat_init_f32(&Minv_, 6, 6, Minv);
 		inv6x6(M, Minv);
 
-	    /* f_ss = Minv * (-C*dchi - G - D) */
-	    /* g_ss = Minv * Q */
-	    float f_ss[6]; arm_matrix_instance_f32 f_ss_; arm_mat_init_f32(&f_ss_, 6, 1, f_ss);
-	    float g_ss[6*3]; arm_matrix_instance_f32 g_ss_; arm_mat_init_f32(&g_ss_, 6, 3, g_ss);
-	    float tmp6[6]; arm_matrix_instance_f32 tmp6_; arm_mat_init_f32(&tmp6_, 6, 1, tmp6);
-	    arm_mat_mult_f32(&C_, &dchi_ss_, &tmp6_);
-	    arm_add_f32(tmp6, G, tmp6, 6);
-	    arm_add_f32(tmp6, D, tmp6, 6);
-	    arm_negate_f32(tmp6, tmp6, 6);
-	    arm_mat_mult_f32(&Minv_, &tmp6_, &f_ss_);
-	    arm_mat_mult_f32(&Minv_, &Q_, &g_ss_);
+		/* f_ss = Minv * (-C*dchi - G - D) */
+		/* g_ss = Minv * Q */
+		float f_ss[6]; arm_matrix_instance_f32 f_ss_; arm_mat_init_f32(&f_ss_, 6, 1, f_ss);
+		float g_ss[6*3]; arm_matrix_instance_f32 g_ss_; arm_mat_init_f32(&g_ss_, 6, 3, g_ss);
+		float tmp6[6]; arm_matrix_instance_f32 tmp6_; arm_mat_init_f32(&tmp6_, 6, 1, tmp6);
+		arm_mat_mult_f32(&C_, &dchi_ss_, &tmp6_);
+		arm_add_f32(tmp6, G, tmp6, 6);
+		arm_add_f32(tmp6, D, tmp6, 6);
+		arm_negate_f32(tmp6, tmp6, 6);
+		arm_mat_mult_f32(&Minv_, &tmp6_, &f_ss_);
+		arm_mat_mult_f32(&Minv_, &Q_, &g_ss_);
 
-	    /* Extract the quaternion elements of the steady state ODE */
-	    arm_matrix_instance_f32 fq_ss_; arm_mat_init_f32(&fq_ss_, 4, 1, &f_ss[2]); // extract the quaternion elements of f_ss
-	    float gq_ss[4*3]; arm_matrix_instance_f32 gq_ss_; arm_mat_init_f32(&gq_ss_, 4, 3, gq_ss); // extract the quaternion elements (last 4 rows) of g_ss
-	    Matrix_Extract(g_ss, 6, 3, 2, 0, 4, 3, gq_ss);
+		/* Extract the quaternion elements of the steady state ODE */
+		arm_matrix_instance_f32 fq_ss_; arm_mat_init_f32(&fq_ss_, 4, 1, &f_ss[2]); // extract the quaternion elements of f_ss
+		float gq_ss[4*3]; arm_matrix_instance_f32 gq_ss_; arm_mat_init_f32(&gq_ss_, 4, 3, gq_ss); // extract the quaternion elements (last 4 rows) of g_ss
+		Matrix_Extract(g_ss, 6, 3, 2, 0, 4, 3, gq_ss);
 
-	    /* tau_ss = inv(2*devec*Phi(q)'*gq_ss) * (-2*devec*Phi(dq_ref)'*dq_ref - 2*devec*Phi(q)'*fq_ss) */
-	    /* Note that the current quaternion is used here */
-	    float devecPhiQ_T[3*4]; arm_matrix_instance_f32 devecPhiQ_T_; arm_mat_init_f32(&devecPhiQ_T_, 3, 4, devecPhiQ_T);
-	    Quaternion_mat_devecPhiT(q, devecPhiQ_T);
-	    float devecPhiDQ_ref_T[3*4]; arm_matrix_instance_f32 devecPhiDQ_ref_T_; arm_mat_init_f32(&devecPhiDQ_ref_T_, 3, 4, devecPhiDQ_ref_T);
-	    Quaternion_mat_devecPhiT(dq_ref, devecPhiDQ_ref_T);
+		/* tau_ss = inv(2*devec*Phi(q)'*gq_ss) * (-2*devec*Phi(dq_ref)'*dq_ref - 2*devec*Phi(q)'*fq_ss) */
+		/* Note that the current quaternion is used here */
+		float devecPhiQ_T[3*4]; arm_matrix_instance_f32 devecPhiQ_T_; arm_mat_init_f32(&devecPhiQ_T_, 3, 4, devecPhiQ_T);
+		Quaternion_mat_devecPhiT(q, devecPhiQ_T);
+		float devecPhiDQ_ref_T[3*4]; arm_matrix_instance_f32 devecPhiDQ_ref_T_; arm_mat_init_f32(&devecPhiDQ_ref_T_, 3, 4, devecPhiDQ_ref_T);
+		Quaternion_mat_devecPhiT(dq_ref, devecPhiDQ_ref_T);
 
-	    float sum[3]; arm_matrix_instance_f32 sum_; arm_mat_init_f32(&sum_, 3, 1, sum);
-	    float tmp3[3]; arm_matrix_instance_f32 tmp3_; arm_mat_init_f32(&tmp3_, 3, 1, tmp3);
-	    arm_mat_mult_f32(&devecPhiQ_T_, &fq_ss_, &tmp3_); // devec*Phi(q)'*fq_ss
-	    arm_scale_f32(tmp3, 2.f, sum, 3); // sum = 2*devec*Phi(q)'*fq_ss
+		float sum[3]; arm_matrix_instance_f32 sum_; arm_mat_init_f32(&sum_, 3, 1, sum);
+		float tmp3[3]; arm_matrix_instance_f32 tmp3_; arm_mat_init_f32(&tmp3_, 3, 1, tmp3);
+		arm_mat_mult_f32(&devecPhiQ_T_, &fq_ss_, &tmp3_); // devec*Phi(q)'*fq_ss
+		arm_scale_f32(tmp3, 2.f, sum, 3); // sum = 2*devec*Phi(q)'*fq_ss
 
-	    arm_mat_mult_f32(&devecPhiDQ_ref_T_, &dq_ref_, &tmp3_); // devec*Phi(dq_ref)'*dq_ref
-	    arm_scale_f32(tmp3, 2.f, tmp3, 3); // 2*devec*Phi(dq_ref)'*dq_ref
-	    arm_add_f32(tmp3, sum, sum, 3); // sum += 2*devec*Phi(dq_ref)'*dq_ref
+		arm_mat_mult_f32(&devecPhiDQ_ref_T_, &dq_ref_, &tmp3_); // devec*Phi(dq_ref)'*dq_ref
+		arm_scale_f32(tmp3, 2.f, tmp3, 3); // 2*devec*Phi(dq_ref)'*dq_ref
+		arm_add_f32(tmp3, sum, sum, 3); // sum += 2*devec*Phi(dq_ref)'*dq_ref
 
-	    arm_negate_f32(sum, sum, 3); // negate the sum to get minus in front of all parts
+		arm_negate_f32(sum, sum, 3); // negate the sum to get minus in front of all parts
 
-	    /* inv(2*devec*Phi(q)'*gq_ss) */
-	    float Input[3*3]; arm_matrix_instance_f32 Input_; arm_mat_init_f32(&Input_, 3, 3, Input);
-	    float InputInv[3*3]; arm_matrix_instance_f32 InputInv_; arm_mat_init_f32(&InputInv_, 3, 3, InputInv);
-	    arm_mat_mult_f32(&devecPhiQ_T_, &gq_ss_, &Input_);
+		/* inv(2*devec*Phi(q)'*gq_ss) */
+		float Input[3*3]; arm_matrix_instance_f32 Input_; arm_mat_init_f32(&Input_, 3, 3, Input);
+		float InputInv[3*3]; arm_matrix_instance_f32 InputInv_; arm_mat_init_f32(&InputInv_, 3, 3, InputInv);
+		arm_mat_mult_f32(&devecPhiQ_T_, &gq_ss_, &Input_);
 		arm_scale_f32(Input, 2.f, Input, 3*3);
 		inv3x3(Input, InputInv);
 
 		/* Final computation: tau_ss = inv(2*devec*Phi(q)'*gq_ss) * (-2*devec*Phi(dq_ref)'*dq_ref - 2*devec*Phi(q)'*fq_ss) */
-	    arm_matrix_instance_f32 tau_ss_; arm_mat_init_f32(&tau_ss_, 3, 1, tau_ss);
-	    arm_mat_mult_f32(&InputInv_, &sum_, &tau_ss_); // tau_ss = inv(2*devec*Phi(q)'*gq_ss) * (-2*devec*Phi(dq_ref)'*dq_ref - 2*devec*Phi(q)'*fq_ss)
+		arm_matrix_instance_f32 tau_ss_; arm_mat_init_f32(&tau_ss_, 3, 1, tau_ss);
+		arm_mat_mult_f32(&InputInv_, &sum_, &tau_ss_); // tau_ss = inv(2*devec*Phi(q)'*gq_ss) * (-2*devec*Phi(dq_ref)'*dq_ref - 2*devec*Phi(q)'*fq_ss)
 	}
 
 	/* Compute control torque by matrix multiplication with LQR gain */
@@ -235,7 +235,7 @@ bool LQR::UnitTest(void)
 {
 	// Perform a unit test to verify if it passes
 	const float UnitTestGain[3*6] = {22.0217540086999,	1.1248573671829e-14,	-0.182574185835055,	2.71774528131163,	1.44298962102302e-15,	-0.101363312648735,
-								    -11.01087700435,	19.0713984074259,	-0.182574185835056,	-1.35887264065581,	2.35481794807652,	-0.101363312648735,
+									-11.01087700435,	19.0713984074259,	-0.182574185835056,	-1.35887264065581,	2.35481794807652,	-0.101363312648735,
 									-11.01087700435,	-19.0713984074259,	-0.182574185835055,	-1.35887264065582,	-2.35481794807652,	-0.101363312648735};
 
 	float q[4];

@@ -182,7 +182,7 @@ void ADC::ConfigureADCPeripheral()
 {
 	if (!_hRes) return;
 
-    /* ADC Periph interface clock configuration */
+	/* ADC Periph interface clock configuration */
 	__HAL_RCC_ADC_CONFIG(RCC_ADCCLKSOURCE_CLKP);
 
 	if (_hRes->adc == ADC_1) {
@@ -269,7 +269,7 @@ void ADC::ConfigureADCPeripheral()
 		_hRes->handle.Init.ScanConvMode         = ENABLE;                        /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
 	else
 		_hRes->handle.Init.ScanConvMode         = DISABLE;                        /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
-    _hRes->handle.Init.DiscontinuousConvMode    = DISABLE;                       /* Parameter discarded because sequencer is disabled */
+	_hRes->handle.Init.DiscontinuousConvMode    = DISABLE;                       /* Parameter discarded because sequencer is disabled */
 	_hRes->handle.Init.NbrOfDiscConversion      = 1;                             /* Parameter discarded because sequencer is disabled */
 	_hRes->handle.Init.ExternalTrigConv         = ADC_SOFTWARE_START;            /* Software start to trig the 1st conversion manually, without external event */
 	_hRes->handle.Init.ExternalTrigConvEdge     = ADC_EXTERNALTRIGCONVEDGE_NONE; /* Parameter discarded because software trigger chosen */
@@ -320,15 +320,15 @@ void ADC::ConfigureADCGPIO()
 	if (!_hRes) return;
 
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
 
 	if (_hRes->adc == ADC_1)
 	{
-	    /**ADC1 GPIO Configuration
-	    PC5     ------> ADC1_INP8
-	    PF11     ------> ADC1_INP2
-	    */
+		/**ADC1 GPIO Configuration
+		PC5     ------> ADC1_INP8
+		PF11     ------> ADC1_INP2
+		*/
 		if (_channel == ADC_CHANNEL_8) {
 			GPIO_InitStruct.Pin = GPIO_PIN_5;
 			__HAL_RCC_GPIOC_CLK_ENABLE();
@@ -347,10 +347,10 @@ void ADC::ConfigureADCGPIO()
 	}
 	else if (_hRes->adc == ADC_2)
 	{
-	    /**ADC2 GPIO Configuration
-	    PC0     ------> ADC2_INP10
-	    PC1     ------> ADC2_INP11
-	    */
+		/**ADC2 GPIO Configuration
+		PC0     ------> ADC2_INP10
+		PC1     ------> ADC2_INP11
+		*/
 		if (_channel == ADC_CHANNEL_10) {
 			GPIO_InitStruct.Pin = GPIO_PIN_0;
 			__HAL_RCC_GPIOC_CLK_ENABLE();
@@ -369,13 +369,13 @@ void ADC::ConfigureADCGPIO()
 	}
 	else if (_hRes->adc == ADC_3)
 	{
-	    /**ADC3 GPIO Configuration
-	    PF3     ------> ADC3_INP5
-	    PF4     ------> ADC3_INP9
-	    PF5     ------> ADC3_INP4
-	    PF10     ------> ADC3_INP6
-	    PC2_C     ------> ADC3_INP0
-	    */
+		/**ADC3 GPIO Configuration
+		PF3     ------> ADC3_INP5
+		PF4     ------> ADC3_INP9
+		PF5     ------> ADC3_INP4
+		PF10     ------> ADC3_INP6
+		PC2_C     ------> ADC3_INP0
+		*/
 		if (_channel == ADC_CHANNEL_5) {
 			GPIO_InitStruct.Pin = GPIO_PIN_3;
 			__HAL_RCC_GPIOF_CLK_ENABLE();
@@ -459,9 +459,9 @@ void ADC::ConfigureADCChannels()
 	  /* ### - 4 - Start conversion in DMA mode ################################# */
 	  //if (StartDMA(&_hRes->handle,
 	  if (HAL_ADC_Start_DMA(&_hRes->handle,
-	                        (uint32_t *)_hRes->buffer,
+							(uint32_t *)_hRes->buffer,
 							_hRes->numberOfConfiguredChannels  // just sample the number of channels into the buffer
-	                       ) != HAL_OK)
+						   ) != HAL_OK)
 	  {
 			_hRes = 0;
 			ERROR("Could not start ADC");
@@ -483,8 +483,8 @@ float ADC::Read()
 
 int32_t ADC::ReadRaw()
 {
-    /* Invalidate Data Cache to get the updated content of the SRAM on the second half of the ADC converted data buffer: 32 bytes */
-    SCB_InvalidateDCache_by_Addr((uint32_t *) &_hRes->buffer[0], _hRes->bufferSize);
+	/* Invalidate Data Cache to get the updated content of the SRAM on the second half of the ADC converted data buffer: 32 bytes */
+	SCB_InvalidateDCache_by_Addr((uint32_t *) &_hRes->buffer[0], _hRes->bufferSize);
 	return _hRes->buffer[_hRes->map_channel2bufferIndex[_channel]];
 }
 
@@ -558,94 +558,94 @@ HAL_StatusTypeDef ADC::StartDMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32
   /* Perform ADC enable and conversion start if no conversion is on going */
   if (ADC_IS_CONVERSION_ONGOING_REGULAR(hadc) == RESET)
   {
-    /* Process locked */
-    __HAL_LOCK(hadc);
+	/* Process locked */
+	__HAL_LOCK(hadc);
 
-    /* Ensure that dual regular conversions are not enabled or unavailable.   */
-    /* Otherwise, dedicated API HAL_ADCEx_MultiModeStart_DMA() must be used.  */
-    if (ADC_IS_DUAL_REGULAR_CONVERSION_ENABLE(hadc) == RESET)
-    {
-      /* Enable the ADC peripheral */
-      tmp_hal_status = ADC_Enable(hadc);
+	/* Ensure that dual regular conversions are not enabled or unavailable.   */
+	/* Otherwise, dedicated API HAL_ADCEx_MultiModeStart_DMA() must be used.  */
+	if (ADC_IS_DUAL_REGULAR_CONVERSION_ENABLE(hadc) == RESET)
+	{
+	  /* Enable the ADC peripheral */
+	  tmp_hal_status = ADC_Enable(hadc);
 
-      /* Start conversion if ADC is effectively enabled */
-      if (tmp_hal_status == HAL_OK)
-      {
-        /* State machine update: Check if an injected conversion is ongoing */
-        if (HAL_IS_BIT_SET(hadc->State, HAL_ADC_STATE_INJ_BUSY))
-        {
-          /* Reset ADC error code fields related to regular conversions only */
-          CLEAR_BIT(hadc->ErrorCode, (HAL_ADC_ERROR_OVR | HAL_ADC_ERROR_DMA));
-        }
-        else
-        {
-          /* Set ADC error code to none */
-          ADC_CLEAR_ERRORCODE(hadc);
-        }
-        /* Clear HAL_ADC_STATE_READY and regular conversion results bits, set HAL_ADC_STATE_REG_BUSY bit */
-        ADC_STATE_CLR_SET(hadc->State,
-                          (HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR | HAL_ADC_STATE_REG_EOSMP),
-                          HAL_ADC_STATE_REG_BUSY);
+	  /* Start conversion if ADC is effectively enabled */
+	  if (tmp_hal_status == HAL_OK)
+	  {
+		/* State machine update: Check if an injected conversion is ongoing */
+		if (HAL_IS_BIT_SET(hadc->State, HAL_ADC_STATE_INJ_BUSY))
+		{
+		  /* Reset ADC error code fields related to regular conversions only */
+		  CLEAR_BIT(hadc->ErrorCode, (HAL_ADC_ERROR_OVR | HAL_ADC_ERROR_DMA));
+		}
+		else
+		{
+		  /* Set ADC error code to none */
+		  ADC_CLEAR_ERRORCODE(hadc);
+		}
+		/* Clear HAL_ADC_STATE_READY and regular conversion results bits, set HAL_ADC_STATE_REG_BUSY bit */
+		ADC_STATE_CLR_SET(hadc->State,
+			              (HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR | HAL_ADC_STATE_REG_EOSMP),
+			              HAL_ADC_STATE_REG_BUSY);
 
-        /* Reset HAL_ADC_STATE_MULTIMODE_SLAVE bit
-           - by default if ADC is Master or Independent or if multimode feature is not available
-           - if multimode setting is set to independent mode (no dual regular or injected conversions are configured) */
-        if (ADC12_NONMULTIMODE_OR_MULTIMODEMASTER(hadc))
-        {
-          CLEAR_BIT(hadc->State, HAL_ADC_STATE_MULTIMODE_SLAVE);
-        }
+		/* Reset HAL_ADC_STATE_MULTIMODE_SLAVE bit
+		   - by default if ADC is Master or Independent or if multimode feature is not available
+		   - if multimode setting is set to independent mode (no dual regular or injected conversions are configured) */
+		if (ADC12_NONMULTIMODE_OR_MULTIMODEMASTER(hadc))
+		{
+		  CLEAR_BIT(hadc->State, HAL_ADC_STATE_MULTIMODE_SLAVE);
+		}
 
-        /* Set the DMA transfer complete callback */
-        hadc->DMA_Handle->XferCpltCallback = ADC_DMAConvCplt;
+		/* Set the DMA transfer complete callback */
+		hadc->DMA_Handle->XferCpltCallback = ADC_DMAConvCplt;
 
-        /* Set the DMA half transfer complete callback */
-        hadc->DMA_Handle->XferHalfCpltCallback = ADC_DMAHalfConvCplt;
+		/* Set the DMA half transfer complete callback */
+		hadc->DMA_Handle->XferHalfCpltCallback = ADC_DMAHalfConvCplt;
 
-        /* Set the DMA error callback */
-        hadc->DMA_Handle->XferErrorCallback = ADC_DMAError;
+		/* Set the DMA error callback */
+		hadc->DMA_Handle->XferErrorCallback = ADC_DMAError;
 
 
-        /* Manage ADC and DMA start: ADC overrun interruption, DMA start,     */
-        /* ADC start (in case of SW start):                                   */
+		/* Manage ADC and DMA start: ADC overrun interruption, DMA start,     */
+		/* ADC start (in case of SW start):                                   */
 
-        /* Clear regular group conversion flag and overrun flag               */
-        /* (To ensure of no unknown state from potential previous ADC         */
-        /* operations)                                                        */
-        __HAL_ADC_CLEAR_FLAG(hadc, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
+		/* Clear regular group conversion flag and overrun flag               */
+		/* (To ensure of no unknown state from potential previous ADC         */
+		/* operations)                                                        */
+		__HAL_ADC_CLEAR_FLAG(hadc, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
 
-        /* With DMA, overrun event is always considered as an error even if
-           hadc->Init.Overrun is set to ADC_OVR_DATA_OVERWRITTEN. Therefore,
-           ADC_IT_OVR is enabled.  */
-        __HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
+		/* With DMA, overrun event is always considered as an error even if
+		   hadc->Init.Overrun is set to ADC_OVR_DATA_OVERWRITTEN. Therefore,
+		   ADC_IT_OVR is enabled.  */
+		__HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
 
-        /* Start the DMA channel */
-        HAL_DMA_Start_IT(hadc->DMA_Handle, (uint32_t)&hadc->Instance->DR, (uint32_t)pData, Length);
+		/* Start the DMA channel */
+		HAL_DMA_Start_IT(hadc->DMA_Handle, (uint32_t)&hadc->Instance->DR, (uint32_t)pData, Length);
 
-        /* Enable conversion of regular group.                                  */
-        /* Process unlocked */
-        __HAL_UNLOCK(hadc);
-        /* If software start has been selected, conversion starts immediately.  */
-        /* If external trigger has been selected, conversion will start at next */
-        /* trigger event.                                                       */
-        SET_BIT(hadc->Instance->CR, ADC_CR_ADSTART);
-      }
-      else
-      {
-        /* Process unlocked */
-        __HAL_UNLOCK(hadc);
-      }  /* if (tmp_hal_status == HAL_OK) */
-    }
-    else
-    {
-      tmp_hal_status = HAL_ERROR;
-      /* Process unlocked */
-      __HAL_UNLOCK(hadc);
-    } /* if (ADC_IS_DUAL_REGULAR_CONVERSION_ENABLE(hadc) == RESET) */
+		/* Enable conversion of regular group.                                  */
+		/* Process unlocked */
+		__HAL_UNLOCK(hadc);
+		/* If software start has been selected, conversion starts immediately.  */
+		/* If external trigger has been selected, conversion will start at next */
+		/* trigger event.                                                       */
+		SET_BIT(hadc->Instance->CR, ADC_CR_ADSTART);
+	  }
+	  else
+	  {
+		/* Process unlocked */
+		__HAL_UNLOCK(hadc);
+	  }  /* if (tmp_hal_status == HAL_OK) */
+	}
+	else
+	{
+	  tmp_hal_status = HAL_ERROR;
+	  /* Process unlocked */
+	  __HAL_UNLOCK(hadc);
+	} /* if (ADC_IS_DUAL_REGULAR_CONVERSION_ENABLE(hadc) == RESET) */
 
   }
   else
   {
-    tmp_hal_status = HAL_BUSY;
+	tmp_hal_status = HAL_BUSY;
   }
 
   /* Return function status */
@@ -696,8 +696,8 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 		return;
 	}
 
-    /* Invalidate Data Cache to get the updated content of the SRAM on the first half of the ADC converted data buffer: 32 bytes */
-    SCB_InvalidateDCache_by_Addr((uint32_t *) &adc->buffer[0], adc->bufferSize);
+	/* Invalidate Data Cache to get the updated content of the SRAM on the first half of the ADC converted data buffer: 32 bytes */
+	SCB_InvalidateDCache_by_Addr((uint32_t *) &adc->buffer[0], adc->bufferSize);
 }
 
 /**
@@ -720,24 +720,24 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 		return;
 	}
 
-    /* Invalidate Data Cache to get the updated content of the SRAM on the second half of the ADC converted data buffer: 32 bytes */
-    SCB_InvalidateDCache_by_Addr((uint32_t *) &adc->buffer[adc->bufferSize/2], adc->bufferSize);
+	/* Invalidate Data Cache to get the updated content of the SRAM on the second half of the ADC converted data buffer: 32 bytes */
+	SCB_InvalidateDCache_by_Addr((uint32_t *) &adc->buffer[adc->bufferSize/2], adc->bufferSize);
 }
 
 void DMA1_Stream0_IRQHandler(void)
 {
 	if (!ADC::resADC1) return;
-    HAL_DMA_IRQHandler(ADC::resADC1->handle.DMA_Handle);
+	HAL_DMA_IRQHandler(ADC::resADC1->handle.DMA_Handle);
 }
 
 void DMA1_Stream1_IRQHandler(void)
 {
 	if (!ADC::resADC2) return;
-    HAL_DMA_IRQHandler(ADC::resADC2->handle.DMA_Handle);
+	HAL_DMA_IRQHandler(ADC::resADC2->handle.DMA_Handle);
 }
 
 void DMA1_Stream2_IRQHandler(void)
 {
 	if (!ADC::resADC3) return;
-    HAL_DMA_IRQHandler(ADC::resADC3->handle.DMA_Handle);
+	HAL_DMA_IRQHandler(ADC::resADC3->handle.DMA_Handle);
 }
