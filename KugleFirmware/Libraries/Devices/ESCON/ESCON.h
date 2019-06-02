@@ -20,12 +20,12 @@
 #define DEVICES_ESCON_H
 
 #include "stm32h7xx_hal.h"
+#include "Motor.h"
 #include "PWM.h"
 #include "IO.h"
 #include "ADC.h"
-#include "Encoder.h"
 
-class ESCON
+class ESCON : private Motor
 {
 	private:
 		const double M_PI = 3.14159265358979323846264338327950288;
@@ -36,8 +36,6 @@ class ESCON
 		const float ESCON_MAX_RAD_PR_SEC; // rad/s
 		const float ESCON_MAX_AMP_SETPOINT;	 // A
 		const float MOTOR_TORQUE_CONSTANT;  // Nm/A
-		const uint16_t ENCODER_TICKS_PR_REV;	 // ticks/rev on encoder side - hence one revolution on motor shaft (before gearing)
-		const float GEARING_RATIO;
 
 	public:
 		ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed); // minimal operation general constructor
@@ -49,9 +47,7 @@ class ESCON
 		void Disable();
 
 		bool SetTorque(float torqueNewtonMeter);
-		bool SetOutputTorque(float torqueNewtonMeter);
 		float GetAppliedTorque();
-		float GetAppliedOutputTorque();
 		float GetCurrent();
 		float GetAngle();
 		float GetVelocity();
@@ -61,7 +57,6 @@ class ESCON
 	private:
 		PWM * _torqueSetpoint; 		// DIG_IN_1 on ESCON
 		IO * _enablePin;			// DIG_IN_4 on ESCON
-		Encoder * _encoder;
 		ADC * _currentFeedback;		// AN_OUT_1 on ESCON
 		ADC * _velocityFeedback;	// AN_OUT_2 on ESCON
 		IO * _directionFeedbackPin;	// DIG_IN_3 on ESCON

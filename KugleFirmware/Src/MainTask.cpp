@@ -92,12 +92,7 @@ void MainTask(void * pvParameters)
 	Parameters& params = *(new Parameters);
 
 	/* Initialize power management */
-	IO * enable19V = new IO(GPIOE, GPIO_PIN_4); // configure as output
-	IO * enable5V = new IO(GPIOC, GPIO_PIN_3); // configure as output
-	Battery * battery1 = new Battery();
-	Battery * battery2 = new Battery();
-	PWM * powerLED = new PWM(PWM::TIMER17, PWM::CH1, POWER_LED_PWM_FREQUENCY, POWER_LED_PWM_RANGE);
-	PowerManagement * pm = new PowerManagement(*enable19V, *enable5V, *battery1, *battery2, *powerLED, POWER_MANAGEMENT_PRIORITY);
+	// No power management implemented yet
 
 	/* Initialize EEPROM */
 	EEPROM * eeprom = new EEPROM;
@@ -122,50 +117,31 @@ void MainTask(void * pvParameters)
 	/* Debug boot info */
 	Debug::print("Booting...\n");
 
-	/* Initialize front panel periphirals (eg. quadrature knob, LCD and buttons */
-	IO * powerButton = new IO(GPIOB, GPIO_PIN_6, IO::PULL_DOWN); // configure as input
-	IO * resetButton = new IO(GPIOD, GPIO_PIN_15, IO::PULL_DOWN); // configure as input
-	IO * calibrateButton = new IO(GPIOD, GPIO_PIN_14, IO::PULL_DOWN); // configure as input
-
-	/* Prepare Xsens IMU always, since it is used for logging and comparison purposes */
-	UART * uart = new UART(UART::PORT_UART3, 460800, 500);
-	MTI200 * mti200 = new MTI200(uart);
-	if (params.estimator.ConfigureXsensIMUatBoot) {
-		if (!mti200->Configure(2*params.estimator.SampleRate)) { // configuration failed, so do not use/pass on to balance controller
-			delete(mti200);
-			mti200 = 0;
-		}
-	}
+	/* Initialize front panel periphirals (eg. quadrature knob, LCD and buttons) */
+	// No front panel
 
 	/* Initialize and configure IMU */
 	IMU * imu = 0;
-	if (params.estimator.UseXsensIMU) {
-		if (!mti200)
-			ERROR("MTI200 selected but not available!");
-		imu = mti200; // use Xsens MTI200 in Balance controller
-		imu->AttachEEPROM(eeprom);
-	}
-	else {
-		// Prepare and configure MPU9250 IMU
-		SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
-		MPU9250 * mpu9250 = new MPU9250(spi);
-		if (mpu9250->Configure(MPU9250::ACCEL_RANGE_4G, MPU9250::GYRO_RANGE_2000DPS) != 0)
-			ERROR("MPU9250 selected but not available!");
 
-		if (params.estimator.EnableSensorLPFfilters) {
-			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_92HZ, MPU9250::DLPF_BANDWIDTH_92HZ); // sensor bandwidths should be lower than half the sample rate to avoid aliasing problems
-			mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_92HZ, MPU9250::DLPF_BANDWIDTH_250HZ); // however best results are seen with 250 Hz gyro bandwidth, even though we sample at 200 Hz
-		} else {
-			mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_OFF, MPU9250::DLPF_BANDWIDTH_OFF);
-			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_184HZ, MPU9250::DLPF_BANDWIDTH_184HZ);
-			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_41HZ, MPU9250::DLPF_BANDWIDTH_41HZ);
-			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_20HZ, MPU9250::DLPF_BANDWIDTH_20HZ);
-			//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_OFF, MPU9250::DLPF_BANDWIDTH_184HZ);
-		}
-		mpu9250->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
-		imu = mpu9250; // use MPU9250 in Balance controller
-		imu->AttachEEPROM(eeprom);
+	// Prepare and configure MPU9250 IMU
+	SPI * spi = new SPI(SPI::PORT_SPI6, MPU9250_Bus::SPI_LOW_FREQUENCY, GPIOG, GPIO_PIN_8);
+	MPU9250 * mpu9250 = new MPU9250(spi);
+	if (mpu9250->Configure(MPU9250::ACCEL_RANGE_4G, MPU9250::GYRO_RANGE_2000DPS) != 0)
+		ERROR("MPU9250 selected but not available!");
+
+	if (params.estimator.EnableSensorLPFfilters) {
+		//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_92HZ, MPU9250::DLPF_BANDWIDTH_92HZ); // sensor bandwidths should be lower than half the sample rate to avoid aliasing problems
+		mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_92HZ, MPU9250::DLPF_BANDWIDTH_250HZ); // however best results are seen with 250 Hz gyro bandwidth, even though we sample at 200 Hz
+	} else {
+		mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_OFF, MPU9250::DLPF_BANDWIDTH_OFF);
+		//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_184HZ, MPU9250::DLPF_BANDWIDTH_184HZ);
+		//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_41HZ, MPU9250::DLPF_BANDWIDTH_41HZ);
+		//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_20HZ, MPU9250::DLPF_BANDWIDTH_20HZ);
+		//mpu9250->setFilt(MPU9250::DLPF_BANDWIDTH_OFF, MPU9250::DLPF_BANDWIDTH_184HZ);
 	}
+	mpu9250->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
+	imu = mpu9250; // use MPU9250 in Balance controller
+	imu->AttachEEPROM(eeprom);
 	if (!imu->isCalibrated()) {
 		imu->SetCalibration(params.sensor.default_accelerometer_bias, params.sensor.default_accelerometer_scale, params.sensor.default_gyroscope_bias, params.sensor.default_calibration_matrix);
 	}
@@ -174,16 +150,13 @@ void MainTask(void * pvParameters)
 	Timer * microsTimer = new Timer(Timer::TIMER6, 1000000); // create a 1 MHz counting timer used for micros() timing
 
 	/* Initialize motors */
-	ESCON * motor1 = new ESCON(1, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed);
-	ESCON * motor2 = new ESCON(2, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed);
-	ESCON * motor3 = new ESCON(3, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed);
+	//ESCON * motor1 = new ESCON(1, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed);
+	//ESCON * motor2 = new ESCON(2, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed);
+	//ESCON * motor3 = new ESCON(3, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed);
 
 	/******* APPLICATION LAYERS *******/
-	BalanceController * balanceController = new BalanceController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer, mti200);
-	if (!balanceController) ERROR("Could not initialize balance controller");
-
-	FrontPanel * frontPanel = new FrontPanel(*pm, *balanceController, powerButton, resetButton, calibrateButton);
-	if (!frontPanel) ERROR("Could not initialize front panel");
+	//BalanceController * balanceController = new BalanceController(*imu, *motor1, *motor2, *motor3, *lspcUSB, *microsTimer, mti200);
+	//if (!balanceController) ERROR("Could not initialize balance controller");
 
 
 	/* Send CPU load every second */

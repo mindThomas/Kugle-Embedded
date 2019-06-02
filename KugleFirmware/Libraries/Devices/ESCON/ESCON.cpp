@@ -16,9 +16,10 @@
  * ------------------------------------------
  */
  
-#include "ESCON.h"
 #include "stm32h7xx_hal.h"
 
+#include "Motor.h"
+#include "ESCON.h"
 #include "Debug.h"
 #include "PWM.h"
 #include "IO.h"
@@ -26,50 +27,46 @@
 #include "Encoder.h"
 
 ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed) :
+	Motor(EncoderTicksPrRev, GearRatio),
 	ESCON_MAX_AMP_SETPOINT(MaxCurrent),
 	MOTOR_TORQUE_CONSTANT(TorqueConstant),
-	ENCODER_TICKS_PR_REV(EncoderTicksPrRev),
-	GEARING_RATIO(GearRatio),
 	ESCON_MAX_RAD_PR_SEC(MaxMotorSpeed),
 	_torqueSetpoint(TorqueSetpoint),
 	_enablePin(EnablePin),
-	_encoder(encoder),
 	_currentFeedback(0),
 	_velocityFeedback(0),
 	_directionFeedbackPin(0),
 	_deleteObjectsAtDestruction(false)
 {
+	_encoder = encoder;
 	SetTorque(0);
 	Disable();
 }
 
 ESCON::ESCON(PWM * TorqueSetpoint, IO * EnablePin, Encoder * encoder, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed, ADC * CurrentFeedback, ADC * VelocityFeedback, IO * DirectionFeedbackPin) :
+	Motor(EncoderTicksPrRev, GearRatio),
 	ESCON_MAX_AMP_SETPOINT(MaxCurrent),
 	MOTOR_TORQUE_CONSTANT(TorqueConstant),
-	ENCODER_TICKS_PR_REV(EncoderTicksPrRev),
-	GEARING_RATIO(GearRatio),
 	ESCON_MAX_RAD_PR_SEC(MaxMotorSpeed),
 	_torqueSetpoint(TorqueSetpoint),
 	_enablePin(EnablePin),
-	_encoder(encoder),
 	_currentFeedback(CurrentFeedback),
 	_velocityFeedback(VelocityFeedback),
 	_directionFeedbackPin(DirectionFeedbackPin),
 	_deleteObjectsAtDestruction(false)
 {
+	_encoder = encoder;
 	SetTorque(0);
 	Disable();
 }
 
 ESCON::ESCON(uint8_t MotorIndex, float MaxCurrent, float TorqueConstant, float GearRatio, uint16_t EncoderTicksPrRev, float MaxMotorSpeed) :
+	Motor(EncoderTicksPrRev, GearRatio),
 	ESCON_MAX_AMP_SETPOINT(MaxCurrent),
 	MOTOR_TORQUE_CONSTANT(TorqueConstant),
-	ENCODER_TICKS_PR_REV(EncoderTicksPrRev),
-	GEARING_RATIO(GearRatio),
 	ESCON_MAX_RAD_PR_SEC(MaxMotorSpeed),
 	_torqueSetpoint(0),
 	_enablePin(0),
-	_encoder(0),
 	_currentFeedback(0),
 	_velocityFeedback(0),
 	_directionFeedbackPin(0),
@@ -178,13 +175,6 @@ bool ESCON::SetTorque(float torqueNewtonMeter)
 	return didClip;
 }
 
-// Set output shaft (after gearing) torque in Newton meters (Nm)
-// Returns a boolean indicating whether the applied torque was saturated/clipped
-bool ESCON::SetOutputTorque(float torqueNewtonMeter)
-{
-	return SetTorque(torqueNewtonMeter / GEARING_RATIO);
-}
-
 // Return actual motor current reading in Amps (A)
 float ESCON::GetCurrent()
 {
@@ -208,34 +198,6 @@ float ESCON::GetAppliedTorque()
 
 	// The applied motor current can be converted to torque using the torque constant (Nm/A)
 	return MOTOR_TORQUE_CONSTANT * Current;
-}
-
-// Return applied torque (based on current reading) on the output shaft (after gearing) in Newton meters (Nm)
-float ESCON::GetAppliedOutputTorque()
-{
-	return GEARING_RATIO * GetAppliedTorque();
-}
-
-int32_t ESCON::GetEncoderRaw()
-{
-	if (!_encoder) return 0;
-	return _encoder->Get();
-}
-
-// Return motor angle in radians (rad)
-float ESCON::GetAngle()
-{
-	if (!_encoder) return 0;
-	int32_t encoderReading = _encoder->Get();
-
-	// The encoder reading is in number of quadrature ticks (counting each edge on the two signal wires, hence 4 ticks pr. repetition)
-	float absoluteMotorRevolutions = (float)encoderReading / ENCODER_TICKS_PR_REV;
-
-	// Since the motor is geared the absolute output shaft angle is less than the absolute motor shaft angle
-	float absoluteOutputRevolutions = absoluteMotorRevolutions / GEARING_RATIO;
-
-	// Convert to radians
-	return 2 * M_PI * absoluteOutputRevolutions;
 }
 
 // Return motor velocity in radians pr. second (rad/s)

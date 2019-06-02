@@ -23,6 +23,8 @@
 #include "Priorities.h"
 #include "Parameters.h"
 #include "LSPC.hpp"
+#include "Motor.h"
+#include "MotorDriver.h"
 #include "ESCON.h"
 #include "IMU.h"
 #include "Timer.h"
@@ -42,7 +44,7 @@ class BalanceController
 		const uint32_t THREAD_PRIORITY = BALANCE_CONTROLLER_PRIORITY;
 
 	public:
-		BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_, MTI200 * mti_ = 0);
+		BalanceController(IMU& imu_, Motor& motor1_, Motor& motor2_, Motor& motor3_, LSPC& com_, Timer& microsTimer_, MTI200 * mti_ = 0);
 		~BalanceController();
 
 		int Start();
@@ -75,9 +77,9 @@ class BalanceController
 
 	private:
 		IMU& imu;
-		ESCON& motor1;
-		ESCON& motor2;
-		ESCON& motor3;
+		Motor& motor1;
+		Motor& motor2;
+		Motor& motor3;
 		LSPC& com;
 		Timer& microsTimer;
 		MTI200 * mti;

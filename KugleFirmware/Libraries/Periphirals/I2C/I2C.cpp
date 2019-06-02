@@ -24,11 +24,14 @@
 #include <string.h> // for memset
 
 I2C::hardware_resource_t * I2C::resI2C1 = 0;
+I2C::hardware_resource_t * I2C::resI2C2 = 0;
 I2C::hardware_resource_t * I2C::resI2C3 = 0;
 
 // Necessary to export for compiler to generate code to be called by interrupt vector
 extern "C" __EXPORT void I2C1_EV_IRQHandler(void);
 extern "C" __EXPORT void I2C1_ER_IRQHandler(void);
+extern "C" __EXPORT void I2C2_EV_IRQHandler(void);
+extern "C" __EXPORT void I2C2_ER_IRQHandler(void);
 extern "C" __EXPORT void I2C3_EV_IRQHandler(void);
 extern "C" __EXPORT void I2C3_ER_IRQHandler(void);
 extern "C" __EXPORT void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *I2cHandle);
@@ -42,8 +45,11 @@ I2C::I2C(port_t port, uint8_t devAddr, uint32_t frequency)
 	ConfigurePeripheral();
 }
 
-I2C::I2C(port_t port, uint8_t devAddr) : I2C(port, devAddr, I2C_DEFAULT_FREQUENCY)
+I2C::I2C(port_t port, uint8_t devAddr)  /* : I2C(port, devAddr, I2C_DEFAULT_FREQUENCY)    // this is apparently not working properly   */
 {
+	_devAddr = devAddr << 1;
+	InitPeripheral(port, I2C_DEFAULT_FREQUENCY);
+	ConfigurePeripheral();
 }
 
 I2C::~I2C()
@@ -62,6 +68,9 @@ I2C::~I2C()
 		{
 			case PORT_I2C1:
 				resI2C1 = 0;
+				break;
+			case PORT_I2C2:
+				resI2C2 = 0;
 				break;
 			case PORT_I2C3:
 				resI2C3 = 0;
@@ -89,6 +98,20 @@ void I2C::DeInitPeripheral()
 		/* I2C1 interrupt DeInit */
 		HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
 		HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
+	}
+	else if (_hRes->port == PORT_I2C2) {
+		/* Peripheral clock disable */
+		__HAL_RCC_I2C2_CLK_DISABLE();
+
+		/**I2C2 GPIO Configuration
+		PF1     ------> I2C2_SCL
+		PF0     ------> I2C2_SDA
+		*/
+		HAL_GPIO_DeInit(GPIOF, GPIO_PIN_0|GPIO_PIN_1);
+
+		/* I2C2 interrupt DeInit */
+		HAL_NVIC_DisableIRQ(I2C2_ER_IRQn);
+		HAL_NVIC_DisableIRQ(I2C2_EV_IRQn);
 	}
 	else if (_hRes->port == PORT_I2C3)
 	{
@@ -122,6 +145,14 @@ void I2C::InitPeripheral(port_t port, uint32_t frequency)
 				firstTime = true;
 			}
 			_hRes = resI2C1;
+			break;
+		case PORT_I2C2:
+			if (!resI2C2) {
+				resI2C2 = new I2C::hardware_resource_t;
+				memset(resI2C2, 0, sizeof(I2C::hardware_resource_t));
+				firstTime = true;
+			}
+			_hRes = resI2C2;
 			break;
 		case PORT_I2C3:
 			if (!resI2C3) {
@@ -171,7 +202,7 @@ void I2C::InitPeripheral(port_t port, uint32_t frequency)
 			GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
 			GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
 			GPIO_InitStruct.Pull = GPIO_NOPULL;
-			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 			GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
 			HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
@@ -184,6 +215,28 @@ void I2C::InitPeripheral(port_t port, uint32_t frequency)
 			HAL_NVIC_SetPriority(I2C1_EV_IRQn, I2C_INTERRUPT_PRIORITY, 0);
 			HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
 		}
+		else if (port == PORT_I2C2) {
+			__HAL_RCC_GPIOF_CLK_ENABLE();
+			/**I2C1 GPIO Configuration
+			PF1     ------> I2C2_SCL
+			PF0     ------> I2C2_SDA
+			*/
+			GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1;
+			GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+			GPIO_InitStruct.Pull = GPIO_NOPULL;
+			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+			GPIO_InitStruct.Alternate = GPIO_AF4_I2C2;
+			HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+			/* Peripheral clock enable */
+			__HAL_RCC_I2C2_CLK_ENABLE();
+
+			/* NVIC for I2C2 */
+			HAL_NVIC_SetPriority(I2C2_ER_IRQn, I2C_INTERRUPT_PRIORITY, 0);
+			HAL_NVIC_EnableIRQ(I2C2_ER_IRQn);
+			HAL_NVIC_SetPriority(I2C2_EV_IRQn, I2C_INTERRUPT_PRIORITY, 0);
+			HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
+		}
 		else if (port == PORT_I2C3)
 		{
 			__HAL_RCC_GPIOC_CLK_ENABLE();
@@ -195,14 +248,14 @@ void I2C::InitPeripheral(port_t port, uint32_t frequency)
 			GPIO_InitStruct.Pin = GPIO_PIN_9;
 			GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
 			GPIO_InitStruct.Pull = GPIO_NOPULL;
-			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 			GPIO_InitStruct.Alternate = GPIO_AF4_I2C3;
 			HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
 			GPIO_InitStruct.Pin = GPIO_PIN_8;
 			GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
 			GPIO_InitStruct.Pull = GPIO_NOPULL;
-			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+			GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
 			GPIO_InitStruct.Alternate = GPIO_AF4_I2C3;
 			HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -227,6 +280,9 @@ void I2C::ConfigurePeripheral()
 		switch (_hRes->port) {
 			case PORT_I2C1:
 				_hRes->handle.Instance = I2C1;
+				break;
+			case PORT_I2C2:
+				_hRes->handle.Instance = I2C2;
 				break;
 			case PORT_I2C3:
 				_hRes->handle.Instance = I2C3;
@@ -256,7 +312,7 @@ void I2C::ConfigurePeripheral()
 			tSCLDEL = (SCLDEL+1)*tPRESC = 260 ns     (Data setup time)
 
 			SDADEL = 0000 = 0
-			tSDADEL = (SDADEL+1)*tPRESC = 20 ns      (Data hold time)
+			tSDADEL = (SDADEL)*tPRESC = 0 ns         (Data hold time)
 
 			SCLH = 11101100 = 236
 			tSCLH = (SCLH+1)*tPRESC = 4740 ns        (SCL high period)
@@ -268,15 +324,78 @@ void I2C::ConfigurePeripheral()
 			I2C frequency = 101419,88 Hz
 		*/
 
-		uint32_t I2C_Clock = HAL_RCC_GetPCLK1Freq(); // assuming all I2C periphirals to be configured with the same clock frequency running at the same frequency as APB1
-		uint32_t timingParam = 0x10C00000; // set prescaler, data setup and data hold time as listed above
-		uint8_t PRESC =  (timingParam & 0xF0000000) >> 28;
-		uint8_t SCLDEL = (timingParam & 0x00F00000) >> 20;
-		uint8_t SDADEL = (timingParam & 0x000F0000) >> 16;
-		uint16_t period = ((I2C_Clock/(PRESC+1)) / _hRes->frequency) / 2;
-		uint16_t periodHigh = period - (SCLDEL+1) - (SDADEL+1);
-		uint16_t periodLow = period;
-		_hRes->handle.Init.Timing = timingParam | (periodHigh << 8) | periodLow;
+		// See chapter 30.4.9 and table 181 in Reference manual for recommended values
+		// fI2CCLK = 100 Mhz ??
+		// tI2CCLK = 10 ns ??
+		// tPRESC = (PRESC+1)*tI2CCLK
+		// tSYNC1 + tSYNC2 = minimum value of 4 x tI2CCLK
+		// tSCL = tSCLL + tSCLH + tSYNC1 + tSYNC2
+		// tSDADEL recommended = 500 ns
+		// tSCLDEL recommended = 1250 ns
+		// tSCLDEL = (SCLDEL+1)*tPRESC    (Data setup time)
+		// tSDADEL = (SDADEL)*tPRESC      (Data hold time)
+		// tSCLH = (SCLH+1)*tPRESC        (SCL high period)
+		// tSCLL = (SCLL+1)*tPRESC        (SCL low period)
+
+		volatile uint32_t tSDADELns;
+		volatile uint32_t tSCLDELns;
+		volatile uint8_t SYNC_PERIODS_upperbound;
+
+		if (_hRes->frequency > 350000) { // fast mode I2C, eg. f = 400 KHz
+			tSDADELns = 375;
+			tSCLDELns = 500;
+			SYNC_PERIODS_upperbound = 8;
+		} else { // standard mode I2C
+			tSDADELns = 500;
+			tSCLDELns = 1250;
+			SYNC_PERIODS_upperbound = 4;
+		}
+
+		volatile uint32_t I2C_Clock = HAL_RCC_GetPCLK1Freq(); // assuming all I2C periphirals to be configured with the same clock frequency running at the same frequency as APB1
+		volatile uint32_t tI2CCLKns = 1000000000 / I2C_Clock;
+
+		volatile uint32_t tSCLns = 1000000000 / _hRes->frequency;
+
+		volatile uint8_t PRESC;
+		volatile uint32_t tPRESCns;
+		volatile uint32_t tSYNCns;
+		volatile uint32_t tSCLLns;
+		volatile uint32_t tSCLHns;
+		volatile uint8_t SCLL;
+		volatile uint8_t SCLH;
+		volatile uint8_t SCLDEL;
+		volatile uint8_t SDADEL;
+
+		for (PRESC = 0; PRESC < 0x0F; PRESC++) {
+			tPRESCns = (PRESC+1) * tI2CCLKns;
+			tSYNCns = SYNC_PERIODS_upperbound * tPRESCns;
+
+			tSCLLns = tSCLns / 2;
+			tSCLHns = tSCLns - tSCLLns - tSYNCns;
+
+			SCLL = tSCLLns / tPRESCns - 1; // tSCLL = (SCLL+1)*tPRESC   --->   SCLL = tSCLL/tPRESC - 1
+			SCLH = tSCLHns / tPRESCns - 1;
+			SCLDEL = tSCLDELns / tPRESCns - 1;
+			SDADEL = tSDADELns / tPRESCns;
+
+			if (SCLDEL < 0x10 && SDADEL < 0x10) break;
+		}
+
+		/*volatile uint32_t timingParam = 0x10C00000; // set prescaler, data setup and data hold time as listed above
+		volatile uint8_t PRESC =  (timingParam & 0xF0000000) >> 28;
+		volatile uint8_t SCLDEL = (timingParam & 0x00F00000) >> 20;
+		volatile uint8_t SDADEL = (timingParam & 0x000F0000) >> 16;
+		volatile uint16_t period = ((I2C_Clock/(PRESC+1)) / _hRes->frequency) / 2;
+		volatile uint16_t periodHigh = period - (SCLDEL+1) - (SDADEL+1);
+		volatile uint16_t periodLow = period;*/
+
+		volatile uint32_t timingParam = ((uint32_t)(PRESC & 0x0F) << 28) |
+										((uint32_t)(SCLDEL & 0x0F) << 20) |
+										((uint32_t)(SDADEL & 0x0F) << 16) |
+										((uint32_t)SCLH << 8) |
+										(uint32_t)SCLL;
+
+		_hRes->handle.Init.Timing = timingParam;
 
 		if (HAL_I2C_Init(&_hRes->handle) != HAL_OK)
 		{
@@ -301,14 +420,15 @@ void I2C::ConfigurePeripheral()
 	}
 }
 
-void I2C::Write(uint8_t reg, uint8_t value)
+bool I2C::Write(uint8_t reg, uint8_t value)
 {
-	Write(reg, &value, 1);
+	return Write(reg, &value, 1);
 }
 
-void I2C::Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
+bool I2C::Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
 {
-	if (!_hRes) return;
+	bool success = false;
+	if (!_hRes) return success;
 	xSemaphoreTake( _hRes->resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
 
 	// Consider to use task notifications instead: https://www.freertos.org/RTOS-task-notifications.html
@@ -327,6 +447,7 @@ void I2C::Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
 	{
 		// Wait for the transmission to finish
 		xSemaphoreTake( _hRes->transmissionFinished, ( TickType_t ) portMAX_DELAY );
+		success = true;
 	} else {
 		DEBUG("Failed I2C transmission");
 	}
@@ -336,18 +457,23 @@ void I2C::Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength)
 	//vPortFree(txBuffer);
 
 	xSemaphoreGive( _hRes->resourceSemaphore ); // give hardware resource back
+
+	return success;
 }
 
 uint8_t I2C::Read(uint8_t reg)
 {
 	uint8_t rx;
-	Read(reg, &rx, 1);
-	return rx;
+	if (Read(reg, &rx, 1))
+		return rx;
+	else
+		return 0;
 }
 
-void I2C::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
+bool I2C::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
 {
-	if (!_hRes) return;
+	bool success = false;
+	if (!_hRes) return success;
 	xSemaphoreTake( _hRes->resourceSemaphore, ( TickType_t ) portMAX_DELAY ); // take hardware resource
 
 	if (uxSemaphoreGetCount(_hRes->transmissionFinished)) // semaphore is available to be taken - which it should not be at this state before starting the transmission, since we use the semaphore for flagging the finish transmission event
@@ -365,6 +491,7 @@ void I2C::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
 	{
 		// Wait for the transmission to finish
 		xSemaphoreTake( _hRes->transmissionFinished, ( TickType_t ) portMAX_DELAY );
+		success = true;
 	} else {
 		DEBUG("Failed I2C transmission");
 	}
@@ -377,6 +504,7 @@ void I2C::Read(uint8_t reg, uint8_t * buffer, uint8_t readLength)
 	vPortFree(rxBuffer);*/
 
 	xSemaphoreGive( _hRes->resourceSemaphore ); // give hardware resource back
+	return success;
 }
 
 void I2C1_EV_IRQHandler(void)
@@ -388,6 +516,17 @@ void I2C1_ER_IRQHandler(void)
 {
 	if (I2C::resI2C1)
 		HAL_I2C_ER_IRQHandler(&I2C::resI2C1->handle);
+}
+
+void I2C2_EV_IRQHandler(void)
+{
+	if (I2C::resI2C2)
+		HAL_I2C_EV_IRQHandler(&I2C::resI2C2->handle);
+}
+void I2C2_ER_IRQHandler(void)
+{
+	if (I2C::resI2C2)
+		HAL_I2C_ER_IRQHandler(&I2C::resI2C2->handle);
 }
 
 void I2C3_EV_IRQHandler(void)
@@ -407,6 +546,8 @@ void I2C::TransmissionCompleteCallback(I2C_HandleTypeDef *I2cHandle)
 	I2C::hardware_resource_t * i2c;
 	if (I2cHandle->Instance == I2C1)
 		i2c = I2C::resI2C1;
+	else if (I2cHandle->Instance == I2C2)
+		i2c = I2C::resI2C2;
 	else if (I2cHandle->Instance == I2C3)
 		i2c = I2C::resI2C3;
 	else

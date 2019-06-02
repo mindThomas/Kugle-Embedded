@@ -35,13 +35,13 @@ extern "C" __EXPORT void EXTI15_10_IRQHandler(void);
 // Configure as output
 IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin) : _InterruptCallback(0), _InterruptCallbackParams(0), _InterruptSemaphore(0), _GPIO(GPIOx), _pin(GPIO_Pin), _isInput(false), _pull()
 {
-	ConfigurePin(GPIOx, GPIO_Pin, false, PULL_NONE);
+	ConfigurePin(GPIOx, GPIO_Pin, false, false, PULL_NONE);
 }
 
 // Configure as input
 IO::IO(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, pull_t pull) : _InterruptCallback(0), _InterruptCallbackParams(0), _InterruptSemaphore(0), _GPIO(GPIOx), _pin(GPIO_Pin), _isInput(true), _pull()
 {
-	ConfigurePin(GPIOx, GPIO_Pin, true, pull);
+	ConfigurePin(GPIOx, GPIO_Pin, true, false, pull);
 }
 
 IO::~IO()
@@ -76,7 +76,7 @@ IO::~IO()
 	}
 }
 
-void IO::ConfigurePin(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pull_t pull)
+void IO::ConfigurePin(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, bool isOpenDrain, pull_t pull)
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
@@ -106,8 +106,11 @@ void IO::ConfigurePin(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pul
 
 	// Configure pin as output or input
 	_isInput = isInput;
+	_isOpenDrain = isOpenDrain;
 	if (isInput)
 		GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	else if (isOpenDrain)
+		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
 	else
 		GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 
@@ -123,6 +126,23 @@ void IO::ConfigurePin(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pul
 	GPIO_InitStruct.Pin = GPIO_Pin;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
+}
+
+void IO::ChangeToInput(pull_t pull)
+{
+	ConfigurePin(_GPIO, _pin, true, false, _pull);
+}
+
+void IO::ChangeToOutput(bool state)
+{
+	ConfigurePin(_GPIO, _pin, false, false, PULL_NONE);
+	Set(state);
+}
+
+void IO::ChangeToOpenDrain(bool state)
+{
+	ConfigurePin(_GPIO, _pin, false, true, PULL_NONE);
+	Set(state);
 }
 
 void IO::RegisterInterrupt(interrupt_trigger_t trigger, SemaphoreHandle_t semaphore)

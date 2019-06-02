@@ -20,6 +20,7 @@
 #include "stm32h7xx_hal.h"
 #include "Debug.h"
 #include <string.h> // for memset
+#include <math.h> // for roundf
  
 PWM::hardware_resource_t * PWM::resTIMER1 = 0;
 PWM::hardware_resource_t * PWM::resTIMER8 = 0;
@@ -225,7 +226,9 @@ void PWM::ConfigureTimerPeripheral()
 	//   fCNT = (ARR+1) * fPERIOD
 	//   PSC = (fTIM / fCNT) - 1
 	uint32_t TimerClock = HAL_RCC_GetHCLKFreq();
-	_hRes->handle.Init.Prescaler = (TimerClock / ((_hRes->handle.Init.Period+1) * _hRes->frequency)) - 1;
+	// Added prescaler computation as float such that rounding can happen
+	float prescaler = ((float)TimerClock / ((_hRes->handle.Init.Period+1) * _hRes->frequency)) - 1;
+	_hRes->handle.Init.Prescaler = roundf(prescaler);
 
 	if (_hRes->handle.Init.Prescaler > 0xFFFF) {
 		_hRes = 0;
@@ -414,8 +417,8 @@ void PWM::ConfigureTimerChannel()
 // Set a duty-cycle value between 0-1, where 0 results in an always LOW signal and 1 results in an always HIGH signal
 void PWM::Set(float value)
 {
-	if (value < 0) return;
-	if (value > 1) return;
+	if (value < 0) value = 0.0f;
+	if (value > 1) value = 1.0f;
 
 	uint16_t rawValue = _hRes->maxValue * value;
 	SetRaw(rawValue);

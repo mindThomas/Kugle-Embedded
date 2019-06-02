@@ -52,8 +52,12 @@ class IO
 		void Low();
 		void Toggle();
 
+		void ChangeToInput(pull_t pull);
+		void ChangeToOutput(bool state = false);
+		void ChangeToOpenDrain(bool state = false);
+
 	private:
-		void ConfigurePin(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, pull_t pull);
+		void ConfigurePin(GPIO_TypeDef * GPIOx, uint32_t GPIO_Pin, bool isInput, bool isOpenDrain, pull_t pull);
 
 	public:
 		void (*_InterruptCallback)(void * params);
@@ -66,6 +70,7 @@ class IO
 		GPIO_TypeDef * _GPIO;
 		uint32_t _pin;
 		bool _isInput;
+		bool _isOpenDrain;
 		pull_t _pull;
 
 	private:

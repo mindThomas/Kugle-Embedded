@@ -236,13 +236,13 @@ class MPU9250 : public IMU {
 
 		// Transformation from sensor frame to body frame (robot frame)
 		// out = T * meas
-		// body_x = sensor_y
-		// body_y = sensor_x
-		// body_z = -sensor_z
+		// body_x = sensor_x
+		// body_y = sensor_y
+		// body_z = sensor_z
 		// OBS: This does not transform mag data.
-		const int16_t tX[3] = {0,  1,  0};
-		const int16_t tY[3] = {1,  0,  0};
-		const int16_t tZ[3] = {0,  0,  -1};
+		const int16_t tX[3] = {1,  0,  0};
+		const int16_t tY[3] = {0,  1,  0};
+		const int16_t tZ[3] = {0,  0,  1};
 
 		bool writeRegister(uint8_t subAddress, uint8_t data);
 		void readRegisters(uint8_t subAddress, uint8_t count, uint8_t* dest);

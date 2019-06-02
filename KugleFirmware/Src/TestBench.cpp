@@ -35,11 +35,19 @@
 #include "ADC.h"
 #include "MPU9250.h"
 #include "MTI200.h"
+#include "Motor.h"
+#include "MotorDriver.h"
 #include "ESCON.h"
+#include "INA219.h"
+#include "WS2811.h"
 #include "PowerManagement.h"
 #include "Parameters.h"
 #include "FrontPanel.h"
 #include "VelocityEKF.h"
+
+#include "MathLib.h"
+#include "FirstOrderLPF.h"
+#include "MovingAverage.hpp"
 
 void TestBench(void * pvParameters);
 TaskHandle_t testBenchTaskHandle;
@@ -53,6 +61,14 @@ IO * pin;
 QuadratureKnob * knob;
 ADC * adc;
 MTI200 * mti200;
+WS2811 * ws2811;
+
+volatile uint16_t vrefRawValue;
+volatile float vrefValue;
+volatile uint16_t adcValue;
+volatile float adcVoltage1, adcVoltage2;
+volatile float filteredVoltage1, filteredVoltage2;
+volatile float MOT_current_mA, INA_current_mA;
 
 void TestBench_Init()
 {
@@ -124,7 +140,7 @@ void TestBench(void * pvParameters)
 
 	imu->Configure(MPU9250::ACCEL_RANGE_2G, MPU9250::GYRO_RANGE_250DPS);
 	imu->setFilt(MPU9250::DLPF_BANDWIDTH_250HZ, MPU9250::DLPF_BANDWIDTH_184HZ, 8);
-	imu->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
+	//imu->ConfigureInterrupt(GPIOE, GPIO_PIN_3);
 
 	while (1) {
 		imu->WaitForNewData();
@@ -177,24 +193,34 @@ void UART_Callback(void * param, uint8_t * buffer, uint32_t bufLen)
 
 void TestBench(void * pvParameters)
 {
-	uart = new UART(UART::PORT_UART3, 115200, 100);
+	/*uart = new UART(UART::PORT_UART3, 115200, 100);
 	spi = new SPI(SPI::PORT_SPI6, 500000);
 	i2c = new I2C(I2C::PORT_I2C1, 0x68);
-	imu = new MPU9250<I2C,I2C::port_t>(i2c);
+	imu = new MPU9250<I2C,I2C::port_t>(i2c);*/
 
-	pwm = new PWM(PWM::TIMER1, PWM::CH1, 1, 50000);
-	encoder = new Encoder(Encoder::TIMER2);
-	timer = new Timer(Timer::TIMER6, 10000);
-	timer2 = new Timer(Timer::TIMER7, 10000);
-	pin = new IO(GPIOA, GPIO_PIN_4, true);
+	i2c = new I2C(I2C::PORT_I2C2, INA219::I2C_ADDRESS2);
+	INA219 * ina219 = new INA219(*i2c);
+
+	pwm = new PWM(PWM::TIMER1, PWM::CH2, 20000, 1024);
+	IO * INA = new IO(GPIOF, GPIO_PIN_13); INA->ChangeToOpenDrain();
+	IO * INB = new IO(GPIOF, GPIO_PIN_12); INB->ChangeToOpenDrain();
+	IO * EN = new IO(GPIOE, GPIO_PIN_10); EN->ChangeToOpenDrain();
+
+	encoder = new Encoder(Encoder::TIMER4);
+	//timer = new Timer(Timer::TIMER6, 10000);
+	//timer2 = new Timer(Timer::TIMER7, 10000);
+	//pin = new IO(GPIOA, GPIO_PIN_4, true);
 	//knob = new QuadratureKnob(GPIOA, GPIO_PIN_0, GPIOA, GPIO_PIN_1);
-	adc = new ADC(ADC::ADC_1, ADC_CHANNEL_8);
+	adc = new ADC(ADC::ADC_3, ADC_CHANNEL_4, ADC_RESOLUTION_16B);
 
-	pwm->Set(5000);
+	pwm->Set(0.99); // note maximum duty cycle should ensure that low period is longer than at least 6 us
+	INA->High();
+	INB->Low();
+	EN->High();
 
 	uint8_t buffer[10];
 
-	std::string testString("This is a test");
+	/*std::string testString("This is a test");
 	uart->RegisterRXcallback(UART_Callback, 10);
 
 	SemaphoreHandle_t semaphore;
@@ -202,9 +228,14 @@ void TestBench(void * pvParameters)
 	semaphore = xSemaphoreCreateBinary();
 	vQueueAddToRegistry(semaphore, "Test semaphore");
 	//timer->RegisterInterrupt(10, semaphore);
-	//pin->RegisterInterrupt(IO::TRIGGER_BOTH, semaphore);
+	//pin->RegisterInterrupt(IO::TRIGGER_BOTH, semaphore);*/
 
-	uint16_t adcValue;
+	MovingAverage ma(200);
+	//FirstOrderLPF lpf(0.01f, 1.0f / (2*M_PI* 1.0f));
+	FirstOrderLPF lpf(0.01f, 2.0f / 3);
+	FirstOrderLPF lpf2(0.01f, 1.0f / 3);
+
+	ws2811 = new WS2811();
 
 	while (1) {
 		/*uart->TransmitBlocking(reinterpret_cast<uint8_t *>(const_cast<char *>(testString.c_str())), testString.length());
@@ -221,7 +252,16 @@ void TestBench(void * pvParameters)
 		pwm->Set(750);
 		osDelay(500);*/
 		encoderValue = encoder->Get();
-		adcValue = adc->Read();
+
+		vrefValue = adc->GetVREF();
+		adcVoltage1 = 3.3f * adc->Read();
+		adcVoltage2 = adc->ReadVoltage();
+		filteredVoltage1 = ma.Filter(adcVoltage2);
+		filteredVoltage2 = lpf.Filter(adcVoltage2);
+		//vrefValue = vref->GetCoreVREF();
+
+		MOT_current_mA = 7580 * filteredVoltage2;
+		INA_current_mA = lpf2.Filter(ina219->getCurrent_mA());
 
 
 		/*timer->Reset();
@@ -250,7 +290,42 @@ void TestBench(void * pvParameters)
 			osDelay(1);
 		}*/
 
-		osDelay(100);
+		ws2811->SetColor(40, 40, 40);
+
+		osDelay(10);
+	}
+}
+#endif
+
+#if 1
+volatile float testCurrent = 0.3;
+void TestBench(void * pvParameters)
+{
+	ws2811 = new WS2811();
+
+	Parameters& params = *(new Parameters);
+	MotorDriver * motor1 = new MotorDriver(1, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed, CURRENT_CONTROLLER_PRIORITY);
+	MotorDriver * motor2 = new MotorDriver(2, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed, CURRENT_CONTROLLER_PRIORITY);
+	MotorDriver * motor3 = new MotorDriver(3, params.model.MotorMaxCurrent, params.model.MotorTorqueConstant, params.model.i_gear, params.model.EncoderTicksPrRev, params.model.MotorMaxSpeed, CURRENT_CONTROLLER_PRIORITY);
+
+	//((Motor*)motor)->SetCurrent(testCurrent);
+	motor1->Enable();
+	motor2->Enable();
+	motor3->Enable();
+
+	while (1) {
+		/*motor1->SetDirectPWM(testCurrent);
+		motor2->SetDirectPWM(testCurrent);
+		motor3->SetDirectPWM(testCurrent);
+		osDelay(2000);
+		motor1->SetDirectPWM(-testCurrent);
+		motor2->SetDirectPWM(-testCurrent);
+		motor3->SetDirectPWM(-testCurrent);
+		osDelay(2000);*/
+		((Motor*)motor1)->SetCurrent(testCurrent);
+		osDelay(2000);
+		((Motor*)motor1)->SetCurrent(-testCurrent);
+		osDelay(2000);
 	}
 }
 #endif

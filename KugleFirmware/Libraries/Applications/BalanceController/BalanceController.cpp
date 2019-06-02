@@ -37,7 +37,7 @@
 #include <string> // for memcpy
 #include <cmath> // for fminf, fmaxf
 
-BalanceController::BalanceController(IMU& imu_, ESCON& motor1_, ESCON& motor2_, ESCON& motor3_, LSPC& com_, Timer& microsTimer_, MTI200 * mti_) : TaskHandle_(0), isRunning_(false), shouldStop_(false), imu(imu_), motor1(motor1_), motor2(motor2_), motor3(motor3_), com(com_), microsTimer(microsTimer_), mti(mti_)
+BalanceController::BalanceController(IMU& imu_, Motor& motor1_, Motor& motor2_, Motor& motor3_, LSPC& com_, Timer& microsTimer_, MTI200 * mti_) : TaskHandle_(0), isRunning_(false), shouldStop_(false), imu(imu_), motor1(motor1_), motor2(motor2_), motor3(motor3_), com(com_), microsTimer(microsTimer_), mti(mti_)
 {
 	/* Create setpoint semaphores */
 	BalanceReference.semaphore = xSemaphoreCreateBinary();
@@ -133,9 +133,9 @@ void BalanceController::Thread(void * pvParameters)
 
 	/* Load initialized objects */
 	IMU& imu = balanceController->imu;
-	ESCON& motor1 = balanceController->motor1;
-	ESCON& motor2 = balanceController->motor2;
-	ESCON& motor3 = balanceController->motor3;
+	Motor& motor1 = balanceController->motor1;
+	Motor& motor2 = balanceController->motor2;
+	Motor& motor3 = balanceController->motor3;
 	LSPC& com = balanceController->com;
 	Timer& microsTimer = balanceController->microsTimer;
 
@@ -694,7 +694,7 @@ void BalanceController::Thread(void * pvParameters)
 			motor2.SetOutputTorque(Torque[1]);
 			motor3.SetOutputTorque(Torque[2]);
 
-			/* Measure delivered torque feedback from ESCON drivers */
+			/* Measure delivered torque feedback from motor drivers */
 			TorqueDelivered[0] = motor1.GetAppliedOutputTorque();
 			TorqueDelivered[1] = motor2.GetAppliedOutputTorque();
 			TorqueDelivered[2] = motor3.GetAppliedOutputTorque();

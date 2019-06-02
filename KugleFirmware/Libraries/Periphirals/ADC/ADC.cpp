@@ -24,6 +24,7 @@
 ADC::hardware_resource_t * ADC::resADC1 = 0;
 ADC::hardware_resource_t * ADC::resADC2 = 0;
 ADC::hardware_resource_t * ADC::resADC3 = 0;
+float ADC::ADC_REF_CORR = 1.0f;
 
 // Necessary to export for compiler to generate code to be called by interrupt vector
 extern "C" __EXPORT void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc);
@@ -34,11 +35,11 @@ extern "C" __EXPORT void DMA1_Stream2_IRQHandler(void);
 
 ADC::ADC(adc_t adc, uint32_t channel, uint32_t resolution) : _channel(channel)
 {
-	InitPeripheral(adc, channel, resolution);
+	InitPeripheral(adc, resolution);
 }
 ADC::ADC(adc_t adc, uint32_t channel) : _channel(channel)
 {
-	InitPeripheral(adc, channel, ADC_DEFAULT_RESOLUTION);
+	InitPeripheral(adc, ADC_DEFAULT_RESOLUTION);
 }
 
 ADC::~ADC()
@@ -88,7 +89,7 @@ ADC::~ADC()
 	}
 }
 
-void ADC::InitPeripheral(adc_t adc, uint32_t channel, uint32_t resolution)
+void ADC::InitPeripheral(adc_t adc, uint32_t resolution)
 {
 	bool configureResource = false;
 
@@ -140,16 +141,22 @@ void ADC::InitPeripheral(adc_t adc, uint32_t channel, uint32_t resolution)
 		_hRes->numberOfConfiguredChannels = 0;
 		memset(_hRes->map_channel2bufferIndex, 0xFF, sizeof(_hRes->map_channel2bufferIndex));
 		memcpy(_hRes->buffer, 0, sizeof(_hRes->buffer));
+
+		if (adc == ADC_3) {
+			// configure VREFINT channel as the first one, such that this channel is always read
+			_hRes->map_channel2bufferIndex[ADC_CHANNEL_VREFINT] = 0;
+			_hRes->numberOfConfiguredChannels = 1;
+		}
 	}
 
 	// Ensure that the channel is valid and not already in use
-	if (_hRes->map_channel2bufferIndex[channel] != 0xFF) {
+	if (_hRes->map_channel2bufferIndex[_channel] != 0xFF) {
 		_hRes = 0;
 		ERROR("Channel already configured on selected ADC");
 		return;
 	}
+	_hRes->map_channel2bufferIndex[_channel] = _hRes->numberOfConfiguredChannels;
 	_hRes->numberOfConfiguredChannels++;
-	_hRes->map_channel2bufferIndex[_channel] = _hRes->numberOfConfiguredChannels-1;
 
 	if (_hRes->resolution != resolution) {
 		_hRes = 0;
@@ -160,22 +167,6 @@ void ADC::InitPeripheral(adc_t adc, uint32_t channel, uint32_t resolution)
 	ConfigureADCPeripheral();
 	ConfigureADCGPIO();
 	ConfigureADCChannels();
-
-	if (resolution == ADC_RESOLUTION_8B)
-		_range = ((uint32_t)1 << 8) - 1;
-	else if (resolution == ADC_RESOLUTION_10B)
-		_range = ((uint32_t)1 << 10) - 1;
-	else if (resolution == ADC_RESOLUTION_12B)
-		_range = ((uint32_t)1 << 12) - 1;
-	else if (resolution == ADC_RESOLUTION_14B)
-		_range = ((uint32_t)1 << 14) - 1;
-	else if (resolution == ADC_RESOLUTION_16B)
-		_range = ((uint32_t)1 << 16) - 1;
-	else {
-		_hRes = 0;
-		ERROR("Incorrect ADC resolution");
-		return;
-	}
 }
 
 void ADC::ConfigureADCPeripheral()
@@ -225,17 +216,22 @@ void ADC::ConfigureADCPeripheral()
 		return;
 	}
 
-	if (_hRes->resolution == ADC_RESOLUTION_8B)
+	if (_hRes->resolution == ADC_RESOLUTION_8B) {
 		_hRes->handle.Init.Resolution = ADC_RESOLUTION_8B; /* 8-bit resolution for converted data */
-	else if (_hRes->resolution == ADC_RESOLUTION_10B)
+		_hRes->range = ((uint32_t)1 << 8) - 1;
+	} else if (_hRes->resolution == ADC_RESOLUTION_10B) {
 		_hRes->handle.Init.Resolution = ADC_RESOLUTION_10B; /* 10-bit resolution for converted data */
-	else if (_hRes->resolution == ADC_RESOLUTION_12B)
+		_hRes->range = ((uint32_t)1 << 10) - 1;
+	} else if (_hRes->resolution == ADC_RESOLUTION_12B) {
 		_hRes->handle.Init.Resolution = ADC_RESOLUTION_12B; /* 12-bit resolution for converted data */
-	else if (_hRes->resolution == ADC_RESOLUTION_14B)
+		_hRes->range = ((uint32_t)1 << 12) - 1;
+	} else if (_hRes->resolution == ADC_RESOLUTION_14B) {
 		_hRes->handle.Init.Resolution = ADC_RESOLUTION_14B; /* 14-bit resolution for converted data */
-	else if (_hRes->resolution == ADC_RESOLUTION_16B)
+		_hRes->range = ((uint32_t)1 << 14) - 1;
+	} else if (_hRes->resolution == ADC_RESOLUTION_16B) {
 		_hRes->handle.Init.Resolution = ADC_RESOLUTION_16B; /* 16-bit resolution for converted data */
-	else {
+		_hRes->range = ((uint32_t)1 << 16) - 1;
+	} else {
 		_hRes = 0;
 		ERROR("Incorrect ADC resolution");
 		return;
@@ -442,6 +438,8 @@ void ADC::ConfigureADCChannels()
 			sConfig.Channel      = channel;                /* Sampled channel number */
 			sConfig.Rank         = _hRes->map_channel2bufferIndex[channel] + 1; // ADC_REGULAR_RANK_1;          /* Rank of sampled channel number ADCx_CHANNEL */
 			sConfig.SamplingTime = ADC_SAMPLETIME_8CYCLES_5;   /* Sampling time (number of clock cycles unit) */
+			if (channel == ADC_CHANNEL_VBAT_DIV4 || channel == ADC_CHANNEL_TEMPSENSOR || channel == ADC_CHANNEL_VREFINT)
+				sConfig.SamplingTime = ADC_SAMPLETIME_387CYCLES_5;   /* Sampling time (number of clock cycles unit) */
 			sConfig.SingleDiff   = ADC_SINGLE_ENDED;            /* Single-ended input channel */
 			sConfig.OffsetNumber = ADC_OFFSET_NONE;             /* No offset subtraction */
 			sConfig.Offset = 0;                                 /* Parameter discarded because offset correction is disabled */
@@ -474,7 +472,7 @@ float ADC::Read()
 {
 	int32_t reading = ReadRaw();
 	if (reading >= 0) {
-		float converted = (float)reading / _range;
+		float converted = (float)reading / _hRes->range;
 		return converted;
 	} else {
 		return 0;
@@ -490,6 +488,9 @@ int32_t ADC::ReadRaw()
 
 void ADC::ConfigureDMA(void)
 {
+	// See DMA mapping on page 226 in Reference Manual
+	// Note that the below DMA and Stream seems incorrect when compared to this table?!
+
 	/*##-1- Enable peripherals and GPIO Clocks #################################*/
 	/* Enable DMA clock */
 	__HAL_RCC_DMA1_CLK_ENABLE();
@@ -740,4 +741,69 @@ void DMA1_Stream2_IRQHandler(void)
 {
 	if (!ADC::resADC3) return;
 	HAL_DMA_IRQHandler(ADC::resADC3->handle.DMA_Handle);
+}
+
+float ADC::GetCoreTemp(void) {
+	// requires the ADC channel of the current object to be configured as ADC_CHANNEL_TEMPSENSOR
+	if (_channel != ADC_CHANNEL_TEMPSENSOR) return 0;
+
+    int32_t raw_value = ReadRaw();
+    float core_temp_avg_slope = (ADC_CAL2 - ADC_CAL1) / 80.0;
+    return (((float)raw_value * ADC_REF_CORR - ADC_CAL1) / core_temp_avg_slope) + 30.0f;
+}
+
+float ADC::GetCoreVBAT(void) {
+	// requires the ADC channel of the current object to be configured as ADC_CHANNEL_VBAT_DIV4
+	if (_channel != ADC_CHANNEL_VBAT_DIV4) return 0;
+
+    uint16_t raw_value = ReadRaw();
+    return raw_value * VBAT_DIV * (VREF_CAL_VDD / (float)(((uint32_t)1 << ADC_CAL_BITS) - 1)) * ADC_REF_CORR;
+}
+
+float ADC::GetCoreVREF(void) {
+	// requires the ADC channel of the current object to be configured as ADC_CHANNEL_VREFINT
+	if (_channel != ADC_CHANNEL_VREFINT) return 0;
+
+    uint32_t raw_value = (uint32_t)ReadRaw();
+
+    // update the reference correction factor
+    ADC_REF_CORR = ((float)VREFIN_CAL) / ((float)raw_value);
+
+    return VREFIN_CAL * (VREF_CAL_VDD / (float)(((uint32_t)1 << ADC_CAL_BITS) - 1));
+}
+
+
+uint16_t ADC::GetVREFINTraw(void)
+{
+	if (!ADC::resADC3) return 0; // only available if ADC3 is configured
+
+	/* Invalidate Data Cache to get the updated content of the SRAM on the second half of the ADC converted data buffer: 32 bytes */
+	SCB_InvalidateDCache_by_Addr((uint32_t *) &ADC::resADC3->buffer[0], ADC::resADC3->bufferSize);
+	return ADC::resADC3->buffer[ADC::resADC3->map_channel2bufferIndex[ADC_CHANNEL_VREFINT]];
+}
+
+float ADC::GetVREF(void)
+{
+	if (!ADC::resADC3) return 0; // only available if ADC3 is configured
+
+	// Compute VREF+ value based on VREFINT measurement and calibration
+	// VREFINT calibration is taken with 3.3V VREF+
+	//    (VREFINT_MEAS / RANGE) * VREF_CURR = (VREFINT_CAL / RANGE) * 3.3V
+	return VREF_CAL_VDD * ((float)(VREFIN_CAL) / ADC_CAL_RANGE) / ((float)GetVREFINTraw() / ADC::resADC3->range);
+}
+
+// Return ADC reading in volt based on VREFINT correction (if ADC3 is enabled), otherwise based on 3.3V VREF+ assumption
+float ADC::ReadVoltage()
+{
+	float percentual = Read();
+
+	float voltage;
+	if (ADC::resADC3) {
+		// VREF available, use to compute voltage
+		voltage = GetVREF() * percentual;
+	} else {
+		voltage = VREF_CAL_VDD * percentual;
+	}
+
+	return voltage;
 }

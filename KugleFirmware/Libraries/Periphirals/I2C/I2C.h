@@ -25,12 +25,13 @@
 class I2C
 {
 	private:
-		const uint32_t I2C_DEFAULT_FREQUENCY = 400000;	// 400 kHz
+		const uint32_t I2C_DEFAULT_FREQUENCY = 100000;	// 100 kHz
 
 	public:
 		typedef enum port_t {
 			PORT_UNDEFINED = 0,
 			PORT_I2C1,
+			PORT_I2C2,
 			PORT_I2C3
 		} port_t;
 
@@ -42,9 +43,9 @@ class I2C
 		void InitPeripheral(port_t port, uint32_t frequency);
 		void DeInitPeripheral();
 		void ConfigurePeripheral();
-		void Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength);
-		void Write(uint8_t reg, uint8_t value);
-		void Read(uint8_t reg, uint8_t * buffer, uint8_t readLength);
+		bool Write(uint8_t reg, uint8_t * buffer, uint8_t writeLength);
+		bool Write(uint8_t reg, uint8_t value);
+		bool Read(uint8_t reg, uint8_t * buffer, uint8_t readLength);
 		uint8_t Read(uint8_t reg);
 
 	public:
@@ -59,6 +60,7 @@ class I2C
 		} hardware_resource_t;
 
 		static hardware_resource_t * resI2C1;
+		static hardware_resource_t * resI2C2;
 		static hardware_resource_t * resI2C3;
 
 	private:

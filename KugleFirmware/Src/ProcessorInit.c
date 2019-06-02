@@ -23,6 +23,12 @@
 #include "usbd_core.h"
 
 /* Configure clocks to:
+	- The CPU (SYSCLK) at 400 MHz
+	- The HCLK for D1 Domain AXI and AHB3 peripherals , D2 Domain AHB1/AHB2 peripherals and D3 Domain AHB4  peripherals at 200 MHz.
+	- The APB clock dividers for D1 Domain APB3 peripherals, D2 Domain APB1 and APB2 peripherals and D3 Domain APB4 peripherals to  run at 100 MHz
+	- However the APB1 and APB2 timer clocks are configured to 200 MHz
+
+   Summary:
 	- 400 MHz CPU clock
 	- 200 MHz timer periphiral clock
 	- 80 MHz SPI periphiral clock
