@@ -35,7 +35,7 @@ class MotorDriver : private Motor
 	private:
 		const float K_P = 5; // current controller gain - from current error to normalized PWM (-1 to 1)
 
-		const int PWM_FREQUENCY	= 20000;		// 20 kHz
+		const int PWM_FREQUENCY	= 8000;		// 20 kHz
 		const int PWM_RANGE = 2000;				// 0-2000, corresponding to 0.1% resolution
 
 		const float MAX_RAD_PR_SEC; // rad/s

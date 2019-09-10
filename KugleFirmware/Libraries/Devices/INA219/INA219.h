@@ -223,6 +223,7 @@ class INA219 {
 	public:
 		INA219(I2C& i2c);
 		void setCalibration_32V_2A(void);
+		void setCalibration_16V_6A(void);
 		void setCalibration_32V_1A(void);
 		void setCalibration_16V_400mA(void);
 		float getBusVoltage_V(void);
