@@ -415,12 +415,12 @@ void Parameters::LookupParameter(uint8_t type, uint8_t param, void ** paramPtr, 
 			case lspc::ParameterLookup::Ky: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[1]; return;
 			case lspc::ParameterLookup::Kz: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.K[2]; return;
 			case lspc::ParameterLookup::Kf: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[0]; arraySize = 6; return;
-			case lspc::ParameterLookup::Kfpx: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[0]; return;
-			case lspc::ParameterLookup::Kfpy: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[1]; return;
-			case lspc::ParameterLookup::Kfpz: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[2]; return;
-			case lspc::ParameterLookup::Kfvx: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[3]; return;
-			case lspc::ParameterLookup::Kfvy: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[4]; return;
-			case lspc::ParameterLookup::Kfvz: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[5]; return;
+			case lspc::ParameterLookup::Kfp_x: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[0]; return;
+			case lspc::ParameterLookup::Kfp_y: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[1]; return;
+			case lspc::ParameterLookup::Kfp_z: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[2]; return;
+			case lspc::ParameterLookup::Kfv_x: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[3]; return;
+			case lspc::ParameterLookup::Kfv_y: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[4]; return;
+			case lspc::ParameterLookup::Kfv_z: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kf[5]; return;
 			case lspc::ParameterLookup::Kv_x: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kv[0]; return;
 			case lspc::ParameterLookup::Kv_y: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kv[1]; return;
 			case lspc::ParameterLookup::Kvi_x: valueType = lspc::ParameterLookup::_float; *paramPtr = (void *)&this->controller.Kvi[0]; return;
