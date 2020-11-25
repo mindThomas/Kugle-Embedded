@@ -23,6 +23,7 @@
 #include "Debug.h"
 #include "LQR.h"
 #include "SlidingMode.h"
+#include "FeedbackLinearization.h"
 #include "QuaternionVelocityControl.h"
 #include "VelocityLQR.h"
 #include "IIR.hpp"
@@ -148,6 +149,7 @@ void BalanceController::Thread(void * pvParameters)
 	/* Create and initialize controller and estimator objects */
 	LQR& lqr = *(new LQR(params));
 	SlidingMode& sm = *(new SlidingMode(params));
+	FeedbackLinearization& fbl = *(new FeedbackLinearization(params));
 	QuaternionVelocityControl& velocityController = *(new QuaternionVelocityControl(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate));
 	VelocityLQR& velocityLQR = *(new VelocityLQR(params, &balanceController->microsTimer, 1.0f / params.controller.SampleRate));
 	QEKF& qEKF = *(new QEKF(params, &balanceController->microsTimer));
@@ -202,7 +204,12 @@ void BalanceController::Thread(void * pvParameters)
 	FirstOrderLPF& Motor2_LPF = *(new FirstOrderLPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau));
 	FirstOrderLPF& Motor3_LPF = *(new FirstOrderLPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau));
 
-#if 0  // UNIT TESTS DISABLED
+#if 1 // UNIT TESTS DISABLED
+	if (!fbl.UnitTest()) {
+		ERROR("FBL Unit test failed!");
+	}
+
+/*
 	if (!lqr.UnitTest()) {
 		ERROR("LQR Unit test failed!");
 	}
@@ -214,6 +221,7 @@ void BalanceController::Thread(void * pvParameters)
 	if (!qEKF.UnitTest()) {
 		ERROR("qEKF Unit test failed!");
 	}
+*/
 #endif
 
 	/* Reset estimators */
@@ -639,7 +647,9 @@ void BalanceController::Thread(void * pvParameters)
 		} else if (params.controller.type == lspc::ParameterTypes::SLIDING_MODE_CONTROLLER && params.controller.mode != lspc::ParameterTypes::OFF) {
 			// OBS. When running the Sliding Mode controller, inertial angular velocity reference is needed
 			sm.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->COM, balanceController->q_ref, balanceController->omega_ref_body, EquivalentControlPct, Torque, S);
-		} else {
+		} else if(params.controller.type == lspc::ParameterTypes::FEEDBACK_LINEARIZATION_CONTROLLER && params.controller.mode != lspc::ParameterTypes::OFF) {
+			fbl.Step(balanceController->q, balanceController->dq, balanceController->xy, balanceController->dxy, balanceController->COM, balanceController->q_ref, balanceController->omega_ref_body, Torque);
+		}else {
 			// Undefined controller mode, eg. OFF - set torque output to 0
 			Torque[0] = 0;
 			Torque[1] = 0;
@@ -934,6 +944,7 @@ void BalanceController::Thread(void * pvParameters)
 	delete(&params);
 	delete(&lqr);
 	delete(&sm);
+	delete(&fbl);
 	delete(&velocityController);
 	delete(&velocityLQR);
 	delete(&qEKF);

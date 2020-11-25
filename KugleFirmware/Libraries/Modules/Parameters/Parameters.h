@@ -14,6 +14,11 @@
  * Web      :  http://www.tkjelectronics.dk
  * e-mail   :  thomasj@tkjelectronics.dk
  * ------------------------------------------
+ * Modifications
+ * ------------------------------------------
+ * Victor Borja
+ * e-mail   :  v.borja1991@gmail.com
+ * ------------------------------------------
  */
 
 #ifndef MODULES_PARAMETERS_H
@@ -58,7 +63,7 @@ class Parameters
 			float SampleRate = 200;
 			
 			/* Controller selection */
-			lspc::ParameterTypes::controllerType_t type = lspc::ParameterTypes::SLIDING_MODE_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER
+			lspc::ParameterTypes::controllerType_t type = lspc::ParameterTypes::SLIDING_MODE_CONTROLLER;  // LQR_CONTROLLER or SLIDING_MODE_CONTROLLER or FEEDBACK_LINEARIZATION_CONTROLLER
 			lspc::ParameterTypes::controllerMode_t mode = lspc::ParameterTypes::OFF;  // OFF, QUATERNION_CONTROL, ANGULAR_VELOCITY_CONTROL, VELOCITY_CONTROL or PATH_FOLLOWING
 
 			/* Torque output filtering parameters */
@@ -95,18 +100,25 @@ class Parameters
 			#ifdef AGGRESSIVE_SLIDING_MODE
 			float K[3] = {15, 15, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
 			float eta[3] = {6, 6, 3}; // {5, 5, 10}  switching gain
-			float epsilon[3] = {0.5, 0.5, 0.2}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
+			float epsilon[3] = {0.5, 0.5, 0.2}; // continuous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 			//float K[3] = {15, 15, 3}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
 			//float eta[3] = {6, 6, 8}; // {5, 5, 10}  switching gain
-			//float epsilon[3] = {0.5, 0.5, 0.1}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
+			//float epsilon[3] = {0.5, 0.5, 0.1}; // continuous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 			#else
 
 			// The gains below are much more sluggish/slow than the above but works well with the Velocity LQR controller settings both angle (q_ref) and angular velocity (omega_ref) references
 			float K[3] = {6, 6, 6}; // sliding manifold gain  (S = omega + K*devec*q_err)  or  (S = q_dot + K*devec*q_err)  depending on manifold type
 			float eta[3] = {5, 5, 6}; // {5, 5, 10}  switching gain
-			float epsilon[3] = {0.8, 0.8, 0.3}; // continous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
+			float epsilon[3] = {0.8, 0.8, 0.3}; // continuous switching law : "radius" of epsilon-tube around the sliding surface, wherein the control law is linear in S
 
 			#endif
+
+			/* Feedback Linearization Mode parameters */
+			float fp = 100; //Parameter influencing the position/quaternion of the balance controller
+			float fv = 100; //Parameter influencing the velocity/dquaternion of the balance controller
+			float Kfp[3] = {fp, fp, fp};
+			float Kfv [3] = {fv, fv, fv};
+			float Kf [6] = {Kfp[0],Kfp[1],Kfp[2],Kfv[0],Kfv[1],Kfv[2]};
 
 			/* Velocity sliding mode gains */
 			float Kv[2] = {0, 0};
