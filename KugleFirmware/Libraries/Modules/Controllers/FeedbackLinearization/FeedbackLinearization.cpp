@@ -196,15 +196,15 @@ void FeedbackLinearization::Step(const float q[4], const float dq_in[4], const f
 	if (_frameType == 0) {
 		/* Quaternion error in Body frame */
 		// dq_err = Phi(dq_ref)'*q + Phi(q_ref)'*dq
-		Quaternion_PhiT(dq_ref, q, q_err1);
-		Quaternion_PhiT(q_ref,dq,q_err2);
+		Quaternion_PhiT(dq_ref, q, dq_err1);
+		Quaternion_PhiT(q_ref,dq,dq_err2);
 		for (int i=0; i<4;i++)
 			dq_err[i]= dq_err1[i]+dq_err2[i];
 	} else {
 		/* Quaternion error in Inertial frame */
 		// dq_err = Gamma(dq_ref)'*q + Gamma(q_ref)'*dq
-		Quaternion_GammaT(dq_ref, q, q_err1);
-		Quaternion_GammaT(q_ref, dq, q_err2);
+		Quaternion_GammaT(dq_ref, q, dq_err1);
+		Quaternion_GammaT(q_ref, dq, dq_err2);
 		for (int i=0; i<4;i++)
 			dq_err[i]= dq_err1[i]+dq_err2[i];
 	}
