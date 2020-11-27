@@ -204,7 +204,7 @@ void BalanceController::Thread(void * pvParameters)
 	FirstOrderLPF& Motor2_LPF = *(new FirstOrderLPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau));
 	FirstOrderLPF& Motor3_LPF = *(new FirstOrderLPF(1.0f/params.controller.SampleRate, params.controller.TorqueLPFtau));
 
-#if 1 // UNIT TESTS DISABLED
+#if 0 // UNIT TESTS DISABLED
 	if (!fbl.UnitTest()) {
 		ERROR("FBL Unit test failed!");
 	}
